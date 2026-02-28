@@ -1,0 +1,13 @@
+body {
+  margin: 0;
+  background-color: #0f172a; /* Karanlık mod arka planımız */
+  color: #f1f5f9;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#root {
+  width: 100vw; /* Ekranın %100 genişliğini kapla */
+  min-height: 100vh;
+  display: flex;
+  justify-content: center; /* En dış çerçeveyi tam merkeze oturtur */
+}

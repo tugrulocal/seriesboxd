@@ -1,0 +1,1046 @@
+* {
+  box-sizing: border-box;
+}
+
+/* Genel Sayfa Ayarları */
+:root {
+  background-color: #0f172a; /* Koyu, modern bir arka plan */
+  color: #f1f5f9;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.App {
+  width: 100%;
+  max-width: 1000px; /* Letterboxd'ın o şık darlığı */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* İçindeki başlığı, arama kutusunu ve listeyi yatayda ortalar */
+  padding: 40px 20px;
+}
+
+/* NAVBAR TASARIMI */
+.navbar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #334155; /* Şık bir alt çizgi */
+  margin-bottom: 40px;
+}
+
+.logo a {
+  font-size: 1.8rem;
+  color: #38bdf8;
+  text-decoration: none;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.menu-linkler {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+}
+
+.menu-linkler a {
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.menu-linkler a:hover {
+  color: #f8fafc; /* Üzerine gelince beyazlaşır */
+}
+
+.login-btn {
+  background-color: #38bdf8;
+  color: #0f172a !important;
+  padding: 8px 18px;
+  border-radius: 20px; /* Hap şeklinde şık buton */
+  font-weight: bold !important;
+  transition: all 0.2s ease;
+}
+
+.login-btn:hover {
+  background-color: #0284c7;
+  transform: translateY(-2px);
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 45px;
+  color: #38bdf8; /* Seriesboxd Mavisi */
+  
+  letter-spacing: 1px;
+}
+
+/* Kartların Dizilimi (Flexbox) */
+/* Kartların toplandığı ana alan */
+.dizi-listesi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 25px;
+  justify-content: center; /* Kartları kendi aralarında ortalar */
+  
+  /* İŞTE EKSİK OLAN SİHİRLİ SATIRLAR */
+  width: 100%; /* Kutunun ekranın iki ucuna kadar esnemesini sağlar */
+  margin: 0 auto; /* Kutunun kendisini sayfanın tam merkezine oturtur */
+  padding: 20px 0; /* Yanlarda gizli boşluk kalmamasını garantiler */
+}
+
+.dizi-kart {
+  position: relative; /* İçindeki yazıları karta göre hizalamak için ŞART */
+  width: 160px; /* Letterboxd afiş boyutu */
+  border-radius: 10px;
+  overflow: hidden; /* Taşan kısımları ve yazıları gizler */
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* O sıkışık hissi veren kenarlığı sildik, yerine dışarı doğru esneyen mavi parlama ekledik */
+.dizi-kart:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(56, 189, 248, 0.4); 
+}
+
+/* Afiş Ayarları */
+.dizi-poster {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  display: block;
+  margin: 0; /* Alttaki o can sıkıcı boşluğu sildik */
+}
+
+/* İŞTE SİHİR BURADA: Sadece Hover'da Beliren Katman */
+.dizi-bilgi {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%; /* Resmin üzerini tamamen kaplar */
+  
+  /* Alttan yukarı doğru kararan şık bir sinema (vignette) efekti */
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0) 60%);
+  
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Yazıları afişin en altına iter */
+  padding: 15px;
+  
+  opacity: 0; /* Başlangıçta görünmez (Hayalet Modu) */
+  transition: opacity 0.3s ease; /* Yumuşakça belirme efekti */
+}
+
+/* Mouse kartın üzerine gelince yazılar görünür olur */
+.dizi-kart:hover .dizi-bilgi {
+  opacity: 1; 
+}
+
+/* Katman İçindeki Yazı Ayarları */
+.dizi-bilgi h2 {
+  font-size: 1rem;
+  margin: 0 0 5px 0;
+  color: #f8fafc;
+  white-space: normal; /* Artık geniş yerimiz var, uzun isimler 2 satıra inebilir */
+}
+
+.dizi-bilgi p {
+  font-size: 0.9rem;
+  color: #fbbf24;
+  margin: 0;
+  font-weight: bold;
+}
+
+/* Arama Kutusu Tasarımı */
+.arama-kutusu {
+  width: 100%;
+  max-width: 400px; /* Çok uzamasını engeller */
+  padding: 12px 20px;
+  margin-bottom: 40px; /* Kartlarla arasına boşluk koyar */
+  border-radius: 25px;
+  border: 1px solid #334155;
+  background-color: #1e293b;
+  color: #f8fafc;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.arama-kutusu:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.bulunamadi {
+  color: #94a3b8;
+  width: 100%;
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Arka planı karartıp tıklanmaz yapan katman */
+.modal-arkaplan {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.85); /* Hafif saydam koyu lacivert */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Her şeyin üstünde çıkmasını sağlar */
+  backdrop-filter: blur(5px); /* Arka planı şık bir şekilde bulanıklaştırır */
+}
+
+/* Pencerenin kendisi */
+.modal-icerik {
+  background-color: #1e293b;
+  width: 90%;
+  max-width: 700px; /* Çok uzamasını engeller */
+  border-radius: 16px;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: modalAcilis 0.3s ease-out;
+}
+
+@keyframes modalAcilis {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Kapat Butonu */
+.kapat-butonu {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(15, 23, 42, 0.6);
+  color: #f8fafc;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.kapat-butonu:hover {
+  background: #ef4444; /* Kırmızımsı hover */
+}
+
+/* Modal İçindeki Poster */
+.modal-poster {
+  width: 250px;
+  object-fit: cover;
+}
+
+/* Modal İçindeki Yazılar */
+.modal-metin {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.modal-metin h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.8rem;
+  color: #f8fafc;
+}
+
+.modal-puan {
+  font-size: 1.2rem;
+  color: #fbbf24;
+  font-weight: bold;
+
+  
+}
+
+.modal-ayirici {
+  height: 1px;
+  background-color: #334155;
+  margin: 15px 0;
+}
+
+.modal-metin p {
+  color: #94a3b8;
+  font-size: 1rem;
+  line-height: 1.7;
+  overflow-y: auto; /* Çok uzunsa kaydırma çubuğu çıkarır */
+  max-height: 250px;
+}
+
+/* Puan ve Butonu Yan Yana Hizalama */
+.puan-ve-buton {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Puan ile buton arasındaki nefes boşluğu */
+  margin-bottom: 15px; /* Çizgiyle (ayırıcı) arasına boşluk */
+}
+
+/* Modal Puanı (Eski haline getirdik) */
+.modal-puan {
+  font-size: 1.2rem;
+  color: #fbbf24;
+  font-weight: bold;
+}
+
+/* İŞTE YENİ DETAY BUTONUMUZ */
+.detay-butonu {
+  background-color: #38bdf8; /* Seriesboxd Mavisi */
+  color: #0f172a; /* Koyu lacivert, okunabilir bir yazı rengi */
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px; /* Yumuşak köşeler */
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  cursor: pointer;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2); /* Hafif mavi bir parlama */
+  transition: all 0.2s ease;
+}
+
+/* Mouse ile Üzerine Gelince (Hover) */
+.detay-butonu:hover {
+  background-color: #0284c7; /* Rengi hafif koyulaşır */
+  transform: translateY(-2px); /* Çok hafif yukarı zıplar */
+  box-shadow: 0 6px 15px rgba(56, 189, 248, 0.4);
+}
+
+/* Modal Kapanış Animasyonları */
+@keyframes modalKapanis {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 0; transform: scale(0.95) translateY(20px); }
+}
+
+.modal-gizle {
+  animation: modalKapanis 0.3s ease-in forwards;
+}
+
+@keyframes arkaplanKapanis {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.arkaplan-gizle {
+  animation: arkaplanKapanis 0.3s ease-in forwards;
+}
+
+/* =========================================
+   GERÇEK LETTERBOXD DETAY SAYFASI
+========================================= */
+.detay-sayfasi {
+  position: relative;
+  width: 100%;
+  min-height: 80vh;
+  display: flex;
+  justify-content: center;
+  margin-top: -20px; /* Navbar ile arayı kapatır */
+  padding-top: 40px;
+}
+
+/* 1. DÜZELTME: Eski h1 kuralının burayı bozmasını KESİNLİKLE engelliyoruz */
+h1.detay-baslik {
+  font-size: 2.2rem;
+  font-family: 'Merriweather', 'Georgia', serif; /* Letterboxd asilliği */
+  color: #f8fafc !important; /* Mavi iptal, beyaz oldu */
+  text-transform: none !important; /* Lowercase iptal, orijinaline döndü */
+  letter-spacing: normal;
+  margin: 0 0 10px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 15px;
+}
+
+/* DEvasa Arkalan Banner'ı */
+.detay-backdrop {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  height: 600px; /* Dev ekran */
+  background-size: cover;
+  background-position: center 10%;
+  z-index: -1;
+  /* Letterboxd stilinde yumuşak kararma efekti */
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%);
+  opacity: 0.5; /* Resim yazıları okutmayacak kadar parlamasın */
+}
+
+/* 3 Sütunlu Izgara Yapısı */
+.detay-icerik {
+  display: flex;
+  gap: 40px;
+  width: 100%;
+  max-width: 950px;
+  z-index: 1;
+}
+
+/* SOL - Afiş */
+.detay-sol {
+  width: 230px;
+  flex-shrink: 0;
+}
+
+.detay-poster {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #475569;
+  box-shadow: 0 0 20px rgba(0,0,0,0.8);
+}
+
+.poster-alti-ikonlar {
+  display: flex;
+  justify-content: space-between;
+  color: #64748b;
+  font-size: 0.8rem;
+  padding: 10px 5px;
+  border-bottom: 1px solid #334155;
+}
+
+/* ORTA - Metinler */
+.detay-orta {
+  flex: 1;
+  color: #94a3b8;
+}
+
+.detay-yil {
+  font-size: 1.2rem;
+  color: #94a3b8;
+  font-family: 'Segoe UI', sans-serif;
+  font-weight: normal;
+}
+
+.detay-yonetmen {
+  font-size: 0.85rem;
+  margin-bottom: 25px;
+}
+
+.detay-yonetmen span {
+  color: #e2e8f0;
+}
+
+.detay-ozet {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #94a3b8;
+  margin-bottom: 30px;
+}
+
+/* Sekmeler (Cast, Crew vs) */
+.detay-sekmeler {
+  display: flex;
+  gap: 20px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #64748b;
+}
+
+.detay-sekmeler span { cursor: pointer; }
+.aktif-sekme {
+  color: #fff !important;
+  border-bottom: 2px solid #fff;
+  padding-bottom: 5px;
+}
+
+.sekme-cizgisi {
+  height: 1px;
+  background-color: #334155;
+  margin-top: 5px;
+}
+
+/* SAĞ - Letterboxd Paneli */
+.detay-sag-panel {
+  width: 260px;
+  background-color: #1e293b;
+  border-radius: 6px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border: 1px solid #334155;
+}
+
+.aksiyon-ikonlari {
+  display: flex;
+  justify-content: space-around;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.ikon-kutusu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.ikon-kutusu:hover { color: #fff; }
+.ikon { font-size: 1.4rem; }
+.ikon-metin { font-size: 0.75rem; }
+
+.puanlama-alani {
+  text-align: center;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.puan-baslik {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.yildizlar {
+  font-size: 1.5rem;
+  color: #475569;
+  cursor: pointer;
+  letter-spacing: 2px;
+}
+
+.yildizlar:hover { color: #10b981; } /* Yeşil Letterboxd rengi */
+
+.panel-buton {
+  background-color: #334155;
+  color: #cbd5e1;
+  text-align: center;
+  padding: 10px;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.panel-buton:hover { background-color: #475569; color: #fff; }
+
+.ortalama-puan-kutusu {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #334155;
+  padding-top: 15px;
+}
+
+.rating-yazisi { 
+  font-size: 0.8rem; 
+  color: #94a3b8; 
+  display: block;
+  margin-bottom: 5px;
+}
+
+.puan-grubu {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.dev-puan { font-size: 1.8rem; font-weight: bold; color: #f8fafc; }
+
+.kullanici-puan-gostergesi {
+  font-size: 0.9rem;
+  color: #38bdf8; /* Mavi renk senin puanın olduğunu belli eder */
+  font-weight: bold;
+}
+
+.kucuk-yildiz {
+  color: #38bdf8;
+}
+
+/* =========================================
+   SEZONLAR SEKMESİ TASARIMI
+========================================= */
+.sezon-listesi {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 25px;
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.sezon-satir {
+  display: flex;
+  align-items: center;
+  background-color: #1e293b;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  cursor: pointer; /* Tıklanabilir olduğunu gösterir */
+  transition: all 0.2s ease;
+}
+
+.sezon-satir:hover {
+  border-color: #38bdf8;
+  transform: translateX(5px);
+}
+
+.sezon-poster-kucuk {
+  width: 45px;
+  border-radius: 4px;
+  margin-right: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.sezon-bilgi {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sezon-baslik {
+  color: #f8fafc;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.sezon-detay {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  margin-top: 3px;
+}
+
+/* Sezon Sağ Taraf (İkonlar Grubu) */
+.sezon-sag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* İLERLEME ÇUBUĞU (PROGRESS BAR) */
+.progress-container {
+  width: 100%;
+  height: 4px;
+  background-color: #334155;
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #10b981; /* Letterboxd Yeşili */
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+/* BÖLÜMLER (ACCORDION İÇERİĞİ) */
+.bolum-listesi-container {
+  background-color: #0f172a;
+  border-left: 2px solid #334155;
+  margin-left: 20px;
+  margin-bottom: 15px;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  animation: modalAcilis 0.2s ease-out;
+}
+
+.bolum-satir {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid #1e293b;
+  transition: background 0.2s;
+}
+
+.bolum-satir:hover {
+  background-color: #1e293b;
+}
+
+.bolum-sol {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.bolum-no {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: bold;
+  min-width: 25px;
+}
+
+.bolum-bilgi-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.bolum-meta {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.bolum-adi {
+  color: #e2e8f0;
+  font-size: 0.95rem;
+}
+
+.bolum-aksiyonlar {
+  display: flex;
+  gap: 10px;
+}
+
+.bolum-ikon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  background-color: #334155;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+
+.bolum-ikon:hover { background-color: #475569; color: #fff; }
+
+/* İZLEDİM KUTUCUĞU (CHECKBOX) */
+.izlendi-kutusu {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #475569;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #475569; /* İkonlar artık varsayılan olarak sönük gri görünür */
+  font-size: 1.2rem;
+}
+
+.izlendi-kutusu:hover {
+  border-color: #10b981; /* Letterboxd Yeşili */
+}
+
+.izlendi-kutusu.secili {
+  background-color: #10b981;
+  border-color: #10b981;
+  color: #0f172a; /* Tik rengi koyu */
+}
+
+/* Bölüm İkonları Aktif Halleri */
+.bolum-ikon.izlendi-aktif {
+  background-color: #10b981; /* Yeşil */
+  color: #0f172a;
+}
+
+.bolum-ikon.izlenecek-aktif {
+  background-color: #38bdf8; /* Mavi */
+  color: #0f172a;
+}
+
+/* =========================================
+   CAST (OYUNCULAR) SEKMESİ
+========================================= */
+.oyuncu-listesi {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 20px;
+  margin-top: 25px;
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.oyuncu-kart {
+  background-color: #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  transition: transform 0.2s;
+}
+
+.oyuncu-kart:hover {
+  transform: translateY(-5px);
+  border-color: #38bdf8;
+}
+
+.oyuncu-foto {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.oyuncu-bilgi {
+  padding: 10px;
+  text-align: center;
+}
+
+.oyuncu-isim { font-size: 0.9rem; color: #f8fafc; font-weight: bold; margin-bottom: 3px; }
+.oyuncu-karakter { font-size: 0.8rem; color: #94a3b8; font-style: italic; }
+
+/* =========================================
+   CREW (EKİP) SEKMESİ
+========================================= */
+.crew-container {
+  margin-top: 25px;
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.crew-group {
+  margin-bottom: 30px;
+}
+
+.crew-dept-title {
+  font-size: 0.9rem;
+  color: #38bdf8; /* Başlıklar mavi */
+  border-bottom: 1px solid #334155;
+  padding-bottom: 5px;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+
+.crew-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.crew-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.crew-name { font-size: 0.95rem; color: #f8fafc; font-weight: 500; }
+.crew-job { font-size: 0.8rem; color: #94a3b8; margin-top: 2px; }
+
+/* =========================================
+   GENRES (TÜRLER) SEKMESİ
+========================================= */
+.genre-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 25px;
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.genre-tag {
+  background-color: #1e293b;
+  color: #94a3b8;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid #334155;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.genre-tag:hover {
+  background-color: #334155;
+  color: #f8fafc;
+  border-color: #94a3b8;
+}
+
+/* =========================================
+   LİSTE MENÜSÜ (POPUP)
+========================================= */
+.liste-menu-container {
+  position: relative;
+}
+
+.liste-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 240px;
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 10px;
+  z-index: 100;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  margin-top: 5px;
+  animation: modalAcilis 0.2s ease-out;
+}
+
+.liste-satir {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.liste-satir:hover {
+  background-color: #334155;
+}
+
+.liste-checkbox {
+  accent-color: #38bdf8;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.liste-adi {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+}
+
+.yeni-liste-form {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #334155;
+  display: flex;
+  gap: 5px;
+}
+
+.yeni-liste-input {
+  flex: 1;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #fff;
+  padding: 5px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.liste-ekle-btn {
+  background: #38bdf8;
+  border: none;
+  color: #0f172a;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0 8px;
+}
+
+/* =========================================
+   PUANLAMA YILDIZLARI
+========================================= */
+.puanlama-yildizlari {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+.tek-yildiz {
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: #334155; /* Varsayılan sönük renk */
+  transition: color 0.2s;
+}
+
+.tek-yildiz.dolu { color: #38bdf8; } /* Seçili veya hover olunca mavi */
+.tek-yildiz:hover { transform: scale(1.2); }
+
+/* =========================================
+   TOP 50 SAYFASI TASARIMI (YATAY LİSTE)
+========================================= */
+.top50-listesi {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding-bottom: 50px;
+  width: 100%;
+  max-width: 800px; /* Okunabilirlik için çok geniş olmasın */
+  margin: 0 auto;
+}
+
+.top50-satir {
+  display: flex;
+  align-items: center;
+  background-color: #1e293b;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.top50-satir:hover {
+  border-color: #38bdf8;
+  transform: translateX(5px);
+  background-color: #253346;
+}
+
+.top50-sira {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #64748b;
+  width: 40px;
+  text-align: center;
+  flex-shrink: 0;
+  margin-right: 15px;
+}
+
+.top50-poster {
+  width: 70px;
+  height: 105px; /* 2:3 oran */
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 20px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.top50-bilgi {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Taşmaları engelle */
+}
+
+.top50-baslik-satiri {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.top50-baslik {
+  font-size: 1.1rem;
+  color: #f8fafc;
+  margin: 0;
+  font-weight: bold;
+}
+
+.top50-puan {
+  color: #10b981; /* Yeşil */
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.top50-ozet {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 0;
+  
+  /* 3 Satır Sınırlaması (Line Clamp) */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
