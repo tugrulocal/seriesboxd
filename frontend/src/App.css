@@ -491,8 +491,18 @@ h1.detay-baslik {
 }
 
 .ikon-kutusu:hover { color: #fff; }
-.ikon { font-size: 1.4rem; }
-.ikon-metin { font-size: 0.75rem; }
+.ikon { font-size: 1.4rem; transition: transform 0.2s ease; }
+.ikon-metin { font-size: 0.75rem; transition: color 0.2s ease; }
+
+/* Aktif Durumlar */
+.ikon-kutusu.watch-aktif { color: #10b981; } /* Letterboxd Yeşili */
+.ikon-kutusu.watch-aktif .ikon { transform: scale(1.2); }
+
+.ikon-kutusu.like-aktif { color: #f43f5e; } /* Canlı Kırmızı/Pembe */
+.ikon-kutusu.like-aktif .ikon { transform: scale(1.2); }
+
+.ikon-kutusu.watchlist-aktif { color: #38bdf8; } /* Seriesboxd Mavisi */
+.ikon-kutusu.watchlist-aktif .ikon { transform: scale(1.2); }
 
 .puanlama-alani {
   text-align: center;

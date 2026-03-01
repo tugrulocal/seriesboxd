@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import psycopg2
 from pydantic import BaseModel
+from typing import Optional
 from psycopg2.extras import RealDictCursor
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -25,6 +26,12 @@ class ListeItemModel(BaseModel):
 class RatingModel(BaseModel):
     series_id: int
     score: int
+
+class ActivityModel(BaseModel):
+    series_id: int
+    season_id: Optional[int] = None
+    episode_id: int
+    activity_type: str  # 'watched' | 'watchlist'
 
 # Veritabanı bağlantısı
 def get_db_conn():
@@ -164,6 +171,55 @@ def remove_item_from_list(list_id: int, series_id: int):
     conn.close()
     return {"status": "removed"}
 
+# --- AKTİVİTE (İZLENDİ / İZLEYECEĞİM) SİSTEMİ ---
+
+@app.get("/activity/{series_id}")
+def get_activity(series_id: int):
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute(
+        "SELECT episode_id, season_id, activity_type FROM user_activity WHERE user_id = 1 AND series_id = %s",
+        (series_id,)
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+@app.post("/activity")
+def set_activity(activity: ActivityModel):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            INSERT INTO user_activity (user_id, series_id, season_id, episode_id, activity_type)
+            VALUES (1, %s, %s, %s, %s)
+            ON CONFLICT (user_id, episode_id, activity_type) DO NOTHING
+            """,
+            (activity.series_id, activity.season_id, activity.episode_id, activity.activity_type)
+        )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(e)
+    cur.close()
+    conn.close()
+    return {"status": "ok"}
+
+@app.delete("/activity/{episode_id}/{activity_type}")
+def delete_activity(episode_id: int, activity_type: str):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "DELETE FROM user_activity WHERE user_id = 1 AND episode_id = %s AND activity_type = %s",
+        (episode_id, activity_type)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"status": "deleted"}
+
 # --- PUANLAMA (RATING) SİSTEMİ ---
 
 @app.get("/rating/{series_id}")
@@ -192,3 +248,56 @@ def set_user_rating(rating: RatingModel):
     cur.close()
     conn.close()
     return {"status": "success", "score": rating.score}
+
+# --- DİZİ BAZLI AKTİVİTE (WATCH / LIKE / WATCHLIST) ---
+
+class SeriesActivityModel(BaseModel):
+    series_id: int
+    activity_type: str  # 'watched' | 'liked' | 'watchlist'
+
+@app.get("/series-activity/{series_id}")
+def get_series_activity(series_id: int):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT activity_type FROM user_series_activity WHERE user_id = 1 AND series_id = %s",
+        (series_id,)
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return [row[0] for row in rows]  # ['watched', 'liked'] gibi
+
+@app.post("/series-activity")
+def set_series_activity(item: SeriesActivityModel):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            INSERT INTO user_series_activity (user_id, series_id, activity_type)
+            VALUES (1, %s, %s)
+            ON CONFLICT (user_id, series_id, activity_type) DO NOTHING
+            """,
+            (item.series_id, item.activity_type)
+        )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(e)
+    cur.close()
+    conn.close()
+    return {"status": "ok"}
+
+@app.delete("/series-activity/{series_id}/{activity_type}")
+def delete_series_activity(series_id: int, activity_type: str):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "DELETE FROM user_series_activity WHERE user_id = 1 AND series_id = %s AND activity_type = %s",
+        (series_id, activity_type)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"status": "deleted"}
