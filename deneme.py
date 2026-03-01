@@ -160,12 +160,12 @@ def dizi_kaydet(dizi_adi):
             # BÖLÜMLERİ KAYDET
             for ep in s_detail.get('episodes', []):
                 cur.execute("""
-                    INSERT INTO episodes (season_id, episode_number, name, overview, air_date, runtime, still_path)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO episodes (season_id, episode_number, name, overview, air_date, runtime, still_path, vote_average)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT DO NOTHING;
                 """, (
                     db_season_id, ep['episode_number'], ep['name'], 
-                    ep['overview'], ep['air_date'], ep.get('runtime'), ep.get('still_path')
+                    ep['overview'], ep['air_date'], ep.get('runtime'), ep.get('still_path'), ep.get('vote_average')
                 ))
             
             print(f"-> {d['name']} {s['name']} ve {len(s_detail.get('episodes', []))} bölüm kaydedildi.")

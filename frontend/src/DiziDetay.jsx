@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Eye, Heart, Bookmark } from 'lucide-react';
 import './App.css';
 
 function DiziDetay() {
@@ -15,6 +16,9 @@ function DiziDetay() {
   const [izlenecekSezonlar, setIzlenecekSezonlar] = useState({}); // YENİ: Sezon Watchlist
   const [izlenenBolumler, setIzlenenBolumler] = useState({});
   const [izlenecekBolumler, setIzlenecekBolumler] = useState({});
+  const [bolumPuanlari, setBolumPuanlari] = useState({});   // { episode_id: score }
+  const [hoverBolumPuani, setHoverBolumPuani] = useState({ id: null, puan: 0 });
+  const [acikPuanlama, setAcikPuanlama] = useState(null); // Hangi bölümün yıldızları açık
   const [yukleniyor, setYukleniyor] = useState(true);
 
   const [kullaniciPuani, setKullaniciPuani] = useState(null);
@@ -86,6 +90,11 @@ function DiziDetay() {
         setDiziLiked(data.includes('liked'));
         setDiziWatchlist(data.includes('watchlist'));
       });
+
+    // Bölüm puanlarını toplu çek
+    fetch(`http://127.0.0.1:8000/episode-ratings/${id}`)
+      .then(res => res.json())
+      .then(data => setBolumPuanlari(data));
   }, [id]);
 
   // SEZON İZLEME MANTIĞI (TOPLU İŞLEM)
@@ -255,6 +264,19 @@ function DiziDetay() {
       });
   };
 
+  // TARİH FORMATLAMA
+  const tarihFormatla = (tarihStr) => {
+    if (!tarihStr) return 'Bilinmiyor';
+    const aylar = [
+      "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+      "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+    ];
+    const parcalar = tarihStr.split('-');
+    if (parcalar.length !== 3) return tarihStr;
+    const [yil, ay, gun] = parcalar;
+    return `${parseInt(gun)} ${aylar[parseInt(ay) - 1]} ${yil}`;
+  };
+
   // PUAN VERME İŞLEMİ
   const puanVer = (puan) => {
     setKullaniciPuani(puan);
@@ -263,6 +285,23 @@ function DiziDetay() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ series_id: dizi.series_id, score: puan })
     });
+  };
+
+  // BÖLÜM PUANLAMA
+  const bolumPuanVer = (episodeId, puan) => {
+    const mevcutPuan = bolumPuanlari[episodeId];
+    if (mevcutPuan === puan) {
+      // Aynı puana tekrar tıklarsa sil
+      setBolumPuanlari(prev => { const s = { ...prev }; delete s[episodeId]; return s; });
+      fetch(`http://127.0.0.1:8000/episode-rating/${episodeId}`, { method: 'DELETE' });
+    } else {
+      setBolumPuanlari(prev => ({ ...prev, [episodeId]: puan }));
+      fetch('http://127.0.0.1:8000/episode-rating', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ episode_id: episodeId, score: puan })
+      });
+    }
   };
 
   if (yukleniyor) return <div style={{ color: 'white', textAlign: 'center', marginTop: '50px' }}>🎬 Kaset Sarılıyor...</div>;
@@ -324,7 +363,7 @@ function DiziDetay() {
           </h1>
 
           <div className="detay-yonetmen">
-            YAYIN <span>{gosterimTarihi}</span> • <span style={{ color: '#38bdf8' }}>{durum}</span>
+            YAYIN <span>{tarihFormatla(gosterimTarihi)}</span> • <span style={{ color: '#38bdf8' }}>{durum}</span>
           </div>
 
           <p className="detay-ozet">{dizi.overview}</p>
@@ -408,12 +447,60 @@ function DiziDetay() {
                               <div className="bolum-sol">
                                 <span className="bolum-no">{bolum.episode_number}</span>
                                 <div className="bolum-bilgi-container">
-                                  <span className="bolum-adi">{bolum.name}</span>
-                                  <span className="bolum-meta">{bolum.air_date} • {bolum.runtime ? `${bolum.runtime} dk` : ''}</span>
+                                  <span className="bolum-adi">
+                                    {bolum.name}
+                                    {/* TMDB Puanı ismin hemen sağında */}
+                                    {bolum.vote_average > 0 && (
+                                      <span className="bolum-tmdb-puan">⭐ {Number(bolum.vote_average).toFixed(1)}</span>
+                                    )}
+                                  </span>
+                                  <span className="bolum-meta">
+                                    {tarihFormatla(bolum.air_date)} • {bolum.runtime ? `${bolum.runtime} dk` : ''}
+                                  </span>
                                 </div>
                               </div>
 
                               <div className="bolum-aksiyonlar">
+                                {/* Kullanıcı Yıldız Puanlaması (Açılıp/Kapanabilir) */}
+                                <div className="bolum-puanlama-alani">
+                                  {acikPuanlama !== bolum.episode_id && !bolumPuanlari[bolum.episode_id] ? (
+                                    <div
+                                      className="bolum-rate-btn"
+                                      onClick={() => setAcikPuanlama(bolum.episode_id)}
+                                      title="Puan Ver"
+                                    >
+                                      ★
+                                    </div>
+                                  ) : (
+                                    <div
+                                      className="bolum-yildizlar"
+                                      onMouseLeave={() => setHoverBolumPuani({ id: null, puan: 0 })}
+                                    >
+                                      {[1, 2, 3, 4, 5].map(yildiz => {
+                                        const puanDegeri = yildiz * 2; // 1 yıldız = 2 puan
+                                        const aktifPuan = hoverBolumPuani.id === bolum.episode_id
+                                          ? hoverBolumPuani.puan
+                                          : (bolumPuanlari[bolum.episode_id] ?? 0);
+                                        const dolu = puanDegeri <= aktifPuan;
+                                        return (
+                                          <span
+                                            key={yildiz}
+                                            className={`bolum-yildiz ${dolu ? 'dolu' : ''}`}
+                                            onMouseEnter={() => setHoverBolumPuani({ id: bolum.episode_id, puan: puanDegeri })}
+                                            onClick={() => bolumPuanVer(bolum.episode_id, puanDegeri)}
+                                            title={`${puanDegeri}/10`}
+                                          >★</span>
+                                        );
+                                      })}
+                                      {bolumPuanlari[bolum.episode_id] ? (
+                                        <span className="bolum-verilen-puan">{bolumPuanlari[bolum.episode_id]}/10</span>
+                                      ) : (
+                                        <span className="bolum-puan-kapat" onClick={() => setAcikPuanlama(null)}>✕</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
                                 {/* İzledim Butonu */}
                                 <div
                                   className={`bolum-ikon ${izlenenBolumler[bolum.episode_id] ? 'izlendi-aktif' : ''}`}
@@ -502,7 +589,12 @@ function DiziDetay() {
               onClick={() => seriesActivityToggle('watched', diziIzlendi, setDiziIzlendi)}
               title={diziIzlendi ? 'İzlenmiş olarak işaretlendi' : 'İzledim olarak işaretle'}
             >
-              <span className="ikon">👁️</span>
+              <Eye
+                size={24}
+                strokeWidth={diziIzlendi ? 2.5 : 1.5}
+                color={diziIzlendi ? '#10b981' : '#64748b'}
+                fill={diziIzlendi ? 'rgba(16,185,129,0.15)' : 'none'}
+              />
               <span className="ikon-metin">Watch</span>
             </div>
             <div
@@ -510,7 +602,12 @@ function DiziDetay() {
               onClick={() => seriesActivityToggle('liked', diziLiked, setDiziLiked)}
               title={diziLiked ? 'Beğenildi' : 'Beğen'}
             >
-              <span className="ikon">{diziLiked ? '♥' : '♡'}</span>
+              <Heart
+                size={24}
+                strokeWidth={diziLiked ? 2.5 : 1.5}
+                color={diziLiked ? '#f43f5e' : '#64748b'}
+                fill={diziLiked ? 'rgba(244,63,94,0.2)' : 'none'}
+              />
               <span className="ikon-metin">Like</span>
             </div>
             <div
@@ -518,7 +615,12 @@ function DiziDetay() {
               onClick={() => seriesActivityToggle('watchlist', diziWatchlist, setDiziWatchlist)}
               title={diziWatchlist ? 'İzleme listesinde' : 'İzleme listesine ekle'}
             >
-              <span className="ikon">⏱️</span>
+              <Bookmark
+                size={24}
+                strokeWidth={diziWatchlist ? 2.5 : 1.5}
+                color={diziWatchlist ? '#38bdf8' : '#64748b'}
+                fill={diziWatchlist ? 'rgba(56,189,248,0.2)' : 'none'}
+              />
               <span className="ikon-metin">Watchlist</span>
             </div>
           </div>
