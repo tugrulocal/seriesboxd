@@ -58,7 +58,9 @@ function SearchBar({ onSonuclar }) {
 
                 const res = await fetch(`http://127.0.0.1:8000/arama?${params}`);
                 const data = await res.json();
-                onSonuclar(data);
+
+                const isSearchActive = !!q || mn > 0 || mx < 10 || turler.length > 0 || sir !== 'rating_desc';
+                onSonuclar(data, isSearchActive);
             } catch (e) {
                 console.error(e);
             } finally {

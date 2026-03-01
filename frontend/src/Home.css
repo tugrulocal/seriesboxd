@@ -1,0 +1,326 @@
+/* ==========================================
+   Home Component Stilleri 
+   ========================================== */
+.home-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- HERO BANNER --- */
+.home-hero {
+    position: relative;
+    width: 100%;
+    height: 75vh;
+    min-height: 450px;
+    background-size: cover;
+    background-position: top center;
+    background-repeat: no-repeat;
+    z-index: 1;
+}
+
+.hero-gradient-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 65%;
+    height: 100%;
+    background: linear-gradient(to right, #0f172a 0%, rgba(15, 23, 42, 0.75) 35%, transparent 100%);
+    z-index: 1;
+}
+
+.hero-gradient-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 55%;
+    background: linear-gradient(to top, #0f172a 0%, rgba(15, 23, 42, 0.6) 40%, transparent 100%);
+    z-index: 1;
+}
+
+.hero-content {
+    position: absolute;
+    bottom: 12%;
+    left: 5%;
+    width: 45%;
+    min-width: 320px;
+    max-width: 620px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.hero-title {
+    font-size: 3.2rem;
+    font-weight: 800;
+    color: white;
+    margin: 0;
+    line-height: 1.1;
+    text-shadow: 2px 3px 10px rgba(0, 0, 0, 0.7);
+}
+
+.hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    flex-wrap: wrap;
+}
+
+.hero-rating {
+    font-weight: bold;
+    color: #f59e0b;
+}
+
+.hero-votes {
+    color: #94a3b8;
+}
+
+.hero-genres {
+    color: #7dd3fc;
+    font-weight: 500;
+}
+
+.hero-overview {
+    font-size: 1.05rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+    margin: 0;
+}
+
+.hero-buttons {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.hero-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: white;
+    color: #0f172a;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.hero-btn-primary:hover {
+    background-color: #e2e8f0;
+    transform: scale(1.05);
+}
+
+.hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hero-action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.hero-action-icon.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+}
+
+.hero-action-icon:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* --- YATAY SATIRLAR (ROWS) --- */
+.home-rows-container {
+    padding: 30px 4%;
+    margin-top: -40px;
+    z-index: 5;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 35px;
+}
+
+.home-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.row-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+    padding-left: 8px;
+    border-left: 4px solid #38bdf8;
+}
+
+/* Row Wrapper (arrows + posters) */
+.row-wrapper {
+    position: relative;
+}
+
+/* Oklar */
+.row-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    width: 40px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+}
+
+.row-arrow:hover {
+    background: rgba(56, 189, 248, 0.3);
+    border-color: #38bdf8;
+}
+
+.row-arrow-left {
+    left: 0;
+}
+
+.row-arrow-right {
+    right: 0;
+}
+
+/* Poster Şeridi */
+.row-posters {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 12px;
+    padding: 8px 45px 15px 45px;
+    /* Ok butonları için yan padding */
+    scroll-behavior: smooth;
+    /* Scrollbar gizle */
+    scrollbar-width: none;
+}
+
+.row-posters::-webkit-scrollbar {
+    display: none;
+}
+
+/* Poster Kartı */
+.row-item {
+    position: relative;
+    flex: 0 0 auto;
+    width: 155px;
+    aspect-ratio: 2 / 3;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: #1e293b;
+}
+
+.row-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.row-item:hover {
+    transform: scale(1.08) translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+}
+
+/* Poster Hover Overlay */
+.row-item-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.3) 40%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 10px;
+    gap: 4px;
+}
+
+.row-item:hover .row-item-overlay {
+    opacity: 1;
+}
+
+.row-item-name {
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.row-item-rating {
+    color: #fbbf24;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* --- MOBİL UYUMLULUK --- */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-content {
+        width: 90%;
+        left: 5%;
+        bottom: 5%;
+    }
+
+    .hero-overview {
+        font-size: 0.9rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .row-item {
+        width: 120px;
+    }
+
+    .row-arrow {
+        width: 32px;
+        height: 60px;
+    }
+
+    .row-posters {
+        padding: 8px 35px 15px 35px;
+    }
+}

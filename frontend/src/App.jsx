@@ -4,6 +4,7 @@ import Navbar from './Navbar'
 import DiziDetay from './DiziDetay'
 import Top50 from './Top50'
 import Login from './Login'
+import Home from './Home'
 import { AuthProvider } from './AuthContext'
 import './App.css'
 
@@ -13,6 +14,7 @@ function AppIcerik() {
   const [seciliDizi, setSeciliDizi] = useState(null);
   const [diziler, setDiziler] = useState([]);
   const [hata, setHata] = useState(null);
+  const [aramaAktif, setAramaAktif] = useState(false);
 
   useEffect(() => {
     fetch('http://127.0.0.1:8000/arama?siralama=rating_desc')
@@ -24,8 +26,9 @@ function AppIcerik() {
       .catch(err => setHata(err.message));
   }, []);
 
-  const handleSonuclar = useCallback((yeniDiziler) => {
+  const handleSonuclar = useCallback((yeniDiziler, isSearchActive) => {
     if (Array.isArray(yeniDiziler)) setDiziler(yeniDiziler);
+    setAramaAktif(!!isSearchActive);
   }, []);
 
   const modalKapatVeGit = (rota = null) => {
@@ -46,27 +49,32 @@ function AppIcerik() {
           <>
             {hata && <div style={{ color: 'red', marginBottom: '20px' }}>⚠️ {hata}</div>}
 
-            <div className="dizi-listesi">
-              {diziler.length > 0 ? (
-                diziler.map((dizi) => (
-                  <div key={dizi.series_id} className="dizi-kart" onClick={() => setSeciliDizi(dizi)}>
-                    {dizi.poster_path && (
-                      <img
-                        src={`https://image.tmdb.org/t/p/w500${dizi.poster_path}`}
-                        alt={dizi.name}
-                        className="dizi-poster"
-                      />
-                    )}
-                    <div className="dizi-bilgi">
-                      <h2>{dizi.name}</h2>
-                      <p>⭐ {Number(dizi.rating).toFixed(1)}</p>
+            {aramaAktif ? (
+              <div className="dizi-listesi">
+                {diziler.length > 0 ? (
+                  diziler.map((dizi) => (
+                    <div key={dizi.series_id} className="dizi-kart" onClick={() => setSeciliDizi(dizi)}>
+                      {dizi.poster_path && (
+                        <img
+                          src={`https://image.tmdb.org/t/p/w500${dizi.poster_path}`}
+                          alt={dizi.name}
+                          className="dizi-poster"
+                          loading="lazy"
+                        />
+                      )}
+                      <div className="dizi-bilgi">
+                        <h2>{dizi.name}</h2>
+                        <p>⭐ {Number(dizi.rating).toFixed(1)}</p>
+                      </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                !hata && <p className="bulunamadi">Aradığınız dizi bulunamadı. 🍿</p>
-              )}
-            </div>
+                  ))
+                ) : (
+                  !hata && <p className="bulunamadi">Aradığınız dizi bulunamadı. 🍿</p>
+                )}
+              </div>
+            ) : (
+              <Home tumDiziler={diziler} seciliDiziAyarla={setSeciliDizi} />
+            )}
 
             {seciliDizi && (
               <div

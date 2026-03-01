@@ -41,34 +41,34 @@ def setup_db():
 def get_top_500_ids():
     series_dict = {}
 
-    print("TMDB'den populer diziler (Popular) çekiliyor...", flush=True)
-    for page in range(1, 26): # 25 sayfa x 20 = 500
+    print("TMDB'den EN KALITELI 500 dizi ('Succession', 'The Wire' standartlarinda) seciliyor...", flush=True)
+    # 25 sayfa x 20 sonuc = 500 Dizi
+    # Sadece puani 7.5 Ustu ve en az 1500 kisi tarafindan oylanmis, ana dili Ingilizce olan diziler
+    for page in range(1, 26): 
         try:
-            url = f"{BASE_URL}/tv/popular?api_key={API_KEY}&language=tr-TR&page={page}"
+            url = (
+                f"{BASE_URL}/discover/tv"
+                f"?api_key={API_KEY}"
+                f"&language=tr-TR"
+                f"&sort_by=vote_count.desc"
+                f"&vote_count.gte=1000"
+                f"&vote_average.gte=7.5"
+                f"&with_original_language=en"
+                f"&page={page}"
+            )
             data = requests.get(url).json()
             for res in data.get('results', []):
                 series_dict[res['id']] = res
             time.sleep(0.05)
         except Exception as e:
-            print(f"Hata popular sayfa {page}: {e}")
+            print(f"Hata sayfa {page}: {e}")
 
-    print("TMDB'den en yuksek puanli diziler (Top Rated) çekiliyor...", flush=True)
-    for page in range(1, 26):
-        try:
-            url = f"{BASE_URL}/tv/top_rated?api_key={API_KEY}&language=tr-TR&page={page}"
-            data = requests.get(url).json()
-            for res in data.get('results', []):
-                series_dict[res['id']] = res
-            time.sleep(0.05)
-        except Exception as e:
-            print(f"Hata top_rated sayfa {page}: {e}")
-
-    # En populerden aza doğru sirala
-    sorted_series = sorted(series_dict.values(), key=lambda x: x.get('popularity', 0), reverse=True)
+    # Vote count'a (populerlige) gore geri sirala ki en iyiler ilk gelsin
+    sorted_series = sorted(series_dict.values(), key=lambda x: x.get('vote_count', 0), reverse=True)
     
-    # 500 dizi seç
-    top_500 = sorted_series[:500]
-    return [s['id'] for s in top_500]
+    # Ilk 150 diziyi sec
+    top_150 = sorted_series[:150]
+    return [s['id'] for s in top_150]
 
 def import_series(tmdb_id, index, total):
     conn = get_db_conn()
@@ -86,21 +86,22 @@ def import_series(tmdb_id, index, total):
         created_by = ", ".join([c['name'] for c in d.get('created_by', [])])
         genres = ", ".join([g['name'] for g in d.get('genres', [])])
         
-        # 1. SERIES TABLOSU
+        # 1. SERIES TABLOSU (vote_count eklendi)
         series_query = """
-        INSERT INTO series (series_id, name, rating, overview, poster_path, backdrop_path, status, networks, created_by, genres) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO series (series_id, name, rating, overview, poster_path, backdrop_path, status, networks, created_by, genres, vote_count) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (series_id) DO UPDATE SET
             status = EXCLUDED.status,
             networks = EXCLUDED.networks,
             created_by = EXCLUDED.created_by,
             rating = EXCLUDED.rating,
             genres = EXCLUDED.genres,
-            backdrop_path = EXCLUDED.backdrop_path;
+            backdrop_path = EXCLUDED.backdrop_path,
+            vote_count = EXCLUDED.vote_count;
         """
         cur.execute(series_query, (
             d['id'], d['name'], d.get('vote_average'), d.get('overview'), 
-            d.get('poster_path'), d.get('backdrop_path'), d.get('status'), networks, created_by, genres
+            d.get('poster_path'), d.get('backdrop_path'), d.get('status'), networks, created_by, genres, d.get('vote_count', 0)
         ))
 
         # 2. SEZONLAR VE BÖLÜMLER
@@ -175,13 +176,13 @@ def import_series(tmdb_id, index, total):
 
 def main():
     print("--------------------------------------------------")
-    print("TOP 500 DIZI ICERI AKTARMA ISLEMI BASLATILIYOR...")
+    print("TOP 150 KALITELI DIZI ICERI AKTARMA ISLEMI BASLATILIYOR...")
     print("--------------------------------------------------\n", flush=True)
     setup_db()
     
     ids = get_top_500_ids()
-    print(f"\nToplam {len(ids)} adet benzersiz populer dizi bulundu.")
-    print("Diziler tum sezon/bolum/oyuncu detaylariyla aktariliyor (Bu islem 15-20 dk surebilir)...\n", flush=True)
+    print(f"\nToplam {len(ids)} adet elit dizi aktarilacak.")
+    print("Diziler tum sezon/bolum/oyuncu detaylariyla aktariliyor (Bu islem 5-7 dk surebilir)...\n", flush=True)
     
     for i, tmdb_id in enumerate(ids, 1):
         import_series(tmdb_id, i, len(ids))
