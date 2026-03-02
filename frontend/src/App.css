@@ -10,14 +10,18 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+html,
+body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 .App {
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 0 40px 0;
+  padding: 0;
 }
 
 /* NAVBAR TASARIMI */
@@ -94,15 +98,9 @@ h1 {
   flex-wrap: wrap;
   gap: 25px;
   justify-content: center;
-  /* Kartları kendi aralarında ortalar */
-
-  /* İŞTE EKSİK OLAN SİHİRLİ SATIRLAR */
   width: 100%;
-  /* Kutunun ekranın iki ucuna kadar esnemesini sağlar */
   margin: 0 auto;
-  /* Kutunun kendisini sayfanın tam merkezine oturtur */
-  padding: 20px 0;
-  /* Yanlarda gizli boşluk kalmamasını garantiler */
+  padding: 20px 4%;
 }
 
 .dizi-kart {
@@ -393,8 +391,390 @@ h1 {
 }
 
 /* =========================================
-   GERÇEK LETTERBOXD DETAY SAYFASI
+   DİZİ DETAY V2 — HERO-DRIVEN LAYOUT
 ========================================= */
+.detay-v2 {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* ===== HERO BANNER ===== */
+.dv2-hero {
+  position: relative;
+  width: 100%;
+  min-height: 500px;
+  background-size: cover;
+  background-position: center 20%;
+  background-repeat: no-repeat;
+  margin-top: -75px;
+  padding-top: 75px;
+}
+
+.dv2-hero-grad-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 65%;
+  height: 100%;
+  background: linear-gradient(to right, #0f172a 0%, rgba(15, 23, 42, 0.85) 30%, rgba(15, 23, 42, 0.3) 65%, transparent 100%);
+  z-index: 1;
+}
+
+.dv2-hero-grad-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(to top, #0f172a 0%, rgba(15, 23, 42, 0.6) 50%, transparent 100%);
+  z-index: 1;
+}
+
+.dv2-hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 4% 40px;
+  display: flex;
+  gap: 30px;
+  align-items: flex-end;
+}
+
+.dv2-hero-poster {
+  width: 200px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.dv2-hero-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dv2-title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  line-height: 1.15;
+  text-shadow: 2px 3px 10px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dv2-yil {
+  font-size: 1.3rem;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.dv2-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.92rem;
+  color: #94a3b8;
+}
+
+.dv2-rating {
+  color: #f59e0b;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dv2-votes {
+  color: #64748b;
+}
+
+.dv2-durum {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.dv2-tarih {
+  color: #94a3b8;
+}
+
+.dv2-genres {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.dv2-genre-tag {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  transition: all 0.2s;
+}
+
+.dv2-genre-tag:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: white;
+  border-color: #38bdf8;
+}
+
+.dv2-overview {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  line-height: 1.55;
+  margin: 4px 0 0 0;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Actions (Right) */
+.dv2-hero-actions {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-self: flex-start;
+  margin-top: 20px;
+}
+
+.dv2-action-icons {
+  display: flex;
+  justify-content: space-around;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 12px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dv2-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-size: 0.75rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  font-weight: 500;
+}
+
+.dv2-action svg {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+}
+
+.dv2-action:hover {
+  color: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.dv2-action.act-watch {
+  color: #10b981;
+}
+
+.dv2-action.act-watch svg {
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.5));
+}
+
+.dv2-action.act-like {
+  color: #f43f5e;
+}
+
+.dv2-action.act-like svg {
+  filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.5));
+}
+
+.dv2-action.act-wl {
+  color: #38bdf8;
+}
+
+.dv2-action.act-wl svg {
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));
+}
+
+.dv2-rate-box {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.dv2-rate-label {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  display: block;
+  margin-bottom: 4px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.dv2-stars {
+  font-size: 1.15rem;
+  letter-spacing: 1px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+}
+
+.dv2-star {
+  color: #334155;
+  cursor: pointer;
+  transition: color 0.15s, transform 0.15s;
+}
+
+.dv2-star:hover,
+.dv2-star.dolu {
+  color: #f59e0b;
+}
+
+.dv2-puan-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.dv2-puan-sil {
+  background: none;
+  border: 1px solid #475569;
+  color: #f87171;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s;
+}
+
+.dv2-puan-sil:hover {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: #f87171;
+}
+
+.dv2-rating-display {
+  text-align: center;
+}
+
+.dv2-big-rating {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.dv2-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px;
+  background: rgba(30, 41, 59, 0.7);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+}
+
+.dv2-btn:hover {
+  background: #334155;
+  color: #fff;
+}
+
+.dv2-liste-container {
+  position: relative;
+}
+
+/* ===== CONTENT BELOW HERO ===== */
+.dv2-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 4%;
+}
+
+.dv2-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 2px solid #1e293b;
+  padding-bottom: 0;
+  margin-bottom: 24px;
+}
+
+.dv2-tabs span {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dv2-tabs span:hover {
+  color: #e2e8f0;
+}
+
+.dv2-tab-active {
+  color: #fff !important;
+  border-bottom-color: #38bdf8 !important;
+}
+
+.dv2-tab-content {
+  min-height: 300px;
+}
+
+.dv2-reviews-section {
+  margin-top: 40px;
+  border-top: 1px solid #1e293b;
+  padding-top: 24px;
+}
+
+.dv2-reviews-section h3 {
+  color: #e2e8f0;
+  font-size: 1.1rem;
+  margin: 0 0 16px 0;
+}
+
+/* Puanlama yıldızları (uyumluluk) */
+.puanlama-yildizlari {
+  font-size: 1.3rem;
+  letter-spacing: 2px;
+}
+
+.tek-yildiz {
+  color: #334155;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.tek-yildiz.dolu {
+  color: #f59e0b;
+}
+
 .detay-sayfasi {
   position: relative;
   width: 100%;
@@ -422,23 +802,97 @@ h1.detay-baslik {
   gap: 15px;
 }
 
-/* DEvasa Arkalan Banner'ı */
-.detay-backdrop {
+/* ===== HERO BANNER (Detay Sayfası) ===== */
+.detay-hero {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  height: 50vh;
+  min-height: 350px;
+  background-size: cover;
+  background-position: center 20%;
+  background-repeat: no-repeat;
+}
+
+.detay-hero-gradient-left {
   position: absolute;
   top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100vw;
-  height: 600px;
-  /* Dev ekran */
-  background-size: cover;
-  background-position: center 10%;
-  z-index: -1;
-  /* Letterboxd stilinde yumuşak kararma efekti */
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
-  opacity: 0.5;
-  /* Resim yazıları okutmayacak kadar parlamasın */
+  left: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(to right, #0f172a 0%, rgba(15, 23, 42, 0.75) 35%, transparent 100%);
+  z-index: 1;
+}
+
+.detay-hero-gradient-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60%;
+  background: linear-gradient(to top, #0f172a 0%, rgba(15, 23, 42, 0.5) 40%, transparent 100%);
+  z-index: 1;
+}
+
+.detay-hero-content {
+  position: absolute;
+  bottom: 12%;
+  left: 4%;
+  width: 45%;
+  min-width: 320px;
+  max-width: 600px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detay-hero-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  line-height: 1.1;
+  text-shadow: 2px 3px 10px rgba(0, 0, 0, 0.7);
+}
+
+.detay-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+}
+
+.detay-hero-rating {
+  color: #f59e0b;
+  font-weight: bold;
+}
+
+.detay-hero-votes {
+  color: #94a3b8;
+}
+
+.detay-hero-yil {
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+.detay-hero-durum {
+  color: #38bdf8;
+  font-weight: 500;
+}
+
+.detay-hero-genres {
+  color: #7dd3fc;
+}
+
+.detay-hero-overview {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+  margin: 0;
 }
 
 /* 3 Sütunlu Izgara Yapısı */
@@ -446,7 +900,7 @@ h1.detay-baslik {
   display: flex;
   gap: 40px;
   width: 100%;
-  max-width: 950px;
+  max-width: 1100px;
   z-index: 1;
 }
 
@@ -663,6 +1117,209 @@ h1.detay-baslik {
 .panel-buton:hover {
   background-color: #475569;
   color: #fff;
+}
+
+.review-log-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+/* REVIEW MODAL */
+.review-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.review-modal {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  width: 520px;
+  max-width: 92vw;
+  max-height: 82vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.review-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.review-modal-header h3 {
+  color: white;
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.review-modal-kapat {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.review-modal-kapat:hover {
+  color: white;
+  background: #334155;
+}
+
+.review-textarea {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #f1f5f9;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.2s;
+}
+
+.review-textarea:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+
+.review-textarea::placeholder {
+  color: #475569;
+}
+
+.spoiler-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin: 10px 0;
+  cursor: pointer;
+}
+
+.spoiler-label input[type="checkbox"] {
+  accent-color: #f59e0b;
+}
+
+.review-gonder-btn {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.review-gonder-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+}
+
+.review-gonder-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.review-listesi {
+  margin-top: 20px;
+  border-top: 1px solid #334155;
+  padding-top: 14px;
+}
+
+.review-listesi h4 {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin: 0 0 12px 0;
+}
+
+.review-item {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.review-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.review-user {
+  color: #38bdf8;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.review-tarih {
+  color: #475569;
+  font-size: 0.8rem;
+}
+
+.review-text {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.spoiler-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
 }
 
 .ortalama-puan-kutusu {
@@ -902,8 +1559,272 @@ h1.detay-baslik {
 
 .bolum-ikon.izlenecek-aktif {
   background-color: #38bdf8;
-  /* Mavi */
   color: #0f172a;
+}
+
+/* Sezon butonları */
+.sezon-butonlar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sezon-izle-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+
+.sezon-izle-btn:hover {
+  border-color: #94a3b8;
+  color: #e2e8f0;
+}
+
+.sezon-izle-btn.aktif-izle {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+.sezon-izle-btn.aktif-izlenecek {
+  background: #38bdf8;
+  border-color: #38bdf8;
+  color: white;
+}
+
+/* Sezon progress bar */
+.sezon-progress-bar {
+  width: 100%;
+  height: 3px;
+  background: #334155;
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.sezon-progress-fill {
+  height: 100%;
+  background: #10b981;
+  transition: width 0.3s;
+}
+
+.sezon-izlenme-text {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Bölüm listesi wrapper (accordion content) */
+.bolum-listesi-wrapper {
+  background: #0f172a;
+  border-left: 2px solid #334155;
+  margin-left: 20px;
+  margin-bottom: 15px;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  animation: modalAcilis 0.2s ease-out;
+}
+
+.bolum-bilgi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bolum-tarih {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.bolum-rating {
+  color: #f59e0b;
+  font-size: 0.78rem;
+}
+
+/* Bölüm izle/watchlist butonları */
+.bolum-izle-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  background: #334155;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+
+.bolum-izle-btn:hover {
+  background: #475569;
+  color: #e2e8f0;
+}
+
+.bolum-izle-btn.izlendi {
+  background: #10b981;
+  color: white;
+}
+
+.bolum-izle-btn.izlenecek {
+  background: #38bdf8;
+  color: white;
+}
+
+/* Bölüm puanlama */
+.bolum-puanlama-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bolum-puan-toggle {
+  background: none;
+  border: 1px solid #475569;
+  color: #f59e0b;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bolum-puan-toggle:hover {
+  border-color: #f59e0b;
+}
+
+.bolum-yildizlar {
+  position: absolute;
+  right: 100%;
+  margin-right: 6px;
+  display: flex;
+  gap: 1px;
+  background: #1e293b;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  white-space: nowrap;
+}
+
+.bolum-tek-yildiz {
+  color: #334155;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: color 0.15s;
+}
+
+.bolum-tek-yildiz.dolu {
+  color: #f59e0b;
+}
+
+/* =========================================
+   CAST GRID (Yeni)
+========================================= */
+.cast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.cast-kart {
+  background: #1e293b;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.cast-kart:hover {
+  transform: translateY(-4px);
+  border-color: #38bdf8;
+}
+
+.cast-foto {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.cast-foto-yok {
+  width: 100%;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  font-size: 2.5rem;
+  color: #334155;
+}
+
+.cast-bilgi {
+  padding: 10px;
+  text-align: center;
+}
+
+.cast-isim {
+  color: #f1f5f9;
+  font-weight: 600;
+  font-size: 0.88rem;
+  display: block;
+}
+
+.cast-rol {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-style: italic;
+  display: block;
+  margin-top: 2px;
+}
+
+/* =========================================
+   CREW GRID (Yeni)
+========================================= */
+.crew-bolumler {
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.crew-departman {
+  margin-bottom: 28px;
+}
+
+.crew-dept-baslik {
+  font-size: 0.85rem;
+  color: #38bdf8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 8px;
+  margin: 0 0 14px 0;
+}
+
+.crew-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.crew-kart {
+  background: #1e293b;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.crew-kart:hover {
+  transform: translateY(-4px);
+  border-color: #38bdf8;
 }
 
 /* =========================================
@@ -1385,9 +2306,8 @@ h1.detay-baslik {
   top: calc(100% + 12px);
   right: 0;
   left: auto;
-  transform: none;
   width: 340px;
-  background: rgba(15, 23, 42, 0.92);
+  background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border: 1px solid #334155;
@@ -1401,12 +2321,12 @@ h1.detay-baslik {
 @keyframes panelAcilis {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-10px) scale(0.97);
+    transform: translateY(-8px) scale(0.97);
   }
 
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -1415,8 +2335,8 @@ h1.detay-baslik {
   content: '';
   position: absolute;
   top: -7px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 20px;
+  left: auto;
   width: 14px;
   height: 7px;
   background: #1e2d3d;
@@ -2201,4 +3121,15 @@ h1.detay-baslik {
   align-items: center;
   min-width: 90px;
   justify-content: flex-end;
+}
+
+/* Genre Page Title */
+.genre-sayfa-baslik {
+  width: 100%;
+  color: #f1f5f9;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #1e293b;
 }

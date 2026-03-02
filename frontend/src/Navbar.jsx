@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import SearchBar from './SearchBar';
 import { useAuth } from './AuthContext';
 
-function Navbar({ onSonuclar }) {
+function Navbar({ onSonuclar, onAnaSayfaGit }) {
   const { kullanici, cikisYap } = useAuth();
   const navigate = useNavigate();
   const [menuAcik, setMenuAcik] = useState(false);
@@ -32,11 +32,11 @@ function Navbar({ onSonuclar }) {
   return (
     <nav className="navbar">
       <div className="logo">
-        <Link to="/">seriesboxd</Link>
+        <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); }}>seriesboxd</Link>
       </div>
 
       <div className="menu-linkler">
-        <Link to="/">Ana Sayfa</Link>
+        <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); }}>Ana Sayfa</Link>
         <Link to="/top50">Top 50</Link>
         <SearchBar onSonuclar={onSonuclar} />
 

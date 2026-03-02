@@ -1,24 +1,25 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Eye, Heart, Bookmark } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Eye, Heart, Bookmark, MessageSquare, AlertTriangle, Star, X, Check, Plus, Clock } from 'lucide-react';
 import './App.css';
 
 function DiziDetay() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [dizi, setDizi] = useState(null);
   const [sezonlar, setSezonlar] = useState([]);
-  const [bolumler, setBolumler] = useState([]); // Tüm bölümleri tutar
-  const [oyuncular, setOyuncular] = useState([]); // YENİ: Oyuncu listesi
-  const [ekip, setEkip] = useState([]); // YENİ: Crew listesi
+  const [bolumler, setBolumler] = useState([]);
+  const [oyuncular, setOyuncular] = useState([]);
+  const [ekip, setEkip] = useState([]);
   const [aktifSekme, setAktifSekme] = useState('seasons');
-  const [acikSezonlar, setAcikSezonlar] = useState({}); // Hangi sezonun accordion'u açık?
+  const [acikSezonlar, setAcikSezonlar] = useState({});
   const [izlenenSezonlar, setIzlenenSezonlar] = useState({});
-  const [izlenecekSezonlar, setIzlenecekSezonlar] = useState({}); // YENİ: Sezon Watchlist
+  const [izlenecekSezonlar, setIzlenecekSezonlar] = useState({});
   const [izlenenBolumler, setIzlenenBolumler] = useState({});
   const [izlenecekBolumler, setIzlenecekBolumler] = useState({});
-  const [bolumPuanlari, setBolumPuanlari] = useState({});   // { episode_id: score }
+  const [bolumPuanlari, setBolumPuanlari] = useState({});
   const [hoverBolumPuani, setHoverBolumPuani] = useState({ id: null, puan: 0 });
-  const [acikPuanlama, setAcikPuanlama] = useState(null); // Hangi bölümün yıldızları açık
+  const [acikPuanlama, setAcikPuanlama] = useState(null);
   const [yukleniyor, setYukleniyor] = useState(true);
 
   const [kullaniciPuani, setKullaniciPuani] = useState(null);
@@ -28,673 +29,438 @@ function DiziDetay() {
   const [listeMenuAcik, setListeMenuAcik] = useState(false);
   const [yeniListeAdi, setYeniListeAdi] = useState("");
 
-  // Sag panel butonlari: Watch / Like / Watchlist
   const [diziIzlendi, setDiziIzlendi] = useState(false);
   const [diziLiked, setDiziLiked] = useState(false);
   const [diziWatchlist, setDiziWatchlist] = useState(false);
 
+  const [reviewModalAcik, setReviewModalAcik] = useState(false);
+  const [reviewText, setReviewText] = useState('');
+  const [spoilerVar, setSpoilerVar] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewGonderiliyor, setReviewGonderiliyor] = useState(false);
+
   useEffect(() => {
     fetch(`http://127.0.0.1:8000/dizi/${id}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Veri çekilemedi");
-        return res.json();
-      })
+      .then(res => { if (!res.ok) throw new Error("Veri çekilemedi"); return res.json(); })
       .then(data => {
-        if (data.dizi) {
-          setDizi(data.dizi);
-          setSezonlar(data.sezonlar || []);
-          setBolumler(data.bolumler || []);
-          setOyuncular(data.cast || []);
-          setEkip(data.crew || []);
+        if (data.dizi) { setDizi(data.dizi); setSezonlar(data.sezonlar || []); setBolumler(data.bolumler || []); setOyuncular(data.cast || []); setEkip(data.crew || []); }
+        setYukleniyor(false);
+      })
+      .catch(() => setYukleniyor(false));
+
+    const token = localStorage.getItem('sb_token');
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    if (token) {
+      fetch('http://127.0.0.1:8000/lists', { headers: authHeaders }).then(r => r.json()).then(setKullaniciListeleri).catch(() => { });
+      fetch(`http://127.0.0.1:8000/lists/check/${id}`, { headers: authHeaders }).then(r => r.json()).then(setDizininListeleri).catch(() => { });
+      fetch(`http://127.0.0.1:8000/rating/${id}`, { headers: authHeaders }).then(r => r.json()).then(d => setKullaniciPuani(d.score)).catch(() => { });
+
+      fetch(`http://127.0.0.1:8000/activity/${id}`, { headers: authHeaders }).then(r => r.json()).then(data => {
+        const watched = {}, watchlist = {};
+        if (Array.isArray(data)) {
+          data.forEach(a => { if (a.activity_type === 'watched') watched[a.episode_id] = true; if (a.activity_type === 'watchlist') watchlist[a.episode_id] = true; });
         }
-        setYukleniyor(false);
-      })
-      .catch(err => {
-        console.error("Hata:", err);
-        setYukleniyor(false);
-      });
+        setIzlenenBolumler(watched); setIzlenecekBolumler(watchlist);
+      }).catch(() => { });
 
-    // Listeleri Çek
-    fetch('http://127.0.0.1:8000/lists')
-      .then(res => res.json())
-      .then(data => setKullaniciListeleri(data));
+      fetch(`http://127.0.0.1:8000/series-activity/${id}`, { headers: authHeaders }).then(r => r.json()).then(data => {
+        if (Array.isArray(data)) {
+          setDiziIzlendi(data.includes('watched')); setDiziLiked(data.includes('liked')); setDiziWatchlist(data.includes('watchlist'));
+        }
+      }).catch(() => { });
 
-    fetch(`http://127.0.0.1:8000/lists/check/${id}`)
-      .then(res => res.json())
-      .then(data => setDizininListeleri(data));
+      fetch(`http://127.0.0.1:8000/episode-ratings/${id}`, { headers: authHeaders }).then(r => r.json()).then(setBolumPuanlari).catch(() => { });
+    }
 
-    // Kullanıcı Puanını Çek
-    fetch(`http://127.0.0.1:8000/rating/${id}`)
-      .then(res => res.json())
-      .then(data => setKullaniciPuani(data.score));
-
-    // Aktiviteleri Çek (watched + watchlist)
-    fetch(`http://127.0.0.1:8000/activity/${id}`)
-      .then(res => res.json())
-      .then(data => {
-        const watched = {};
-        const watchlist = {};
-        data.forEach(a => {
-          if (a.activity_type === 'watched') watched[a.episode_id] = true;
-          if (a.activity_type === 'watchlist') watchlist[a.episode_id] = true;
-        });
-        setIzlenenBolumler(watched);
-        setIzlenecekBolumler(watchlist);
-      });
-
-    // Dizi bazlı aktivite (Watch / Like / Watchlist paneli)
-    fetch(`http://127.0.0.1:8000/series-activity/${id}`)
-      .then(res => res.json())
-      .then(data => {
-        setDiziIzlendi(data.includes('watched'));
-        setDiziLiked(data.includes('liked'));
-        setDiziWatchlist(data.includes('watchlist'));
-      });
-
-    // Bölüm puanlarını toplu çek
-    fetch(`http://127.0.0.1:8000/episode-ratings/${id}`)
-      .then(res => res.json())
-      .then(data => setBolumPuanlari(data));
+    fetch(`http://127.0.0.1:8000/reviews/${id}`).then(r => r.json()).then(d => { if (Array.isArray(d)) setReviews(d); }).catch(() => { });
   }, [id]);
 
-  // SEZON İZLEME MANTIĞI (TOPLU İŞLEM)
+  // --- SEZON / BÖLÜM İZLEME ---
   const sezonIzleToggle = (seasonId) => {
+    const token = localStorage.getItem('sb_token');
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
+
     const yeniDurum = !izlenenSezonlar[seasonId];
     setIzlenenSezonlar(prev => ({ ...prev, [seasonId]: yeniDurum }));
-
     const buSezonunBolumleri = bolumler.filter(b => b.season_id === seasonId);
-    const yeniBolumDurumlari = {};
-
-    buSezonunBolumleri.forEach(bolum => {
-      yeniBolumDurumlari[bolum.episode_id] = yeniDurum;
-      // API çağrısı
-      if (yeniDurum) {
-        fetch('http://127.0.0.1:8000/activity', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: bolum.episode_id, activity_type: 'watched' })
-        });
-      } else {
-        fetch(`http://127.0.0.1:8000/activity/${bolum.episode_id}/watched`, { method: 'DELETE' });
-      }
+    const yeni = {};
+    buSezonunBolumleri.forEach(b => {
+      yeni[b.episode_id] = yeniDurum;
+      if (yeniDurum) fetch('http://127.0.0.1:8000/activity', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: b.episode_id, activity_type: 'watched' }) });
+      else fetch(`http://127.0.0.1:8000/activity/${b.episode_id}/watched`, { method: 'DELETE', headers: authHeaders });
     });
-
-    setIzlenenBolumler(prev => ({ ...prev, ...yeniBolumDurumlari }));
+    setIzlenenBolumler(prev => ({ ...prev, ...yeni }));
   };
 
-  // SEZON İZLEYECEĞİM (WATCHLIST) TOGGLE
   const sezonIzlenecekToggle = (seasonId) => {
+    const token = localStorage.getItem('sb_token');
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
+
     const yeniDurum = !izlenecekSezonlar[seasonId];
     setIzlenecekSezonlar(prev => ({ ...prev, [seasonId]: yeniDurum }));
-
     const buSezonunBolumleri = bolumler.filter(b => b.season_id === seasonId);
-    const yeniBolumDurumlari = {};
-    buSezonunBolumleri.forEach(bolum => {
-      yeniBolumDurumlari[bolum.episode_id] = yeniDurum;
-      if (yeniDurum) {
-        fetch('http://127.0.0.1:8000/activity', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: bolum.episode_id, activity_type: 'watchlist' })
-        });
-      } else {
-        fetch(`http://127.0.0.1:8000/activity/${bolum.episode_id}/watchlist`, { method: 'DELETE' });
-      }
+    const yeni = {};
+    buSezonunBolumleri.forEach(b => {
+      yeni[b.episode_id] = yeniDurum;
+      if (yeniDurum) fetch('http://127.0.0.1:8000/activity', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: b.episode_id, activity_type: 'watchlist' }) });
+      else fetch(`http://127.0.0.1:8000/activity/${b.episode_id}/watchlist`, { method: 'DELETE', headers: authHeaders });
     });
-    setIzlenecekBolumler(prev => ({ ...prev, ...yeniBolumDurumlari }));
+    setIzlenecekBolumler(prev => ({ ...prev, ...yeni }));
   };
 
-  // Accordion Aç/Kapa
-  const sezonAccordionToggle = (seasonId) => {
-    setAcikSezonlar(prev => ({
-      ...prev,
-      [seasonId]: !prev[seasonId]
-    }));
-  };
+  const sezonAccordionToggle = (seasonId) => setAcikSezonlar(prev => ({ ...prev, [seasonId]: !prev[seasonId] }));
 
-  // BÖLÜM İZLEME MANTIĞI (CASCADE + PARENT CHECK + API)
   const bolumIzleToggle = (bolum) => {
+    const token = localStorage.getItem('sb_token');
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
+
     const yeniDurum = !izlenenBolumler[bolum.episode_id];
-    let guncellenecekBolumler = { [bolum.episode_id]: yeniDurum };
-
-    // 1. İzledim → önceki bölümleri de işaretle
-    if (yeniDurum === true) {
-      const oncekiBolumler = bolumler.filter(b =>
-        b.season_id === bolum.season_id &&
-        b.episode_number < bolum.episode_number
-      );
-      oncekiBolumler.forEach(b => {
-        guncellenecekBolumler[b.episode_id] = true;
-      });
+    let guncellenecek = { [bolum.episode_id]: yeniDurum };
+    if (yeniDurum) {
+      bolumler.filter(b => b.season_id === bolum.season_id && b.episode_number < bolum.episode_number).forEach(b => { guncellenecek[b.episode_id] = true; });
     }
-
-    // 2. State güncelle
-    const yeniIzlenenBolumlerState = { ...izlenenBolumler, ...guncellenecekBolumler };
-    setIzlenenBolumler(yeniIzlenenBolumlerState);
-
-    // 3. API çağrıları
-    Object.entries(guncellenecekBolumler).forEach(([epId, izlendi]) => {
-      const episodeObj = bolumler.find(b => b.episode_id === parseInt(epId));
-      if (izlendi) {
-        fetch('http://127.0.0.1:8000/activity', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            series_id: dizi.series_id,
-            season_id: episodeObj ? episodeObj.season_id : bolum.season_id,
-            episode_id: parseInt(epId),
-            activity_type: 'watched'
-          })
-        });
-      } else {
-        fetch(`http://127.0.0.1:8000/activity/${epId}/watched`, { method: 'DELETE' });
-      }
+    const yeniState = { ...izlenenBolumler, ...guncellenecek };
+    setIzlenenBolumler(yeniState);
+    Object.entries(guncellenecek).forEach(([epId, izlendi]) => {
+      const ep = bolumler.find(b => b.episode_id === parseInt(epId));
+      if (izlendi) fetch('http://127.0.0.1:8000/activity', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: ep ? ep.season_id : bolum.season_id, episode_id: parseInt(epId), activity_type: 'watched' }) });
+      else fetch(`http://127.0.0.1:8000/activity/${epId}/watched`, { method: 'DELETE', headers: authHeaders });
     });
-
-    // 4. Sezon kontrolü
-    const buSezonunBolumleri = bolumler.filter(b => b.season_id === bolum.season_id);
-    const hepsiIzlendiMi = buSezonunBolumleri.every(b => yeniIzlenenBolumlerState[b.episode_id]);
-    setIzlenenSezonlar(prev => ({ ...prev, [bolum.season_id]: hepsiIzlendiMi }));
+    const hepsi = bolumler.filter(b => b.season_id === bolum.season_id).every(b => yeniState[b.episode_id]);
+    setIzlenenSezonlar(prev => ({ ...prev, [bolum.season_id]: hepsi }));
   };
 
-  // Bölüm İzleyeceğim (Watchlist) Toggle + API
   const bolumIzlenecekToggle = (bolum) => {
+    const token = localStorage.getItem('sb_token');
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
+
     const yeniDurum = !izlenecekBolumler[bolum.episode_id];
     setIzlenecekBolumler(prev => ({ ...prev, [bolum.episode_id]: yeniDurum }));
-    if (yeniDurum) {
-      fetch('http://127.0.0.1:8000/activity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ series_id: dizi.series_id, season_id: bolum.season_id, episode_id: bolum.episode_id, activity_type: 'watchlist' })
-      });
-    } else {
-      fetch(`http://127.0.0.1:8000/activity/${bolum.episode_id}/watchlist`, { method: 'DELETE' });
-    }
+    if (yeniDurum) fetch('http://127.0.0.1:8000/activity', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: bolum.season_id, episode_id: bolum.episode_id, activity_type: 'watchlist' }) });
+    else fetch(`http://127.0.0.1:8000/activity/${bolum.episode_id}/watchlist`, { method: 'DELETE', headers: authHeaders });
   };
 
-  // SAG PANEL: Watch / Like / Watchlist toggle'lari
+  // --- ACTIVITY ---
   const seriesActivityToggle = (type, aktif, setAktif) => {
-    const yeniDurum = !aktif;
-    setAktif(yeniDurum);
-    if (yeniDurum) {
-      fetch('http://127.0.0.1:8000/series-activity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ series_id: dizi.series_id, activity_type: type })
-      });
-    } else {
-      fetch(`http://127.0.0.1:8000/series-activity/${dizi.series_id}/${type}`, { method: 'DELETE' });
-    }
+    const token = localStorage.getItem('sb_token');
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
+
+    setAktif(!aktif);
+    if (!aktif) fetch('http://127.0.0.1:8000/series-activity', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, activity_type: type }) });
+    else fetch(`http://127.0.0.1:8000/series-activity/${dizi.series_id}/${type}`, { method: 'DELETE', headers: authHeaders });
   };
 
-  // LİSTEYE EKLE / ÇIKAR
+  // --- LİSTE ---
   const listeToggle = (listId) => {
-    const listedeVar = dizininListeleri.includes(listId);
+    const token = localStorage.getItem('sb_token');
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
-    if (listedeVar) {
-      // Çıkar
-      fetch(`http://127.0.0.1:8000/lists/${listId}/items/${dizi.series_id}`, { method: 'DELETE' })
-        .then(() => {
-          setDizininListeleri(prev => prev.filter(id => id !== listId));
-        });
+    if (dizininListeleri.includes(listId)) {
+      fetch(`http://127.0.0.1:8000/lists/${listId}/items/${dizi.series_id}`, { method: 'DELETE', headers: authHeaders }).then(() => setDizininListeleri(prev => prev.filter(id => id !== listId)));
     } else {
-      // Ekle
-      fetch(`http://127.0.0.1:8000/lists/${listId}/items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ series_id: dizi.series_id })
-      }).then(() => {
-        setDizininListeleri(prev => [...prev, listId]);
-      });
+      fetch(`http://127.0.0.1:8000/lists/${listId}/items`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id }) }).then(() => setDizininListeleri(prev => [...prev, listId]));
     }
   };
-
-  // YENİ LİSTE OLUŞTUR
   const yeniListeOlustur = () => {
+    const token = localStorage.getItem('sb_token');
+    const jsonHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
     if (!yeniListeAdi.trim()) return;
-
-    fetch('http://127.0.0.1:8000/lists', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: yeniListeAdi })
-    }).then(res => res.json())
-      .then(yeniListe => {
-        setKullaniciListeleri(prev => [...prev, { list_id: yeniListe.list_id, name: yeniListe.name }]);
-        setYeniListeAdi("");
-      });
+    fetch('http://127.0.0.1:8000/lists', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ name: yeniListeAdi }) })
+      .then(r => r.json()).then(l => { setKullaniciListeleri(prev => [...prev, { list_id: l.list_id, name: l.name }]); setYeniListeAdi(""); });
   };
 
-  // TARİH FORMATLAMA
-  const tarihFormatla = (tarihStr) => {
-    if (!tarihStr) return 'Bilinmiyor';
-    const aylar = [
-      "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-      "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
-    ];
-    const parcalar = tarihStr.split('-');
-    if (parcalar.length !== 3) return tarihStr;
-    const [yil, ay, gun] = parcalar;
-    return `${parseInt(gun)} ${aylar[parseInt(ay) - 1]} ${yil}`;
+  // --- PUAN ---
+  const tarihFormatla = (t) => {
+    if (!t) return 'Bilinmiyor';
+    const aylar = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    const p = t.split('-');
+    if (p.length !== 3) return t;
+    return `${parseInt(p[2])} ${aylar[parseInt(p[1]) - 1]} ${p[0]}`;
   };
 
-  // PUAN VERME İŞLEMİ
   const puanVer = (puan) => {
     setKullaniciPuani(puan);
-    fetch('http://127.0.0.1:8000/rating', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ series_id: dizi.series_id, score: puan })
-    });
+    fetch('http://127.0.0.1:8000/rating', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, score: puan }) });
+  };
+  const puanSil = () => {
+    setKullaniciPuani(null);
+    fetch(`http://127.0.0.1:8000/rating/${dizi.series_id}`, { method: 'DELETE' });
   };
 
-  // BÖLÜM PUANLAMA
   const bolumPuanVer = (episodeId, puan) => {
-    const mevcutPuan = bolumPuanlari[episodeId];
-    if (mevcutPuan === puan) {
-      // Aynı puana tekrar tıklarsa sil
+    if (bolumPuanlari[episodeId] === puan) {
       setBolumPuanlari(prev => { const s = { ...prev }; delete s[episodeId]; return s; });
       fetch(`http://127.0.0.1:8000/episode-rating/${episodeId}`, { method: 'DELETE' });
     } else {
       setBolumPuanlari(prev => ({ ...prev, [episodeId]: puan }));
-      fetch('http://127.0.0.1:8000/episode-rating', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ episode_id: episodeId, score: puan })
-      });
+      fetch('http://127.0.0.1:8000/episode-rating', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ episode_id: episodeId, score: puan }) });
     }
   };
 
-  if (yukleniyor) return <div style={{ color: 'white', textAlign: 'center', marginTop: '50px' }}>🎬 Kaset Sarılıyor...</div>;
-  if (!dizi) return <div style={{ color: 'red', textAlign: 'center', marginTop: '50px' }}>Dizi bulunamadı!</div>;
+  if (yukleniyor) return <div style={{ color: 'white', textAlign: 'center', marginTop: '80px', fontSize: '1.2rem' }}>Yükleniyor...</div>;
+  if (!dizi) return <div style={{ color: 'red', textAlign: 'center', marginTop: '80px' }}>Dizi bulunamadı!</div>;
 
-  // 1. DÜZELTME: Doğru arka planı seçiyoruz (backdrop_path). Yoksa afişi kullanır.
-  const arkaplanResmi = dizi.backdrop_path
-    ? `https://image.tmdb.org/t/p/original${dizi.backdrop_path}`
-    : `https://image.tmdb.org/t/p/original${dizi.poster_path}`;
-
-  // 2. DÜZELTME: Yıl bilgisini akıllıca çekiyoruz
-  const yil = dizi.first_air_date ? dizi.first_air_date.substring(0, 4) :
-    (dizi.release_date ? dizi.release_date.substring(0, 4) : '');
-
-  // Dizi tarihini bulamazsa ilk sezonun tarihini kullan (Yedek plan)
+  const arkaplanResmi = dizi.backdrop_path ? `https://image.tmdb.org/t/p/original${dizi.backdrop_path}` : `https://image.tmdb.org/t/p/original${dizi.poster_path}`;
+  const yil = dizi.first_air_date ? dizi.first_air_date.substring(0, 4) : '';
   const gosterimTarihi = dizi.first_air_date || (sezonlar.length > 0 ? sezonlar[0].air_date : 'Bilinmiyor');
   const durum = dizi.status === 'Ended' ? 'Sona Erdi' : (dizi.status === 'Returning Series' ? 'Devam Ediyor' : dizi.status);
+  const genres = dizi.genres ? dizi.genres.split(',').map(g => g.trim()).filter(Boolean) : [];
 
-  // Crew verisini departmanlara göre gruplama fonksiyonu
   const gruplanmisEkip = ekip.reduce((acc, kisi) => {
     const dept = kisi.department || 'Other';
-    if (!acc[dept]) {
-      acc[dept] = [];
-    }
+    if (!acc[dept]) acc[dept] = [];
     acc[dept].push(kisi);
     return acc;
   }, {});
 
   return (
-    <div className="detay-sayfasi">
+    <div className="detay-v2">
+      {/* ===== HERO BANNER ===== */}
+      <div className="dv2-hero" style={{ backgroundImage: `url(${arkaplanResmi})` }}>
+        <div className="dv2-hero-grad-left"></div>
+        <div className="dv2-hero-grad-bottom"></div>
 
-      {/* DEvasa Arka Plan */}
-      <div
-        className="detay-backdrop"
-        style={{ backgroundImage: `url(${arkaplanResmi})` }}
-      ></div>
+        <div className="dv2-hero-inner">
+          {/* Sol: Poster */}
+          <img src={`https://image.tmdb.org/t/p/w500${dizi.poster_path}`} alt={dizi.name} className="dv2-hero-poster" />
 
-      <div className="detay-icerik">
-
-        {/* SOL SÜTUN: Afiş ve İstatistik */}
-        <div className="detay-sol">
-          <img
-            src={`https://image.tmdb.org/t/p/w500${dizi.poster_path}`}
-            alt={dizi.name}
-            className="detay-poster"
-          />
-          <div className="poster-alti-ikonlar">
-            <span>👁️ 33K</span>
-            <span>📝 8.1K</span>
-            <span>♥ 3.8K</span>
-          </div>
-        </div>
-
-        {/* ORTA SÜTUN: Ana Bilgiler */}
-        <div className="detay-orta">
-          {/* 3. DÜZELTME: CSS ezecek şekilde özel class */}
-          <h1 className="detay-baslik">
-            {dizi.name} <span className="detay-yil">{yil}</span>
-          </h1>
-
-          <div className="detay-yonetmen">
-            YAYIN <span>{tarihFormatla(gosterimTarihi)}</span> • <span style={{ color: '#38bdf8' }}>{durum}</span>
+          {/* Orta: Bilgiler */}
+          <div className="dv2-hero-info">
+            <h1 className="dv2-title">{dizi.name} <span className="dv2-yil">{yil}</span></h1>
+            <div className="dv2-meta">
+              <span className="dv2-rating"><Star size={15} fill="#f59e0b" color="#f59e0b" /> {Number(dizi.rating).toFixed(1)}</span>
+              <span className="dv2-votes">({(dizi.vote_count || 0).toLocaleString('tr-TR')} oy)</span>
+              <span className="dv2-durum">{durum}</span>
+              <span className="dv2-tarih">{tarihFormatla(gosterimTarihi)}</span>
+            </div>
+            <div className="dv2-genres">
+              {genres.map(g => (
+                <span key={g} className="dv2-genre-tag" onClick={() => navigate(`/?genre=${encodeURIComponent(g)}`)}>{g}</span>
+              ))}
+            </div>
+            <p className="dv2-overview">{dizi.overview || 'Bu dizi için henüz bir özet bulunmuyor.'}</p>
           </div>
 
-          <p className="detay-ozet">{dizi.overview}</p>
-
-          <div className="detay-sekmeler">
-            <span className={aktifSekme === 'cast' ? 'aktif-sekme' : ''} onClick={() => setAktifSekme('cast')}>CAST</span>
-            <span className={aktifSekme === 'crew' ? 'aktif-sekme' : ''} onClick={() => setAktifSekme('crew')}>CREW</span>
-            <span className={aktifSekme === 'genres' ? 'aktif-sekme' : ''} onClick={() => setAktifSekme('genres')}>GENRES</span>
-            <span className={aktifSekme === 'seasons' ? 'aktif-sekme' : ''} onClick={() => setAktifSekme('seasons')}>SEASONS</span>
-          </div>
-          <div className="sekme-cizgisi"></div>
-
-          <div className="sekme-icerik-alani">
-            {aktifSekme === 'seasons' && (
-              <div className="sezon-listesi">
-                {sezonlar.length > 0 ? sezonlar.map((sezon) => {
-                  // İlerleme Çubuğu Hesaplaması
-                  const buSezonunBolumleri = bolumler.filter(b => b.season_id === sezon.season_id);
-                  const toplamBolum = buSezonunBolumleri.length;
-                  const izlenenSayisi = buSezonunBolumleri.filter(b => izlenenBolumler[b.episode_id]).length;
-                  const yuzde = toplamBolum > 0 ? (izlenenSayisi / toplamBolum) * 100 : 0;
-
-                  return (
-                    <div key={sezon.season_id}>
-                      {/* SEZON BAŞLIĞI (TIKLANABİLİR) */}
-                      <div className="sezon-satir" onClick={() => sezonAccordionToggle(sezon.season_id)}>
-                        <img
-                          src={sezon.poster_path ? `https://image.tmdb.org/t/p/w200${sezon.poster_path}` : `https://image.tmdb.org/t/p/w200${dizi.poster_path}`}
-                          alt={sezon.name}
-                          className="sezon-poster-kucuk"
-                        />
-                        <div className="sezon-bilgi">
-                          <div className="sezon-baslik">{sezon.name}</div>
-                          <div className="sezon-detay">
-                            {sezon.air_date ? sezon.air_date.split('-')[0] : ''} • {sezon.season_number}. Sezon
-                            {acikSezonlar[sezon.season_id] ? ' 🔼' : ' 🔽'}
-                          </div>
-
-                          {/* İLERLEME ÇUBUĞU */}
-                          {toplamBolum > 0 && (
-                            <div style={{ width: '100%', maxWidth: '200px' }}>
-                              <div className="progress-container">
-                                <div className="progress-fill" style={{ width: `${yuzde}%` }}></div>
-                              </div>
-                              <div className="progress-text">{izlenenSayisi} / {toplamBolum} izlendi</div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* SAĞ TARAF: İKONLAR */}
-                        <div className="sezon-sag">
-                          {/* Sezonu Komple İzledim Kutusu */}
-                          <div
-                            className={`izlendi-kutusu ${izlenenSezonlar[sezon.season_id] ? 'secili' : ''}`}
-                            onClick={(e) => { e.stopPropagation(); sezonIzleToggle(sezon.season_id); }}
-                            title="Tüm sezonu izledim olarak işaretle"
-                          >
-                            ✓
-                          </div>
-                          {/* Sezonu İzleyeceğim (Watchlist) Kutusu */}
-                          <div
-                            className={`izlendi-kutusu ${izlenecekSezonlar[sezon.season_id] ? 'secili' : ''}`}
-                            style={{
-                              borderColor: izlenecekSezonlar[sezon.season_id] ? '#38bdf8' : '#475569',
-                              backgroundColor: izlenecekSezonlar[sezon.season_id] ? '#38bdf8' : 'transparent',
-                              color: izlenecekSezonlar[sezon.season_id] ? '#0f172a' : '#475569'
-                            }}
-                            onClick={(e) => { e.stopPropagation(); sezonIzlenecekToggle(sezon.season_id); }}
-                            title="Bu sezonu izleme listeme ekle"
-                          >
-                            ➕
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* BÖLÜMLER LİSTESİ (ACCORDION) */}
-                      {acikSezonlar[sezon.season_id] && (
-                        <div className="bolum-listesi-container">
-                          {buSezonunBolumleri.map(bolum => (
-                            <div key={bolum.episode_id} className="bolum-satir">
-                              <div className="bolum-sol">
-                                <span className="bolum-no">{bolum.episode_number}</span>
-                                <div className="bolum-bilgi-container">
-                                  <span className="bolum-adi">
-                                    {bolum.name}
-                                    {/* TMDB Puanı ismin hemen sağında */}
-                                    {bolum.vote_average > 0 && (
-                                      <span className="bolum-tmdb-puan">⭐ {Number(bolum.vote_average).toFixed(1)}</span>
-                                    )}
-                                  </span>
-                                  <span className="bolum-meta">
-                                    {tarihFormatla(bolum.air_date)} • {bolum.runtime ? `${bolum.runtime} dk` : ''}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="bolum-aksiyonlar">
-                                {/* Kullanıcı Yıldız Puanlaması (Açılıp/Kapanabilir) */}
-                                <div className="bolum-puanlama-alani">
-                                  {acikPuanlama !== bolum.episode_id && !bolumPuanlari[bolum.episode_id] ? (
-                                    <div
-                                      className="bolum-rate-btn"
-                                      onClick={() => setAcikPuanlama(bolum.episode_id)}
-                                      title="Puan Ver"
-                                    >
-                                      ★
-                                    </div>
-                                  ) : (
-                                    <div
-                                      className="bolum-yildizlar"
-                                      onMouseLeave={() => setHoverBolumPuani({ id: null, puan: 0 })}
-                                    >
-                                      {[1, 2, 3, 4, 5].map(yildiz => {
-                                        const puanDegeri = yildiz * 2; // 1 yıldız = 2 puan
-                                        const aktifPuan = hoverBolumPuani.id === bolum.episode_id
-                                          ? hoverBolumPuani.puan
-                                          : (bolumPuanlari[bolum.episode_id] ?? 0);
-                                        const dolu = puanDegeri <= aktifPuan;
-                                        return (
-                                          <span
-                                            key={yildiz}
-                                            className={`bolum-yildiz ${dolu ? 'dolu' : ''}`}
-                                            onMouseEnter={() => setHoverBolumPuani({ id: bolum.episode_id, puan: puanDegeri })}
-                                            onClick={() => bolumPuanVer(bolum.episode_id, puanDegeri)}
-                                            title={`${puanDegeri}/10`}
-                                          >★</span>
-                                        );
-                                      })}
-                                      {bolumPuanlari[bolum.episode_id] ? (
-                                        <span className="bolum-verilen-puan">{bolumPuanlari[bolum.episode_id]}/10</span>
-                                      ) : (
-                                        <span className="bolum-puan-kapat" onClick={() => setAcikPuanlama(null)}>✕</span>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* İzledim Butonu */}
-                                <div
-                                  className={`bolum-ikon ${izlenenBolumler[bolum.episode_id] ? 'izlendi-aktif' : ''}`}
-                                  onClick={() => bolumIzleToggle(bolum)}
-                                  title="İzledim"
-                                >
-                                  ✓
-                                </div>
-
-                                {/* İzleyeceğim Butonu */}
-                                <div
-                                  className={`bolum-ikon ${izlenecekBolumler[bolum.episode_id] ? 'izlenecek-aktif' : ''}`}
-                                  onClick={() => bolumIzlenecekToggle(bolum)}
-                                  title="İzleyeceğim"
-                                >
-                                  ➕
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                          {buSezonunBolumleri.length === 0 &&
-                            <div style={{ padding: '10px', color: '#64748b', fontSize: '0.9rem' }}>Bölüm bilgisi yok.</div>
-                          }
-                        </div>
-                      )}
-                    </div>
-                  );
-                }) : (
-                  <p style={{ marginTop: '20px' }}>Sezon bilgisi bulunamadı.</p>
-                )}
+          {/* Sağ: Aksiyonlar */}
+          <div className="dv2-hero-actions">
+            <div className="dv2-action-icons">
+              <div className={`dv2-action ${diziIzlendi ? 'act-watch' : ''}`} onClick={() => seriesActivityToggle('watched', diziIzlendi, setDiziIzlendi)} title={diziIzlendi ? 'İzlendi' : 'İzledim'}>
+                <Eye size={22} strokeWidth={diziIzlendi ? 2.5 : 1.5} />
+                <span>Watch</span>
               </div>
-            )}
-
-            {aktifSekme === 'cast' && (
-              <div className="oyuncu-listesi">
-                {oyuncular.length > 0 ? oyuncular.map((oyuncu) => (
-                  <div key={oyuncu.cast_id} className="oyuncu-kart">
-                    <img
-                      src={oyuncu.profile_path ? `https://image.tmdb.org/t/p/w200${oyuncu.profile_path}` : 'https://via.placeholder.com/200x300?text=No+Image'}
-                      alt={oyuncu.name}
-                      className="oyuncu-foto"
-                    />
-                    <div className="oyuncu-bilgi">
-                      <div className="oyuncu-isim">{oyuncu.name}</div>
-                      <div className="oyuncu-karakter">{oyuncu.character}</div>
-                    </div>
-                  </div>
-                )) : <p>Oyuncu bilgisi bulunamadı.</p>}
+              <div className={`dv2-action ${diziLiked ? 'act-like' : ''}`} onClick={() => seriesActivityToggle('liked', diziLiked, setDiziLiked)} title={diziLiked ? 'Beğenildi' : 'Beğen'}>
+                <Heart size={22} strokeWidth={diziLiked ? 2.5 : 1.5} fill={diziLiked ? 'currentColor' : 'none'} />
+                <span>Like</span>
               </div>
-            )}
-
-            {aktifSekme === 'crew' && (
-              <div className="crew-container">
-                {Object.keys(gruplanmisEkip).length > 0 ? Object.keys(gruplanmisEkip).map(dept => (
-                  <div key={dept} className="crew-group">
-                    <div className="crew-dept-title">{dept}</div>
-                    <div className="crew-list">
-                      {gruplanmisEkip[dept].map((kisi, index) => (
-                        <div key={`${kisi.crew_id}-${index}`} className="crew-item">
-                          <span className="crew-name">{kisi.name}</span>
-                          <span className="crew-job">{kisi.job}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )) : <p>Ekip bilgisi bulunamadı.</p>}
+              <div className={`dv2-action ${diziWatchlist ? 'act-wl' : ''}`} onClick={() => seriesActivityToggle('watchlist', diziWatchlist, setDiziWatchlist)} title={diziWatchlist ? 'Listede' : 'Listeye ekle'}>
+                <Bookmark size={22} strokeWidth={diziWatchlist ? 2.5 : 1.5} fill={diziWatchlist ? 'currentColor' : 'none'} />
+                <span>Watchlist</span>
               </div>
-            )}
-
-            {aktifSekme === 'genres' && (
-              <div className="genre-container">
-                {dizi.genres ? dizi.genres.split(', ').map((genre, index) => (
-                  <span key={index} className="genre-tag">{genre}</span>
-                )) : <p style={{ marginTop: '20px', fontStyle: 'italic' }}>Tür bilgisi bulunamadı.</p>}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* SAĞ SÜTUN: Efsanevi Aksiyon Paneli */}
-        <div className="detay-sag-panel">
-
-          <div className="aksiyon-ikonlari">
-            <div
-              className={`ikon-kutusu ${diziIzlendi ? 'watch-aktif' : ''}`}
-              onClick={() => seriesActivityToggle('watched', diziIzlendi, setDiziIzlendi)}
-              title={diziIzlendi ? 'İzlenmiş olarak işaretlendi' : 'İzledim olarak işaretle'}
-            >
-              <Eye
-                size={24}
-                strokeWidth={diziIzlendi ? 2.5 : 1.5}
-                color={diziIzlendi ? '#10b981' : '#64748b'}
-                fill={diziIzlendi ? 'rgba(16,185,129,0.15)' : 'none'}
-              />
-              <span className="ikon-metin">Watch</span>
-            </div>
-            <div
-              className={`ikon-kutusu ${diziLiked ? 'like-aktif' : ''}`}
-              onClick={() => seriesActivityToggle('liked', diziLiked, setDiziLiked)}
-              title={diziLiked ? 'Beğenildi' : 'Beğen'}
-            >
-              <Heart
-                size={24}
-                strokeWidth={diziLiked ? 2.5 : 1.5}
-                color={diziLiked ? '#f43f5e' : '#64748b'}
-                fill={diziLiked ? 'rgba(244,63,94,0.2)' : 'none'}
-              />
-              <span className="ikon-metin">Like</span>
-            </div>
-            <div
-              className={`ikon-kutusu ${diziWatchlist ? 'watchlist-aktif' : ''}`}
-              onClick={() => seriesActivityToggle('watchlist', diziWatchlist, setDiziWatchlist)}
-              title={diziWatchlist ? 'İzleme listesinde' : 'İzleme listesine ekle'}
-            >
-              <Bookmark
-                size={24}
-                strokeWidth={diziWatchlist ? 2.5 : 1.5}
-                color={diziWatchlist ? '#38bdf8' : '#64748b'}
-                fill={diziWatchlist ? 'rgba(56,189,248,0.2)' : 'none'}
-              />
-              <span className="ikon-metin">Watchlist</span>
-            </div>
-          </div>
-
-          <div className="puanlama-alani">
-            <span className="puan-baslik">Rate</span>
-            <div className="puanlama-yildizlari" onMouseLeave={() => setHoverPuani(0)}>
-              {[...Array(10)].map((_, index) => {
-                const puanDegeri = index + 1;
-                return (
-                  <span
-                    key={index}
-                    className={`tek-yildiz ${puanDegeri <= (hoverPuani || kullaniciPuani) ? 'dolu' : ''}`}
-                    onMouseEnter={() => setHoverPuani(puanDegeri)}
-                    onClick={() => puanVer(puanDegeri)}
-                  >★</span>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="panel-buton">Review or log...</div> {/* Burası şimdilik boş */}
-
-          {/* LİSTELEME MENÜSÜ */}
-          <div className="liste-menu-container">
-            <div className="panel-buton" onClick={() => setListeMenuAcik(!listeMenuAcik)}>
-              Add to lists...
             </div>
 
-            {listeMenuAcik && (
-              <div className="liste-popup">
-                {kullaniciListeleri.map(liste => (
-                  <div key={liste.list_id} className="liste-satir" onClick={() => listeToggle(liste.list_id)}>
-                    <input
-                      type="checkbox"
-                      className="liste-checkbox"
-                      checked={dizininListeleri.includes(liste.list_id)}
-                      readOnly
-                    />
-                    <span className="liste-adi">{liste.name}</span>
-                  </div>
+            {/* Rate */}
+            <div className="dv2-rate-box">
+              <span className="dv2-rate-label">Puanla</span>
+              <div className="dv2-stars" onMouseLeave={() => setHoverPuani(0)}>
+                {[...Array(10)].map((_, i) => (
+                  <span key={i} className={`dv2-star ${(i + 1) <= (hoverPuani || kullaniciPuani) ? 'dolu' : ''}`}
+                    onMouseEnter={() => setHoverPuani(i + 1)} onClick={() => puanVer(i + 1)}>★</span>
                 ))}
-
-                <div className="yeni-liste-form">
-                  <input
-                    type="text"
-                    className="yeni-liste-input"
-                    placeholder="New list..."
-                    value={yeniListeAdi}
-                    onChange={(e) => setYeniListeAdi(e.target.value)}
-                  />
-                  <button className="liste-ekle-btn" onClick={yeniListeOlustur}>+</button>
+              </div>
+              {kullaniciPuani && (
+                <div className="dv2-puan-info">
+                  <span>Puanın: <strong>{kullaniciPuani}/10</strong></span>
+                  <button className="dv2-puan-sil" onClick={puanSil}><X size={14} /> Geri Al</button>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <div className="ortalama-puan-kutusu">
-            <div>
-              <span className="rating-yazisi">RATINGS</span>
-              <div className="puan-grubu">
-                <span className="dev-puan" style={{ color: '#10b981' }}>★ {Number(dizi.rating).toFixed(1)}</span>
-                {kullaniciPuani && (
-                  <span className="kullanici-puan-gostergesi">
-                    Senin puanın: <span style={{ color: '#38bdf8' }}>★ {kullaniciPuani}</span>
-                  </span>
-                )}
-              </div>
+            {/* Review & List Buttons */}
+            <button className="dv2-btn" onClick={() => setReviewModalAcik(true)}><MessageSquare size={15} /> Yorum Yaz</button>
+            <div className="dv2-liste-container">
+              <button className="dv2-btn" onClick={() => setListeMenuAcik(!listeMenuAcik)}><Bookmark size={15} /> Listeye Ekle</button>
+              {listeMenuAcik && (
+                <div className="liste-popup">
+                  {kullaniciListeleri.map(liste => (
+                    <div key={liste.list_id} className="liste-satir" onClick={() => listeToggle(liste.list_id)}>
+                      <input type="checkbox" className="liste-checkbox" checked={dizininListeleri.includes(liste.list_id)} readOnly />
+                      <span className="liste-adi">{liste.name}</span>
+                    </div>
+                  ))}
+                  <div className="yeni-liste-form">
+                    <input type="text" className="yeni-liste-input" placeholder="Yeni liste..." value={yeniListeAdi} onChange={e => setYeniListeAdi(e.target.value)} />
+                    <button className="liste-ekle-btn" onClick={yeniListeOlustur}>+</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+        </div>
+      </div>
 
+      {/* ===== TABS + İÇERİK ===== */}
+      <div className="dv2-content">
+        <div className="dv2-tabs">
+          <span className={aktifSekme === 'seasons' ? 'dv2-tab-active' : ''} onClick={() => setAktifSekme('seasons')}>Sezonlar</span>
+          <span className={aktifSekme === 'cast' ? 'dv2-tab-active' : ''} onClick={() => setAktifSekme('cast')}>Oyuncular</span>
+          <span className={aktifSekme === 'crew' ? 'dv2-tab-active' : ''} onClick={() => setAktifSekme('crew')}>Ekip</span>
         </div>
 
+        <div className="dv2-tab-content">
+          {aktifSekme === 'seasons' && (
+            <div className="sezon-listesi">
+              {sezonlar.length > 0 ? sezonlar.map(sezon => {
+                const buBolumler = bolumler.filter(b => b.season_id === sezon.season_id);
+                const toplam = buBolumler.length;
+                const izlenen = buBolumler.filter(b => izlenenBolumler[b.episode_id]).length;
+                const yuzde = toplam > 0 ? (izlenen / toplam) * 100 : 0;
+
+                return (
+                  <div key={sezon.season_id}>
+                    <div className="sezon-satir" onClick={() => sezonAccordionToggle(sezon.season_id)}>
+                      <img src={sezon.poster_path ? `https://image.tmdb.org/t/p/w200${sezon.poster_path}` : `https://image.tmdb.org/t/p/w200${dizi.poster_path}`} alt={sezon.name} className="sezon-poster-kucuk" />
+                      <div className="sezon-bilgi">
+                        <div className="sezon-baslik">{sezon.name}</div>
+                        <div className="sezon-detay">
+                          {sezon.air_date && <span>{sezon.air_date.substring(0, 4)}</span>}
+                          <span>• {sezon.season_number}. Sezon</span>
+                          {sezon.vote_average > 0 && <span>⭐ {Number(sezon.vote_average).toFixed(1)}</span>}
+                        </div>
+                        <div className="sezon-progress-bar"><div className="sezon-progress-fill" style={{ width: `${yuzde}%` }} /></div>
+                        <div className="sezon-izlenme-text">{izlenen} / {toplam} izlendi</div>
+                      </div>
+                      <div className="sezon-butonlar">
+                        <button className={`sezon-izle-btn toplu-btn ${izlenenSezonlar[sezon.season_id] ? 'aktif-izle' : ''}`} onClick={e => { e.stopPropagation(); sezonIzleToggle(sezon.season_id); }}><Check size={16} /></button>
+                        <button className={`sezon-izle-btn toplu-btn ${izlenecekSezonlar[sezon.season_id] ? 'aktif-izlenecek' : ''}`} onClick={e => { e.stopPropagation(); sezonIzlenecekToggle(sezon.season_id); }}><Plus size={16} /></button>
+                      </div>
+                    </div>
+
+                    {acikSezonlar[sezon.season_id] && (
+                      <div className="bolum-listesi-wrapper">
+                        {buBolumler.map(bolum => (
+                          <div key={bolum.episode_id} className="bolum-satir">
+                            <div className="bolum-sol">
+                              <span className="bolum-no">{bolum.episode_number}</span>
+                              <div className="bolum-bilgi">
+                                <span className="bolum-adi">{bolum.name || `Bölüm ${bolum.episode_number}`}</span>
+                                {bolum.air_date && <span className="bolum-tarih">{tarihFormatla(bolum.air_date)}</span>}
+                                {bolum.vote_average > 0 && <span className="bolum-rating">⭐ {Number(bolum.vote_average).toFixed(1)}</span>}
+                              </div>
+                            </div>
+                            <div className="bolum-aksiyonlar">
+                              <div className="bolum-puanlama-container">
+                                <button className="bolum-puan-toggle" onClick={() => setAcikPuanlama(acikPuanlama === bolum.episode_id ? null : bolum.episode_id)}>
+                                  {bolumPuanlari[bolum.episode_id] ? `★ ${bolumPuanlari[bolum.episode_id]}` : '☆'}
+                                </button>
+                                {acikPuanlama === bolum.episode_id && (
+                                  <div className="bolum-yildizlar" onMouseLeave={() => setHoverBolumPuani({ id: null, puan: 0 })}>
+                                    {[...Array(10)].map((_, i) => (
+                                      <span key={i}
+                                        className={`bolum-tek-yildiz ${(i + 1) <= (hoverBolumPuani.id === bolum.episode_id ? hoverBolumPuani.puan : (bolumPuanlari[bolum.episode_id] || 0)) ? 'dolu' : ''}`}
+                                        onMouseEnter={() => setHoverBolumPuani({ id: bolum.episode_id, puan: i + 1 })}
+                                        onClick={() => bolumPuanVer(bolum.episode_id, i + 1)}>★</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <button className={`bolum-izle-btn ${izlenenBolumler[bolum.episode_id] ? 'izlendi' : ''}`} onClick={() => bolumIzleToggle(bolum)} title="İzledim"><Eye size={16} /></button>
+                              <button className={`bolum-izle-btn ${izlenecekBolumler[bolum.episode_id] ? 'izlenecek' : ''}`} onClick={() => bolumIzlenecekToggle(bolum)} title="İzleyeceğim"><Clock size={16} /></button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }) : <p style={{ color: '#64748b' }}>Sezon bilgisi bulunamadı.</p>}
+            </div>
+          )}
+
+          {aktifSekme === 'cast' && (
+            <div className="cast-grid">
+              {oyuncular.length > 0 ? oyuncular.map((oyuncu, i) => (
+                <div key={i} className="cast-kart">
+                  {oyuncu.profile_path ? <img src={`https://image.tmdb.org/t/p/w200${oyuncu.profile_path}`} alt={oyuncu.name} className="cast-foto" /> : <div className="cast-foto-yok">👤</div>}
+                  <div className="cast-bilgi"><span className="cast-isim">{oyuncu.name}</span><span className="cast-rol">{oyuncu.character}</span></div>
+                </div>
+              )) : <p style={{ color: '#64748b' }}>Oyuncu bilgisi bulunamadı.</p>}
+            </div>
+          )}
+
+          {aktifSekme === 'crew' && (
+            <div className="crew-bolumler">
+              {Object.keys(gruplanmisEkip).length > 0 ? Object.entries(gruplanmisEkip).map(([dept, kisiler]) => (
+                <div key={dept} className="crew-departman">
+                  <h3 className="crew-dept-baslik">{dept}</h3>
+                  <div className="crew-grid">
+                    {kisiler.map((kisi, i) => (
+                      <div key={i} className="crew-kart">
+                        {kisi.profile_path ? <img src={`https://image.tmdb.org/t/p/w200${kisi.profile_path}`} alt={kisi.name} className="cast-foto" /> : <div className="cast-foto-yok">👤</div>}
+                        <div className="cast-bilgi"><span className="cast-isim">{kisi.name}</span><span className="cast-rol">{kisi.job}</span></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )) : <p style={{ color: '#64748b' }}>Ekip bilgisi bulunamadı.</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Reviews Alt Kısım */}
+        {reviews.length > 0 && (
+          <div className="dv2-reviews-section">
+            <h3>Yorumlar ({reviews.length})</h3>
+            {reviews.map(r => (
+              <div key={r.review_id} className="review-item">
+                <div className="review-meta">
+                  <span className="review-user">@{r.username || 'anonim'}</span>
+                  <span className="review-tarih">{new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
+                </div>
+                {r.contains_spoiler && <span className="spoiler-badge"><AlertTriangle size={12} /> Spoiler</span>}
+                <p className="review-text">{r.review_text}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* REVIEW MODAL */}
+      {reviewModalAcik && (
+        <div className="review-modal-overlay" onClick={() => setReviewModalAcik(false)}>
+          <div className="review-modal" onClick={e => e.stopPropagation()}>
+            <div className="review-modal-header">
+              <h3>Yorum Yaz — {dizi.name}</h3>
+              <button className="review-modal-kapat" onClick={() => setReviewModalAcik(false)}>✕</button>
+            </div>
+            <textarea className="review-textarea" placeholder="Bu dizi hakkında ne düşünüyorsun?" value={reviewText} onChange={e => setReviewText(e.target.value)} rows={5} />
+            <label className="spoiler-label">
+              <input type="checkbox" checked={spoilerVar} onChange={e => setSpoilerVar(e.target.checked)} />
+              <AlertTriangle size={14} /> Spoiler içeriyor
+            </label>
+            <button className="review-gonder-btn" disabled={!reviewText.trim() || reviewGonderiliyor}
+              onClick={async () => {
+                setReviewGonderiliyor(true);
+                try {
+                  await fetch('http://127.0.0.1:8000/reviews', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, review_text: reviewText, contains_spoiler: spoilerVar }) });
+                  const r = await fetch(`http://127.0.0.1:8000/reviews/${dizi.series_id}`);
+                  const d = await r.json();
+                  if (Array.isArray(d)) setReviews(d);
+                  setReviewText(''); setSpoilerVar(false); setReviewModalAcik(false);
+                } catch (e) { console.error(e); }
+                setReviewGonderiliyor(false);
+              }}>
+              {reviewGonderiliyor ? 'Gönderiliyor...' : 'Gönder'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

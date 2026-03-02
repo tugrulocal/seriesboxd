@@ -111,6 +111,17 @@ def ensure_users_table():
             UNIQUE(user_id, episode_id)
         );
     """)
+    # Dizi yorumları/logları tablosu
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_series_reviews (
+            review_id   SERIAL PRIMARY KEY,
+            user_id     INTEGER DEFAULT 1,
+            series_id   INTEGER NOT NULL,
+            review_text TEXT NOT NULL,
+            contains_spoiler BOOLEAN DEFAULT FALSE,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
     conn.commit()
     cur.close()
     conn.close()
@@ -367,10 +378,14 @@ def delete_activity(episode_id: int, activity_type: str):
 # --- PUANLAMA (RATING) SİSTEMİ ---
 
 @app.get("/rating/{series_id}")
-def get_user_rating(series_id: int):
+def get_user_rating(series_id: int, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
     conn = get_db_conn()
     cur = conn.cursor()
-    cur.execute("SELECT score FROM user_ratings WHERE series_id = %s AND user_id = 1", (series_id,))
+    cur.execute("SELECT score FROM user_ratings WHERE series_id = %s AND user_id = %s", (series_id, user["user_id"]))
     row = cur.fetchone()
     cur.close()
     conn.close()
@@ -393,19 +408,42 @@ def set_user_rating(rating: RatingModel):
     conn.close()
     return {"status": "success", "score": rating.score}
 
+@app.delete("/rating/{series_id}")
+def delete_user_rating(series_id: int, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM user_ratings WHERE user_id = %s AND series_id = %s", (user["user_id"], series_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"status": "deleted"}
+
 # --- DİZİ BAZLI AKTİVİTE (WATCH / LIKE / WATCHLIST) ---
 
 class SeriesActivityModel(BaseModel):
     series_id: int
     activity_type: str  # 'watched' | 'liked' | 'watchlist'
 
+class ReviewModel(BaseModel):
+    series_id: int
+    review_text: str
+    contains_spoiler: bool = False
+
 @app.get("/series-activity/{series_id}")
-def get_series_activity(series_id: int):
+def get_series_activity(series_id: int, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
     conn = get_db_conn()
     cur = conn.cursor()
     cur.execute(
-        "SELECT activity_type FROM user_series_activity WHERE user_id = 1 AND series_id = %s",
-        (series_id,)
+        "SELECT activity_type FROM user_series_activity WHERE user_id = %s AND series_id = %s",
+        (user["user_id"], series_id)
     )
     rows = cur.fetchall()
     cur.close()
@@ -413,17 +451,21 @@ def get_series_activity(series_id: int):
     return [row[0] for row in rows]  # ['watched', 'liked'] gibi
 
 @app.post("/series-activity")
-def set_series_activity(item: SeriesActivityModel):
+def set_series_activity(item: SeriesActivityModel, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
     conn = get_db_conn()
     cur = conn.cursor()
     try:
         cur.execute(
             """
             INSERT INTO user_series_activity (user_id, series_id, activity_type)
-            VALUES (1, %s, %s)
+            VALUES (%s, %s, %s)
             ON CONFLICT (user_id, series_id, activity_type) DO NOTHING
             """,
-            (item.series_id, item.activity_type)
+            (user["user_id"], item.series_id, item.activity_type)
         )
         conn.commit()
     except Exception as e:
@@ -434,17 +476,53 @@ def set_series_activity(item: SeriesActivityModel):
     return {"status": "ok"}
 
 @app.delete("/series-activity/{series_id}/{activity_type}")
-def delete_series_activity(series_id: int, activity_type: str):
+def delete_series_activity(series_id: int, activity_type: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
     conn = get_db_conn()
     cur = conn.cursor()
     cur.execute(
-        "DELETE FROM user_series_activity WHERE user_id = 1 AND series_id = %s AND activity_type = %s",
-        (series_id, activity_type)
+        "DELETE FROM user_series_activity WHERE user_id = %s AND series_id = %s AND activity_type = %s",
+        (user["user_id"], series_id, activity_type)
     )
     conn.commit()
     cur.close()
     conn.close()
     return {"status": "deleted"}
+
+# --- DİZİ YORUMLARI / LOG ---
+
+@app.get("/reviews/{series_id}")
+def get_reviews(series_id: int):
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute(
+        """SELECT r.*, u.username FROM user_series_reviews r
+           LEFT JOIN users u ON u.user_id = r.user_id
+           WHERE r.series_id = %s ORDER BY r.created_at DESC""",
+        (series_id,)
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+@app.post("/reviews")
+def create_review(review: ReviewModel):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """INSERT INTO user_series_reviews (user_id, series_id, review_text, contains_spoiler)
+           VALUES (1, %s, %s, %s) RETURNING review_id""",
+        (review.series_id, review.review_text, review.contains_spoiler)
+    )
+    review_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"status": "ok", "review_id": review_id}
 
 # ============================================================
 # --- AUTH: REGISTER / LOGIN / ME ---
@@ -534,6 +612,127 @@ def get_me(credentials: HTTPAuthorizationCredentials = Depends(security)):
     return row
 
 # ============================================================
+# --- KULLANICI PROFİLİ ---
+# ============================================================
+
+@app.get("/profile/stats")
+def get_profile_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    user_id = user["user_id"]
+    
+    # 1. Toplam İzlenen Saat ve Gün
+    cur.execute("""
+        SELECT COALESCE(SUM(e.runtime), 0) as total_minutes, COUNT(ua.episode_id) as episodes_watched
+        FROM user_activity ua
+        JOIN episodes e ON ua.episode_id = e.episode_id
+        WHERE ua.user_id = %s AND ua.activity_type = 'watched'
+    """, (user_id,))
+    time_stats = cur.fetchone()
+    total_minutes = time_stats["total_minutes"] if time_stats["total_minutes"] else 0
+    total_hours = total_minutes // 60
+    total_days = total_hours // 24
+    
+    # 2. İzlenen Dizi Sayısı
+    cur.execute("SELECT COUNT(DISTINCT series_id) as watched_series FROM user_activity WHERE user_id = %s AND activity_type = 'watched'", (user_id,))
+    watched_series = cur.fetchone()["watched_series"]
+    
+    # 3. Watchlist Sayısı
+    cur.execute("SELECT COUNT(*) as watchlist_count FROM user_series_activity WHERE user_id = %s AND activity_type = 'watchlist'", (user_id,))
+    watchlist_count = cur.fetchone()["watchlist_count"]
+    
+    # 4. Favori Türler (Top 3)
+    cur.execute("""
+        SELECT s.genres 
+        FROM user_activity ua 
+        JOIN series s ON ua.series_id = s.series_id 
+        WHERE ua.user_id = %s AND ua.activity_type = 'watched'
+    """, (user_id,))
+    genre_rows = cur.fetchall()
+    genre_counts = {}
+    for row in genre_rows:
+        if row["genres"]:
+            for g in row["genres"].split(","):
+                g = g.strip()
+                if g: genre_counts[g] = genre_counts.get(g, 0) + 1
+    top_genres = sorted(genre_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+    top_genres_names = [g[0] for g in top_genres]
+    
+    # 5. Aylık İzleme İstatistiği (Son 6 ay grafik)
+    cur.execute("""
+        SELECT TO_CHAR(created_at, 'YYYY-MM') as month, COUNT(*) as count 
+        FROM user_activity 
+        WHERE user_id = %s AND activity_type = 'watched' 
+        GROUP BY month 
+        ORDER BY month DESC
+        LIMIT 6
+    """, (user_id,))
+    monthly_stats = cur.fetchall()
+    monthly_stats.reverse()
+    
+    cur.close()
+    conn.close()
+    
+    return {
+        "total_hours": total_hours,
+        "total_days": total_days,
+        "episodes_watched": time_stats["episodes_watched"],
+        "watched_series": watched_series,
+        "watchlist_count": watchlist_count,
+        "top_genres": top_genres_names,
+        "monthly_activity": monthly_stats
+    }
+
+@app.get("/profile/recent-activity")
+def get_recent_activity(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT ua.activity_id, ua.activity_type, ua.created_at, 
+               s.name as series_name, s.series_id, s.poster_path,
+               e.season_id, e.episode_number, e.name as episode_name
+        FROM user_activity ua
+        JOIN series s ON ua.series_id = s.series_id
+        JOIN episodes e ON ua.episode_id = e.episode_id
+        WHERE ua.user_id = %s
+        ORDER BY ua.created_at DESC
+        LIMIT 15
+    """, (user["user_id"],))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+@app.get("/profile/favorites")
+def get_favorite_series(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT s.series_id, s.name, s.poster_path, s.backdrop_path, s.rating 
+        FROM user_series_activity usa
+        JOIN series s ON usa.series_id = s.series_id
+        WHERE usa.user_id = %s AND usa.activity_type = 'liked'
+        ORDER BY usa.created_at DESC
+        LIMIT 4
+    """, (user["user_id"],))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+# ============================================================
 # --- BÖLÜM PUANLAMA ---
 # ============================================================
 
@@ -542,7 +741,11 @@ class EpisodeRatingModel(BaseModel):
     score: int
 
 @app.get("/episode-ratings/{series_id}")
-def get_episode_ratings(series_id: int):
+def get_episode_ratings(series_id: int, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
     """Bir dizinin tüm bölümlerine kullanıcının verdiği puanları döndür."""
     conn = get_db_conn()
     cur = conn.cursor()
@@ -552,9 +755,9 @@ def get_episode_ratings(series_id: int):
         FROM user_episode_ratings uer
         JOIN episodes ep ON ep.episode_id = uer.episode_id
         JOIN seasons s ON s.season_id = ep.season_id
-        WHERE uer.user_id = 1 AND s.series_id = %s
+        WHERE uer.user_id = %s AND s.series_id = %s
         """,
-        (series_id,)
+        (user["user_id"], series_id)
     )
     rows = cur.fetchall()
     cur.close()
@@ -562,17 +765,21 @@ def get_episode_ratings(series_id: int):
     return {row[0]: row[1] for row in rows}  # {episode_id: score}
 
 @app.post("/episode-rating")
-def set_episode_rating(data: EpisodeRatingModel):
+def set_episode_rating(data: EpisodeRatingModel, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
     conn = get_db_conn()
     cur = conn.cursor()
     try:
         cur.execute(
             """
             INSERT INTO user_episode_ratings (user_id, episode_id, score)
-            VALUES (1, %s, %s)
+            VALUES (%s, %s, %s)
             ON CONFLICT (user_id, episode_id) DO UPDATE SET score = EXCLUDED.score
             """,
-            (data.episode_id, data.score)
+            (user["user_id"], data.episode_id, data.score)
         )
         conn.commit()
     except Exception as e:
@@ -584,10 +791,14 @@ def set_episode_rating(data: EpisodeRatingModel):
     return {"status": "ok", "episode_id": data.episode_id, "score": data.score}
 
 @app.delete("/episode-rating/{episode_id}")
-def delete_episode_rating(episode_id: int):
+def delete_episode_rating(episode_id: int, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
     conn = get_db_conn()
     cur = conn.cursor()
-    cur.execute("DELETE FROM user_episode_ratings WHERE user_id = 1 AND episode_id = %s", (episode_id,))
+    cur.execute("DELETE FROM user_episode_ratings WHERE user_id = %s AND episode_id = %s", (user["user_id"], episode_id))
     conn.commit()
     cur.close()
     conn.close()

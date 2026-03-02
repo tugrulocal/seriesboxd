@@ -1,10 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Routes, Route, useNavigate } from 'react-router-dom'
+import { Routes, Route, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import Navbar from './Navbar'
 import DiziDetay from './DiziDetay'
 import Top50 from './Top50'
 import Login from './Login'
 import Home from './Home'
+import Profil from './Profil'
+import Listelerim from './Listelerim'
 import { AuthProvider } from './AuthContext'
 import './App.css'
 
@@ -15,6 +17,9 @@ function AppIcerik() {
   const [diziler, setDiziler] = useState([]);
   const [hata, setHata] = useState(null);
   const [aramaAktif, setAramaAktif] = useState(false);
+  const [genreBaslik, setGenreBaslik] = useState(null);
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     fetch('http://127.0.0.1:8000/arama?siralama=rating_desc')
@@ -26,10 +31,34 @@ function AppIcerik() {
       .catch(err => setHata(err.message));
   }, []);
 
+  // Genre query param handler
+  useEffect(() => {
+    const genre = searchParams.get('genre');
+    if (genre && location.pathname === '/') {
+      setGenreBaslik(`${genre} Dizileri`);
+      setAramaAktif(true);
+      fetch(`http://127.0.0.1:8000/arama?tur=${encodeURIComponent(genre)}&siralama=rating_desc`)
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) setDiziler(data); })
+        .catch(() => { });
+    }
+  }, [searchParams, location.pathname]);
+
   const handleSonuclar = useCallback((yeniDiziler, isSearchActive) => {
     if (Array.isArray(yeniDiziler)) setDiziler(yeniDiziler);
     setAramaAktif(!!isSearchActive);
   }, []);
+
+  const anaSayfayaGit = useCallback(() => {
+    setAramaAktif(false);
+    setGenreBaslik(null);
+    navigate('/');
+    // İlk yükleme verisini tekrar çek
+    fetch('http://127.0.0.1:8000/arama?siralama=rating_desc')
+      .then(res => res.json())
+      .then(data => { if (Array.isArray(data)) setDiziler(data); })
+      .catch(() => { });
+  }, [navigate]);
 
   const modalKapatVeGit = (rota = null) => {
     setKapanisAnimasyonu(true);
@@ -42,7 +71,7 @@ function AppIcerik() {
 
   return (
     <div className="App">
-      <Navbar onSonuclar={handleSonuclar} />
+      <Navbar onSonuclar={handleSonuclar} onAnaSayfaGit={anaSayfayaGit} />
 
       <Routes>
         <Route path="/" element={
@@ -51,6 +80,7 @@ function AppIcerik() {
 
             {aramaAktif ? (
               <div className="dizi-listesi">
+                {genreBaslik && <h2 className="genre-sayfa-baslik">{genreBaslik}</h2>}
                 {diziler.length > 0 ? (
                   diziler.map((dizi) => (
                     <div key={dizi.series_id} className="dizi-kart" onClick={() => setSeciliDizi(dizi)}>
@@ -73,7 +103,7 @@ function AppIcerik() {
                 )}
               </div>
             ) : (
-              <Home tumDiziler={diziler} seciliDiziAyarla={setSeciliDizi} />
+              <Home tumDiziler={diziler} />
             )}
 
             {seciliDizi && (
@@ -115,6 +145,8 @@ function AppIcerik() {
         <Route path="/dizi-detay" element={<h2 style={{ color: 'white', marginTop: '50px' }}>🎬 Detay Sayfası</h2>} />
         <Route path="/dizi/:id" element={<DiziDetay />} />
         <Route path="/top50" element={<Top50 />} />
+        <Route path="/profil" element={<Profil />} />
+        <Route path="/listelerim" element={<Listelerim />} />
       </Routes>
     </div>
   )

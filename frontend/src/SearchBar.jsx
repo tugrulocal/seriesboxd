@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 const SIRALAMA_SECENEKLERI = [
-    { deger: 'rating_desc', etiket: '⭐ Puan (Yüksek→Düşük)' },
-    { deger: 'rating_asc', etiket: '⭐ Puan (Düşük→Yüksek)' },
+    { deger: 'rating_desc', etiket: '⭐ Azalan Puan ⬇' },
+    { deger: 'rating_asc', etiket: '⭐ Artan Puan ⬆' },
     { deger: 'name_asc', etiket: '🔤 İsim (A→Z)' },
     { deger: 'name_desc', etiket: '🔤 İsim (Z→A)' },
 ];
@@ -17,6 +17,7 @@ function SearchBar({ onSonuclar }) {
     const [siralama, setSiralama] = useState('rating_desc');
     const [tumTurler, setTumTurler] = useState([]);
     const [yukleniyor, setYukleniyor] = useState(false);
+    const [panelKullanildi, setPanelKullanildi] = useState(false);
 
     const containerRef = useRef(null);
     const inputRef = useRef(null);
@@ -59,7 +60,7 @@ function SearchBar({ onSonuclar }) {
                 const res = await fetch(`http://127.0.0.1:8000/arama?${params}`);
                 const data = await res.json();
 
-                const isSearchActive = !!q || mn > 0 || mx < 10 || turler.length > 0 || sir !== 'rating_desc';
+                const isSearchActive = panelKullanildi || !!q || mn > 0 || mx < 10 || turler.length > 0 || sir !== 'rating_desc';
                 onSonuclar(data, isSearchActive);
             } catch (e) {
                 console.error(e);
@@ -67,7 +68,7 @@ function SearchBar({ onSonuclar }) {
                 setYukleniyor(false);
             }
         }, 300);
-    }, [onSonuclar]);
+    }, [onSonuclar, panelKullanildi]);
 
     // Herhangi bir filtre değişince tekrar ara
     useEffect(() => {
@@ -82,9 +83,11 @@ function SearchBar({ onSonuclar }) {
         setMaxPuan(10);
         setSeciliTurler([]);
         setSiralama('rating_desc');
+        setPanelKullanildi(false);
     };
 
     const turToggle = (tur) => {
+        setPanelKullanildi(true);
         setSeciliTurler(prev =>
             prev.includes(tur) ? prev.filter(t => t !== tur) : [...prev, tur]
         );
@@ -166,7 +169,7 @@ function SearchBar({ onSonuclar }) {
                                 className="range-slider range-min"
                                 onChange={e => {
                                     const v = parseFloat(e.target.value);
-                                    if (v <= maxPuan) setMinPuan(v);
+                                    if (v <= maxPuan) { setPanelKullanildi(true); setMinPuan(v); }
                                 }}
                             />
                             <input
@@ -175,7 +178,7 @@ function SearchBar({ onSonuclar }) {
                                 className="range-slider range-max"
                                 onChange={e => {
                                     const v = parseFloat(e.target.value);
-                                    if (v >= minPuan) setMaxPuan(v);
+                                    if (v >= minPuan) { setPanelKullanildi(true); setMaxPuan(v); }
                                 }}
                             />
                         </div>
@@ -210,7 +213,7 @@ function SearchBar({ onSonuclar }) {
                                 <button
                                     key={s.deger}
                                     className={`siralama-btn ${siralama === s.deger ? 'aktif' : ''}`}
-                                    onClick={() => setSiralama(s.deger)}
+                                    onClick={() => { setPanelKullanildi(true); setSiralama(s.deger); }}
                                 >
                                     {s.etiket}
                                 </button>
