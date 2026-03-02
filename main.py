@@ -122,6 +122,58 @@ def ensure_users_table():
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     """)
+    # Kullanıcı aktiviteleri tablosu (bölüm bazlı izlendi/watchlist)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_activity (
+            activity_id SERIAL PRIMARY KEY,
+            user_id     INTEGER NOT NULL,
+            series_id   INTEGER NOT NULL,
+            season_id   INTEGER,
+            episode_id  INTEGER NOT NULL,
+            activity_type VARCHAR(50) NOT NULL,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, episode_id, activity_type)
+        );
+    """)
+    # Dizi bazlı aktiviteler (watched/liked/watchlist)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_series_activity (
+            id          SERIAL PRIMARY KEY,
+            user_id     INTEGER NOT NULL,
+            series_id   INTEGER NOT NULL,
+            activity_type VARCHAR(50) NOT NULL,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, series_id, activity_type)
+        );
+    """)
+    # Kullanıcı puanları tablosu
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_ratings (
+            rating_id   SERIAL PRIMARY KEY,
+            user_id     INTEGER DEFAULT 1,
+            series_id   INTEGER,
+            score       INTEGER,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, series_id)
+        );
+    """)
+    # Mevcut tablolara created_at kolonu ekle (eksikse)
+    for tbl in ['user_activity', 'user_series_activity', 'user_ratings']:
+        try:
+            cur.execute(f"ALTER TABLE {tbl} ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;")
+        except Exception:
+            conn.rollback()
+    # Kullanıcının favori dizileri (profilde 5 slot)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_favorites (
+            id        SERIAL PRIMARY KEY,
+            user_id   INTEGER NOT NULL,
+            series_id INTEGER NOT NULL,
+            slot      INTEGER NOT NULL CHECK (slot BETWEEN 0 AND 4),
+            UNIQUE(user_id, slot),
+            UNIQUE(user_id, series_id)
+        );
+    """)
     conn.commit()
     cur.close()
     conn.close()
@@ -718,14 +770,18 @@ def get_profile_stats(credentials: HTTPAuthorizationCredentials = Depends(securi
     }
 
 @app.get("/profile/recent-activity")
-def get_recent_activity(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def get_recent_activity(limit: int = 15, days: Optional[int] = None, credentials: HTTPAuthorizationCredentials = Depends(security)):
     user = get_current_user(credentials)
     if not user:
         raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+    
+    date_filter = ""
+    if days:
+        date_filter = f"AND created_at >= NOW() - INTERVAL '{days} days'"
         
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute("""
+    cur.execute(f"""
         (
             SELECT ua.activity_id, ua.activity_type, ua.created_at, 
                    s.name as series_name, s.series_id, s.poster_path,
@@ -734,7 +790,7 @@ def get_recent_activity(credentials: HTTPAuthorizationCredentials = Depends(secu
             FROM user_activity ua
             JOIN series s ON ua.series_id = s.series_id
             JOIN episodes e ON ua.episode_id = e.episode_id
-            WHERE ua.user_id = %(uid)s
+            WHERE ua.user_id = %(uid)s {date_filter}
         )
         UNION ALL
         (
@@ -744,7 +800,7 @@ def get_recent_activity(credentials: HTTPAuthorizationCredentials = Depends(secu
                    NULL::int as score, NULL::varchar as review_text
             FROM user_series_activity usa
             JOIN series s ON usa.series_id = s.series_id
-            WHERE usa.user_id = %(uid)s
+            WHERE usa.user_id = %(uid)s {date_filter}
         )
         UNION ALL
         (
@@ -754,18 +810,19 @@ def get_recent_activity(credentials: HTTPAuthorizationCredentials = Depends(secu
                    ur.score as score, NULL::varchar as review_text
             FROM user_ratings ur
             JOIN series s ON ur.series_id = s.series_id
-            WHERE ur.user_id = %(uid)s
+            WHERE ur.user_id = %(uid)s {date_filter}
         )
         UNION ALL
         (
             SELECT uer.id as activity_id, 'episode_rated' as activity_type, uer.created_at,
-                   s.name as series_name, e.series_id, s.poster_path,
+                   s.name as series_name, se.series_id, s.poster_path,
                    e.season_id as season_id, e.episode_number as episode_number, e.name as episode_name,
                    uer.score as score, NULL::varchar as review_text
             FROM user_episode_ratings uer
             JOIN episodes e ON uer.episode_id = e.episode_id
-            JOIN series s ON e.series_id = s.series_id
-            WHERE uer.user_id = %(uid)s
+            JOIN seasons se ON e.season_id = se.season_id
+            JOIN series s ON se.series_id = s.series_id
+            WHERE uer.user_id = %(uid)s {date_filter}
         )
         UNION ALL
         (
@@ -775,11 +832,11 @@ def get_recent_activity(credentials: HTTPAuthorizationCredentials = Depends(secu
                    NULL::int as score, usr.review_text as review_text
             FROM user_series_reviews usr
             JOIN series s ON usr.series_id = s.series_id
-            WHERE usr.user_id = %(uid)s
+            WHERE usr.user_id = %(uid)s {date_filter}
         )
         ORDER BY created_at DESC
-        LIMIT 15
-    """, {"uid": user["user_id"]})
+        LIMIT %(limit)s
+    """, {"uid": user["user_id"], "limit": limit})
     rows = cur.fetchall()
     cur.close()
     conn.close()
@@ -794,17 +851,58 @@ def get_favorite_series(credentials: HTTPAuthorizationCredentials = Depends(secu
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("""
-        SELECT s.series_id, s.name, s.poster_path, s.backdrop_path, s.rating 
-        FROM user_series_activity usa
-        JOIN series s ON usa.series_id = s.series_id
-        WHERE usa.user_id = %s AND usa.activity_type = 'liked'
-        ORDER BY usa.created_at DESC
-        LIMIT 4
+        SELECT uf.slot, s.series_id, s.name, s.poster_path, s.rating 
+        FROM user_favorites uf
+        JOIN series s ON uf.series_id = s.series_id
+        WHERE uf.user_id = %s
+        ORDER BY uf.slot
     """, (user["user_id"],))
     rows = cur.fetchall()
     cur.close()
     conn.close()
     return rows
+
+class FavoriteModel(BaseModel):
+    series_id: int
+    slot: int
+
+@app.post("/profile/favorites")
+def set_favorite(data: FavoriteModel, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+    if data.slot < 0 or data.slot > 4:
+        raise HTTPException(status_code=400, detail="Slot 0-4 arası olmalı.")
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM user_favorites WHERE user_id = %s AND slot = %s", (user["user_id"], data.slot))
+        cur.execute("DELETE FROM user_favorites WHERE user_id = %s AND series_id = %s", (user["user_id"], data.series_id))
+        cur.execute(
+            "INSERT INTO user_favorites (user_id, series_id, slot) VALUES (%s, %s, %s)",
+            (user["user_id"], data.series_id, data.slot)
+        )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+    return {"status": "ok"}
+
+@app.delete("/profile/favorites/{slot}")
+def remove_favorite(slot: int, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM user_favorites WHERE user_id = %s AND slot = %s", (user["user_id"], slot))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"status": "deleted"}
 
 @app.get("/profile/watchlist_preview")
 def get_watchlist_preview(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -826,6 +924,190 @@ def get_watchlist_preview(credentials: HTTPAuthorizationCredentials = Depends(se
     cur.close()
     conn.close()
     return rows
+
+@app.get("/profile/watched-series")
+def get_watched_series(
+    genre: Optional[str] = None,
+    sort: Optional[str] = "recent",
+    min_rating: Optional[float] = None,
+    max_rating: Optional[float] = None,
+    decade: Optional[str] = None,
+    service: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    conditions = ["usa.user_id = %s", "usa.activity_type = 'watched'"]
+    params = [user["user_id"]]
+    if genre and genre.strip():
+        conditions.append("s.genres ILIKE %s")
+        params.append(f"%{genre.strip()}%")
+    if min_rating is not None:
+        conditions.append("s.rating >= %s")
+        params.append(min_rating)
+    if max_rating is not None:
+        conditions.append("s.rating <= %s")
+        params.append(max_rating)
+    if decade and decade.strip():
+        try:
+            decade_start = int(decade.strip().rstrip('s'))
+            decade_end = decade_start + 9
+            conditions.append("""
+                EXISTS (
+                    SELECT 1 FROM seasons se
+                    WHERE se.series_id = s.series_id AND se.season_number = 1
+                    AND EXTRACT(YEAR FROM se.air_date::date) BETWEEN %s AND %s
+                )
+            """)
+            params.extend([decade_start, decade_end])
+        except ValueError:
+            pass
+    if service and service.strip():
+        conditions.append("s.networks ILIKE %s")
+        params.append(f"%{service.strip()}%")
+    where = " AND ".join(conditions)
+    sort_map = {
+        "recent": "usa.created_at DESC",
+        "rating_desc": "s.rating DESC NULLS LAST",
+        "rating_asc": "s.rating ASC NULLS LAST",
+        "name_asc": "s.name ASC",
+        "name_desc": "s.name DESC",
+        "user_score_desc": "ur.score DESC NULLS LAST",
+    }
+    order = sort_map.get(sort, "usa.created_at DESC")
+    cur.execute(f"""
+        SELECT s.series_id, s.name, s.poster_path, s.rating, s.genres, s.networks,
+               usa.created_at as watched_at,
+               ur.score as user_score
+        FROM user_series_activity usa
+        JOIN series s ON usa.series_id = s.series_id
+        LEFT JOIN user_ratings ur ON ur.series_id = s.series_id AND ur.user_id = usa.user_id
+        WHERE {where}
+        ORDER BY {order}
+    """, params)
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+@app.get("/services")
+def get_services():
+    """Veritabanındaki tüm benzersiz yayın platformlarını döndür."""
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT networks FROM series WHERE networks IS NOT NULL AND networks != ''")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    service_set = set()
+    for row in rows:
+        for s in row[0].split(','):
+            temiz = s.strip()
+            if temiz:
+                service_set.add(temiz)
+    return sorted(list(service_set))
+
+@app.get("/profile/user-reviews")
+def get_user_reviews(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT r.review_id, r.review_text, r.contains_spoiler, r.created_at,
+               s.series_id, s.name, s.poster_path, s.rating,
+               ur.score as user_score
+        FROM user_series_reviews r
+        JOIN series s ON r.series_id = s.series_id
+        LEFT JOIN user_ratings ur ON ur.series_id = s.series_id AND ur.user_id = r.user_id
+        WHERE r.user_id = %s
+        ORDER BY r.created_at DESC
+    """, (user["user_id"],))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+@app.get("/profile/liked-series")
+def get_liked_series(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT s.series_id, s.name, s.poster_path, s.rating, s.genres,
+               usa.created_at as liked_at,
+               ur.score as user_score
+        FROM user_series_activity usa
+        JOIN series s ON usa.series_id = s.series_id
+        LEFT JOIN user_ratings ur ON ur.series_id = s.series_id AND ur.user_id = usa.user_id
+        WHERE usa.user_id = %s AND usa.activity_type = 'liked'
+        ORDER BY usa.created_at DESC
+    """, (user["user_id"],))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+@app.get("/profile/lists-detail")
+def get_lists_detail(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT ul.list_id, ul.name as list_name, ul.created_at,
+               COUNT(li.series_id) as item_count
+        FROM user_lists ul
+        LEFT JOIN list_items li ON ul.list_id = li.list_id
+        WHERE ul.user_id = %s
+        GROUP BY ul.list_id, ul.name, ul.created_at
+        ORDER BY ul.created_at DESC
+    """, (user["user_id"],))
+    lists = cur.fetchall()
+    # Get preview posters for each list (max 5)
+    for lst in lists:
+        cur.execute("""
+            SELECT s.series_id, s.name, s.poster_path
+            FROM list_items li
+            JOIN series s ON li.series_id = s.series_id
+            WHERE li.list_id = %s
+            LIMIT 5
+        """, (lst["list_id"],))
+        lst["items"] = cur.fetchall()
+    cur.close()
+    conn.close()
+    return lists
+
+@app.get("/profile/ratings-distribution")
+def get_ratings_distribution(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT score, COUNT(*) as count
+        FROM user_ratings
+        WHERE user_id = %s AND score IS NOT NULL
+        GROUP BY score
+        ORDER BY score
+    """, (user["user_id"],))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    distribution = {i: 0 for i in range(1, 11)}
+    total = 0
+    for row in rows:
+        distribution[row["score"]] = row["count"]
+        total += row["count"]
+    return {"distribution": distribution, "total": total}
 
 # ============================================================
 # --- BÖLÜM PUANLAMA ---

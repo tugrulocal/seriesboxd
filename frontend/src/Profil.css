@@ -1,36 +1,41 @@
-/* Profil Sayfası Genel Yapısı */
+/* ========== Profil Sayfası (Letterboxd Style) ========== */
 .profil-page {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 40px 20px 80px;
+    padding: 30px 20px 80px;
     color: #f1f5f9;
     animation: fadeIn 0.4s ease-out;
 }
 
-/* --- PROFİL HERO (LETTERBOXD STYLE) --- */
+/* --- HERO --- */
 .profil-hero {
     display: flex;
     align-items: center;
-    gap: 20px;
-    background: transparent;
-    border-bottom: 1px solid #334155;
-    padding: 20px 0;
-    margin-bottom: 40px;
+    justify-content: space-between;
+    border-bottom: 1px solid #2d3a4a;
+    padding: 20px 0 25px;
+    margin-bottom: 30px;
+}
+
+.profil-hero-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
 }
 
 .profil-avatar-large {
-    width: 100px;
-    height: 100px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
-    background: #334155;
+    background: #2d3a4a;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     font-weight: bold;
-    color: #a78bfa;
-    border: 2px solid #6366f1;
+    color: #9ab;
+    border: 2px solid #456;
     flex-shrink: 0;
     object-fit: cover;
 }
@@ -38,42 +43,33 @@
 .profil-hero-info {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 8px;
-    flex: 1;
-}
-
-.profil-header-top {
-    display: flex;
-    align-items: baseline;
-    gap: 15px;
+    gap: 2px;
 }
 
 .profil-username {
-    font-size: 2rem;
+    font-size: 1.6rem;
     margin: 0;
     color: #fff;
     font-weight: 700;
+    letter-spacing: 0.5px;
 }
 
 .profil-join-date {
-    font-size: 0.85rem;
-    color: #64748b;
+    font-size: 0.8rem;
+    color: #678;
 }
 
 .profil-bio {
-    color: #cbd5e1;
-    font-size: 0.95rem;
+    color: #9ab;
+    font-size: 0.9rem;
     line-height: 1.4;
-    max-width: 600px;
-    margin: 5px 0 0 0;
+    margin: 4px 0 0 0;
+    max-width: 400px;
 }
 
-/* --- STATS IN HEADER --- */
-.profil-stats-row {
+.profil-hero-stats {
     display: flex;
     gap: 30px;
-    margin-top: 15px;
 }
 
 .stat-item {
@@ -83,276 +79,632 @@
 }
 
 .stat-value {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: 700;
     color: #fff;
     line-height: 1.2;
 }
 
 .stat-label {
-    font-size: 0.75rem;
-    color: #94a3b8;
+    font-size: 0.7rem;
+    color: #678;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
 }
 
-
-/* --- İÇERİK BÖLÜMÜ (SOL / SAĞ) --- */
+/* --- MAIN CONTENT --- */
 .profil-main-content {
     display: grid;
-    grid-template-columns: 1fr 300px;
+    grid-template-columns: 1fr 280px;
     gap: 40px;
 }
 
-/* Sütun Başlıkları */
-.section-title {
-    font-size: 1.3rem;
-    color: #f8fafc;
-    border-bottom: 2px solid #334155;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+.profil-left {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: 35px;
+}
+
+/* --- SECTION TITLES (Letterboxd style) --- */
+.section-title-lb {
+    font-size: 0.8rem;
+    color: #678;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    border-bottom: 1px solid #2d3a4a;
+    padding-bottom: 8px;
+    margin: 0 0 15px 0;
+}
+
+/* --- FAVORILER (5'li poster row) --- */
+.fav-row {
+    display: flex;
     gap: 8px;
 }
 
-.section-title svg {
-    color: #a78bfa;
-}
-
-/* RECENT ACTIVITY (DIARY) LETTERBOXD STYLE */
-.activity-list {
-    display: flex;
-    flex-direction: column;
-}
-
-.activity-item {
-    display: flex;
-    gap: 15px;
-    padding: 15px 0;
-    border-bottom: 1px solid #1e293b;
-    align-items: flex-start;
-}
-
-.activity-item:last-child {
-    border-bottom: none;
-}
-
-.activity-item:hover {
-    background: rgba(255, 255, 255, 0.02);
-}
-
-.act-poster {
-    width: 50px;
-    height: 75px;
-    border-radius: 4px;
-    object-fit: cover;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.act-details {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+.fav-slot {
     flex: 1;
-}
-
-.act-series-name {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #fff;
-    margin: 0 0 2px 0;
-    font-family: 'Georgia', serif;
-    /* Letterboxd title feel */
-}
-
-.act-ep-info {
-    font-size: 0.85rem;
-    color: #94a3b8;
-    margin: 0 0 6px 0;
-}
-
-.act-review-text {
-    font-size: 0.9rem;
-    color: #cbd5e1;
-    font-style: italic;
-    background: #1e293b;
-    padding: 10px;
-    border-left: 3px solid #6366f1;
-    border-radius: 4px;
-    margin-bottom: 6px;
-}
-
-.act-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.75rem;
-    color: #64748b;
-}
-
-.act-bag {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-weight: 600;
-}
-
-.act-watched {
-    color: #10b981;
-}
-
-.act-watchlist {
-    color: #38bdf8;
-}
-
-.act-liked {
-    color: #ef4444;
-}
-
-.act-rated {
-    color: #f59e0b;
-}
-
-.act-reviewed {
-    color: #a78bfa;
-}
-
-/* SAĞ PANEL (Sidebar) */
-.profil-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-}
-
-/* Favori Türler */
-.favorite-genres {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.genre-pill {
-    background: rgba(167, 139, 250, 0.15);
-    color: #c4b5fd;
-    border: 1px solid rgba(167, 139, 250, 0.3);
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-/* Favori Diziler */
-.favorite-series-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-}
-
-.fav-card {
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #334155;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.fav-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
-    border-color: #a78bfa;
-}
-
-.fav-poster {
-    width: 100%;
     aspect-ratio: 2 / 3;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #2d3a4a;
+    transition: border-color 0.2s, transform 0.2s;
+}
+
+.fav-slot.filled:hover {
+    border-color: #00e054;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.fav-slot.empty {
+    background: #1a2332;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.fav-slot.empty:hover {
+    border-color: #456;
+    background: #1e2a3a;
+}
+
+.fav-plus-icon {
+    color: #3a4a5a;
+    stroke-width: 1.5;
+}
+
+.fav-slot.empty:hover .fav-plus-icon {
+    color: #678;
+}
+
+.fav-slot.filled {
+    position: relative;
+    cursor: pointer;
+}
+
+.fav-remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.fav-slot.filled:hover .fav-remove-btn {
+    opacity: 1;
+}
+
+.fav-remove-btn:hover {
+    background: rgba(239, 68, 68, 0.8);
+}
+
+.fav-slot img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
     display: block;
 }
 
-.fav-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
-    padding: 20px 10px 10px;
-}
-
-.fav-rating {
-    color: #f59e0b;
-    font-size: 0.8rem;
-    font-weight: bold;
+/* --- GENRE PILLS --- */
+.genre-pills {
     display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-/* Mini Bar Chart */
-.chart-container {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    height: 120px;
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 12px;
-    padding: 15px 20px;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
-.chart-bar-group {
+.genre-pill {
+    background: rgba(100, 120, 140, 0.2);
+    color: #9ab;
+    border: 1px solid #2d3a4a;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+/* --- SIDEBAR --- */
+.profil-sidebar {
     display: flex;
     flex-direction: column;
+    gap: 25px;
+}
+
+.sidebar-block {
+    background: transparent;
+}
+
+.sidebar-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #2d3a4a;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+}
+
+.sidebar-block-header.clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.sidebar-block-header.clickable:hover .sidebar-title {
+    color: #00e054;
+}
+
+.sidebar-title {
+    font-size: 0.75rem;
+    color: #678;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    margin: 0;
+    transition: color 0.2s;
+}
+
+.sidebar-count {
+    font-size: 0.75rem;
+    color: #678;
+}
+
+.sidebar-empty {
+    color: #456;
+    font-size: 0.82rem;
+    margin: 0;
+}
+
+/* WATCHLIST POSTER ROW */
+.sidebar-poster-row {
+    display: flex;
+    gap: 5px;
+}
+
+.sidebar-poster-link {
+    flex: 1;
+    aspect-ratio: 2 / 3;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid #2d3a4a;
+    transition: border-color 0.2s;
+}
+
+.sidebar-poster-link:hover {
+    border-color: #38bdf8;
+}
+
+.sidebar-poster {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* --- RATINGS HISTOGRAM --- */
+.ratings-histogram {
+    background: #141d29;
+    border: 1px solid #2d3a4a;
+    border-radius: 6px;
+    padding: 12px 15px 8px;
+}
+
+.histogram-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 60px;
+}
+
+.histogram-bar-group {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+}
+
+.histogram-bar {
+    width: 100%;
+    background: #456;
+    border-radius: 2px 2px 0 0;
+    min-height: 2px;
+    transition: background 0.2s;
+}
+
+.histogram-bar-group:hover .histogram-bar {
+    background: #00e054;
+}
+
+.histogram-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 0.7rem;
+    color: #678;
+}
+
+.histogram-star {
+    color: #00e054;
+}
+
+.histogram-stars {
+    color: #00e054;
+}
+
+/* --- SON HAREKETLER (Compact Activity) --- */
+.activity-compact-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 120px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.activity-compact-list.expanded {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.activity-compact-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    font-size: 0.82rem;
+    border-bottom: 1px solid rgba(45, 58, 74, 0.5);
+}
+
+.activity-compact-item:last-child {
+    border-bottom: none;
+}
+
+.act-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #456;
+    flex-shrink: 0;
+}
+
+.act-compact-text {
+    flex: 1;
+    color: #9ab;
+    line-height: 1.3;
+}
+
+.act-link {
+    color: #00e054;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.act-link:hover {
+    color: #40ff7f;
+}
+
+.act-time {
+    color: #456;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* --- ANIMATIONS --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- PROFILE TABS --- */
+.profil-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #2d3a4a;
+    margin-bottom: 30px;
+}
+
+.profil-tab {
+    display: flex;
     align-items: center;
     gap: 6px;
-    flex: 1;
-}
-
-.chart-bar {
-    width: 100%;
-    max-width: 24px;
-    background: rgba(167, 139, 250, 0.8);
-    border-radius: 4px 4px 0 0;
-    min-height: 4px;
-    transition: height 0.3s ease, background 0.2s;
-}
-
-.chart-bar:hover {
-    background: #a78bfa;
-}
-
-.chart-label {
-    font-size: 0.7rem;
-    color: #64748b;
+    background: none;
+    border: none;
+    color: #678;
+    font-size: 0.85rem;
+    font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px 18px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    font-family: inherit;
+    text-decoration: none;
 }
 
-.chart-tooltip {
-    font-size: 0.75rem;
-    color: #fff;
+.profil-tab:hover {
+    color: #9ab;
+}
+
+.profil-tab.active {
+    color: #00e054;
+    border-bottom-color: #00e054;
+}
+
+/* --- TAB CONTENT --- */
+.tab-content {
+    margin-bottom: 35px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.tab-loading {
+    text-align: center;
+    color: #456;
+    padding: 40px;
+    font-size: 0.9rem;
+}
+
+.tab-empty {
+    text-align: center;
+    color: #456;
+    padding: 40px;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Tab Filters (Diziler) */
+.tab-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.tab-filters select {
+    background: #141d29;
+    color: #9ab;
+    border: 1px solid #2d3a4a;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 160px;
+}
+
+.tab-filters select:hover,
+.tab-filters select:focus {
+    border-color: #456;
+}
+
+/* Poster Grid (Diziler & Beğendiklerim) */
+.tab-poster-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+}
+
+.tab-poster-card {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #2d3a4a;
+    aspect-ratio: 2 / 3;
+    transition: border-color 0.2s, transform 0.2s;
+    text-decoration: none;
+}
+
+.tab-poster-card:hover {
+    border-color: #00e054;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.tab-poster-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.tab-poster-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+    padding: 20px 8px 8px;
     opacity: 0;
     transition: opacity 0.2s;
-    margin-bottom: 2px;
 }
 
-.chart-bar-group:hover .chart-tooltip {
+.tab-poster-card:hover .tab-poster-overlay {
     opacity: 1;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.tab-poster-name {
+    display: block;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.2;
 }
 
+.tab-poster-score {
+    color: #f59e0b;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+/* Reviews List (İncelemelerim) */
+.tab-reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.tab-review-card {
+    display: flex;
+    gap: 16px;
+    background: #141d29;
+    border: 1px solid #2d3a4a;
+    border-radius: 6px;
+    padding: 16px;
+    transition: border-color 0.2s;
+}
+
+.tab-review-card:hover {
+    border-color: #3a4a5a;
+}
+
+.tab-review-poster-link {
+    flex-shrink: 0;
+}
+
+.tab-review-poster {
+    width: 60px;
+    height: 90px;
+    border-radius: 4px;
+    object-fit: cover;
+    border: 1px solid #2d3a4a;
+}
+
+.tab-review-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.tab-review-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tab-review-title {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+}
+
+.tab-review-title:hover {
+    color: #00e054;
+}
+
+.tab-review-score {
+    color: #f59e0b;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.tab-review-text {
+    color: #9ab;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.spoiler-tag {
+    display: inline-block;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 6px;
+}
+
+.tab-review-date {
+    color: #456;
+    font-size: 0.75rem;
+}
+
+/* Lists Grid (Listelerim) */
+.tab-lists-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.tab-list-card {
+    background: #141d29;
+    border: 1px solid #2d3a4a;
+    border-radius: 6px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.tab-list-card:hover {
+    border-color: #3a4a5a;
+}
+
+.tab-list-posters {
+    display: flex;
+    height: 100px;
+    overflow: hidden;
+}
+
+.tab-list-poster {
+    flex: 1;
+    object-fit: cover;
+    min-width: 0;
+    border-right: 1px solid #1a2332;
+}
+
+.tab-list-poster:last-child {
+    border-right: none;
+}
+
+.tab-list-empty-poster {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a2332;
+    color: #3a4a5a;
+}
+
+.tab-list-info {
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tab-list-name {
+    margin: 0;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.tab-list-count {
+    color: #678;
+    font-size: 0.78rem;
+}
+
+/* --- RESPONSIVE --- */
 @media (max-width: 900px) {
     .profil-main-content {
         grid-template-columns: 1fr;
@@ -363,5 +715,148 @@
     .profil-hero {
         flex-direction: column;
         text-align: center;
+        gap: 15px;
     }
+    .profil-hero-left {
+        flex-direction: column;
+    }
+    .profil-hero-stats {
+        justify-content: center;
+    }
+}
+
+/* --- FAVORİ DİZİ ARAMA MODALI --- */
+.fav-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.fav-modal {
+    background: #1a2332;
+    border: 1px solid #2d3a4a;
+    border-radius: 10px;
+    width: 420px;
+    max-width: 90vw;
+    max-height: 500px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.fav-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #2d3a4a;
+}
+
+.fav-modal-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #fff;
+    font-weight: 600;
+}
+
+.fav-modal-close {
+    background: none;
+    border: none;
+    color: #678;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.fav-modal-close:hover {
+    color: #fff;
+}
+
+.fav-modal-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-bottom: 1px solid #2d3a4a;
+}
+
+.fav-search-icon {
+    color: #456;
+    flex-shrink: 0;
+}
+
+.fav-modal-search input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.fav-modal-search input::placeholder {
+    color: #456;
+}
+
+.fav-modal-results {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.fav-modal-info {
+    color: #456;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+}
+
+.fav-modal-result {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.fav-modal-result:hover {
+    background: rgba(0, 224, 84, 0.08);
+}
+
+.fav-modal-poster {
+    width: 36px;
+    height: 54px;
+    border-radius: 3px;
+    object-fit: cover;
+    border: 1px solid #2d3a4a;
+    flex-shrink: 0;
+}
+
+.fav-modal-result-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fav-modal-name {
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.fav-modal-rating {
+    color: #f59e0b;
+    font-size: 0.78rem;
 }

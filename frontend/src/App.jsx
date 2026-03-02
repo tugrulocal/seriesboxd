@@ -7,6 +7,7 @@ import Login from './Login'
 import Home from './Home'
 import Profil from './Profil'
 import Listelerim from './Listelerim'
+import Dizilerim from './Dizilerim'
 import { AuthProvider } from './AuthContext'
 import './App.css'
 
@@ -147,6 +148,7 @@ function AppIcerik() {
         <Route path="/top50" element={<Top50 />} />
         <Route path="/profil" element={<Profil />} />
         <Route path="/listelerim" element={<Listelerim />} />
+        <Route path="/dizilerim" element={<Dizilerim />} />
       </Routes>
     </div>
   )
