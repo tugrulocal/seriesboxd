@@ -8,45 +8,29 @@
     animation: fadeIn 0.4s ease-out;
 }
 
-/* --- PROFİL HERO --- */
+/* --- PROFİL HERO (LETTERBOXD STYLE) --- */
 .profil-hero {
     display: flex;
     align-items: center;
-    gap: 30px;
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border: 1px solid #334155;
-    border-radius: 16px;
-    padding: 40px;
+    gap: 20px;
+    background: transparent;
+    border-bottom: 1px solid #334155;
+    padding: 20px 0;
     margin-bottom: 40px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    position: relative;
-    overflow: hidden;
-}
-
-.profil-hero::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, rgba(167, 139, 250, 0.15) 0%, transparent 70%);
-    transform: translate(30%, -30%);
 }
 
 .profil-avatar-large {
-    width: 120px;
-    height: 120px;
-    border-radius: 60px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
     background: #334155;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: bold;
     color: #a78bfa;
-    /* Lavanta rengi */
-    border: 3px solid #6366f1;
+    border: 2px solid #6366f1;
     flex-shrink: 0;
     object-fit: cover;
 }
@@ -54,77 +38,64 @@
 .profil-hero-info {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    justify-content: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.profil-header-top {
+    display: flex;
+    align-items: baseline;
+    gap: 15px;
 }
 
 .profil-username {
-    font-size: 2.2rem;
+    font-size: 2rem;
     margin: 0;
     color: #fff;
-    letter-spacing: -0.5px;
+    font-weight: 700;
 }
 
 .profil-join-date {
-    font-size: 0.9rem;
-    color: #94a3b8;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    font-size: 0.85rem;
+    color: #64748b;
 }
 
 .profil-bio {
     color: #cbd5e1;
-    font-size: 1rem;
-    line-height: 1.5;
+    font-size: 0.95rem;
+    line-height: 1.4;
     max-width: 600px;
-    margin: 0;
+    margin: 5px 0 0 0;
 }
 
-/* --- STATS GRID --- */
-.profil-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
-    margin-bottom: 40px;
+/* --- STATS IN HEADER --- */
+.profil-stats-row {
+    display: flex;
+    gap: 30px;
+    margin-top: 15px;
 }
 
-.stat-card {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 12px;
-    padding: 24px;
+.stat-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    text-align: center;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
-    border-color: #4f46e5;
-}
-
-.stat-icon {
-    color: #a78bfa;
-    margin-bottom: 12px;
 }
 
 .stat-value {
-    font-size: 2rem;
-    font-weight: 800;
+    font-size: 1.5rem;
+    font-weight: 700;
     color: #fff;
-    margin-bottom: 4px;
+    line-height: 1.2;
 }
 
 .stat-label {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
 }
+
 
 /* --- İÇERİK BÖLÜMÜ (SOL / SAĞ) --- */
 .profil-main-content {
@@ -149,33 +120,35 @@
     color: #a78bfa;
 }
 
-/* RECENT ACTIVITY */
+/* RECENT ACTIVITY (DIARY) LETTERBOXD STYLE */
 .activity-list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
 }
 
 .activity-item {
     display: flex;
     gap: 15px;
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 10px;
-    padding: 15px;
-    transition: background 0.2s;
+    padding: 15px 0;
+    border-bottom: 1px solid #1e293b;
+    align-items: flex-start;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
 }
 
 .activity-item:hover {
-    background: #1e293b;
-    border-color: #475569;
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .act-poster {
-    width: 60px;
-    height: 90px;
-    border-radius: 6px;
+    width: 50px;
+    height: 75px;
+    border-radius: 4px;
     object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .act-details {
@@ -187,38 +160,63 @@
 
 .act-series-name {
     font-size: 1.1rem;
-    font-weight: 600;
-    color: #f8fafc;
-    margin: 0 0 4px 0;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 2px 0;
+    font-family: 'Georgia', serif;
+    /* Letterboxd title feel */
 }
 
 .act-ep-info {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin: 0 0 6px 0;
+}
+
+.act-review-text {
     font-size: 0.9rem;
     color: #cbd5e1;
-    margin: 0 0 8px 0;
+    font-style: italic;
+    background: #1e293b;
+    padding: 10px;
+    border-left: 3px solid #6366f1;
+    border-radius: 4px;
+    margin-bottom: 6px;
 }
 
 .act-meta {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 0.8rem;
-    color: #94a3b8;
+    font-size: 0.75rem;
+    color: #64748b;
 }
 
 .act-bag {
     display: flex;
     align-items: center;
     gap: 4px;
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
-    padding: 4px 8px;
-    border-radius: 4px;
+    font-weight: 600;
 }
 
-.act-bag.watchlist {
-    background: rgba(56, 189, 248, 0.1);
+.act-watched {
+    color: #10b981;
+}
+
+.act-watchlist {
     color: #38bdf8;
+}
+
+.act-liked {
+    color: #ef4444;
+}
+
+.act-rated {
+    color: #f59e0b;
+}
+
+.act-reviewed {
+    color: #a78bfa;
 }
 
 /* SAĞ PANEL (Sidebar) */

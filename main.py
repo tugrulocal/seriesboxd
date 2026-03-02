@@ -272,20 +272,26 @@ def dizi_detay_getir(series_id: int):
 # --- LİSTE YÖNETİMİ ---
 
 @app.get("/lists")
-def get_lists():
+def get_lists(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute("SELECT * FROM user_lists ORDER BY list_id")
+    cur.execute("SELECT * FROM user_lists WHERE user_id = %s ORDER BY list_id", (user["user_id"],))
     lists = cur.fetchall()
     cur.close()
     conn.close()
     return lists
 
 @app.post("/lists")
-def create_list(liste: ListeEkleModel):
+def create_list(liste: ListeEkleModel, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor()
-    cur.execute("INSERT INTO user_lists (name, user_id) VALUES (%s, 1) RETURNING list_id, name", (liste.name,))
+    cur.execute("INSERT INTO user_lists (name, user_id) VALUES (%s, %s) RETURNING list_id, name", (liste.name, user["user_id"]))
     new_list = cur.fetchone()
     conn.commit()
     cur.close()
@@ -293,17 +299,23 @@ def create_list(liste: ListeEkleModel):
     return {"list_id": new_list[0], "name": new_list[1]}
 
 @app.get("/lists/check/{series_id}")
-def check_series_in_lists(series_id: int):
+def check_series_in_lists(series_id: int, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor()
-    cur.execute("SELECT list_id FROM list_items WHERE series_id = %s", (series_id,))
+    cur.execute("SELECT li.list_id FROM list_items li JOIN user_lists ul ON li.list_id = ul.list_id WHERE li.series_id = %s AND ul.user_id = %s", (series_id, user["user_id"]))
     rows = cur.fetchall()
     cur.close()
     conn.close()
     return [row[0] for row in rows]
 
 @app.post("/lists/{list_id}/items")
-def add_item_to_list(list_id: int, item: ListeItemModel):
+def add_item_to_list(list_id: int, item: ListeItemModel, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor()
     try:
@@ -317,7 +329,10 @@ def add_item_to_list(list_id: int, item: ListeItemModel):
     return {"status": "added"}
 
 @app.delete("/lists/{list_id}/items/{series_id}")
-def remove_item_from_list(list_id: int, series_id: int):
+def remove_item_from_list(list_id: int, series_id: int, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor()
     cur.execute("DELETE FROM list_items WHERE list_id = %s AND series_id = %s", (list_id, series_id))
@@ -329,12 +344,15 @@ def remove_item_from_list(list_id: int, series_id: int):
 # --- AKTİVİTE (İZLENDİ / İZLEYECEĞİM) SİSTEMİ ---
 
 @app.get("/activity/{series_id}")
-def get_activity(series_id: int):
+def get_activity(series_id: int, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute(
-        "SELECT episode_id, season_id, activity_type FROM user_activity WHERE user_id = 1 AND series_id = %s",
-        (series_id,)
+        "SELECT episode_id, season_id, activity_type FROM user_activity WHERE user_id = %s AND series_id = %s",
+        (user["user_id"], series_id)
     )
     rows = cur.fetchall()
     cur.close()
@@ -342,17 +360,20 @@ def get_activity(series_id: int):
     return rows
 
 @app.post("/activity")
-def set_activity(activity: ActivityModel):
+def set_activity(activity: ActivityModel, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor()
     try:
         cur.execute(
             """
             INSERT INTO user_activity (user_id, series_id, season_id, episode_id, activity_type)
-            VALUES (1, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s)
             ON CONFLICT (user_id, episode_id, activity_type) DO NOTHING
             """,
-            (activity.series_id, activity.season_id, activity.episode_id, activity.activity_type)
+            (user["user_id"], activity.series_id, activity.season_id, activity.episode_id, activity.activity_type)
         )
         conn.commit()
     except Exception as e:
@@ -363,12 +384,15 @@ def set_activity(activity: ActivityModel):
     return {"status": "ok"}
 
 @app.delete("/activity/{episode_id}/{activity_type}")
-def delete_activity(episode_id: int, activity_type: str):
+def delete_activity(episode_id: int, activity_type: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor()
     cur.execute(
-        "DELETE FROM user_activity WHERE user_id = 1 AND episode_id = %s AND activity_type = %s",
-        (episode_id, activity_type)
+        "DELETE FROM user_activity WHERE user_id = %s AND episode_id = %s AND activity_type = %s",
+        (user["user_id"], episode_id, activity_type)
     )
     conn.commit()
     cur.close()
@@ -392,14 +416,17 @@ def get_user_rating(series_id: int, credentials: HTTPAuthorizationCredentials = 
     return {"score": row[0] if row else None}
 
 @app.post("/rating")
-def set_user_rating(rating: RatingModel):
+def set_user_rating(rating: RatingModel, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor()
     try:
         cur.execute("""
-            INSERT INTO user_ratings (user_id, series_id, score) VALUES (1, %s, %s)
+            INSERT INTO user_ratings (user_id, series_id, score) VALUES (%s, %s, %s)
             ON CONFLICT (user_id, series_id) DO UPDATE SET score = EXCLUDED.score
-        """, (rating.series_id, rating.score))
+        """, (user["user_id"], rating.series_id, rating.score))
         conn.commit()
     except Exception as e:
         conn.rollback()
@@ -510,13 +537,16 @@ def get_reviews(series_id: int):
     return rows
 
 @app.post("/reviews")
-def create_review(review: ReviewModel):
+def create_review(review: ReviewModel, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor()
     cur.execute(
         """INSERT INTO user_series_reviews (user_id, series_id, review_text, contains_spoiler)
-           VALUES (1, %s, %s, %s) RETURNING review_id""",
-        (review.series_id, review.review_text, review.contains_spoiler)
+           VALUES (%s, %s, %s, %s) RETURNING review_id""",
+        (user["user_id"], review.series_id, review.review_text, review.contains_spoiler)
     )
     review_id = cur.fetchone()[0]
     conn.commit()
@@ -696,16 +726,60 @@ def get_recent_activity(credentials: HTTPAuthorizationCredentials = Depends(secu
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("""
-        SELECT ua.activity_id, ua.activity_type, ua.created_at, 
-               s.name as series_name, s.series_id, s.poster_path,
-               e.season_id, e.episode_number, e.name as episode_name
-        FROM user_activity ua
-        JOIN series s ON ua.series_id = s.series_id
-        JOIN episodes e ON ua.episode_id = e.episode_id
-        WHERE ua.user_id = %s
-        ORDER BY ua.created_at DESC
+        (
+            SELECT ua.activity_id, ua.activity_type, ua.created_at, 
+                   s.name as series_name, s.series_id, s.poster_path,
+                   e.season_id, e.episode_number, e.name as episode_name,
+                   NULL::int as score, NULL::varchar as review_text
+            FROM user_activity ua
+            JOIN series s ON ua.series_id = s.series_id
+            JOIN episodes e ON ua.episode_id = e.episode_id
+            WHERE ua.user_id = %(uid)s
+        )
+        UNION ALL
+        (
+            SELECT usa.id as activity_id, usa.activity_type, usa.created_at, 
+                   s.name as series_name, s.series_id, s.poster_path,
+                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as score, NULL::varchar as review_text
+            FROM user_series_activity usa
+            JOIN series s ON usa.series_id = s.series_id
+            WHERE usa.user_id = %(uid)s
+        )
+        UNION ALL
+        (
+            SELECT ur.rating_id as activity_id, 'series_rated' as activity_type, ur.created_at,
+                   s.name as series_name, s.series_id, s.poster_path,
+                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   ur.score as score, NULL::varchar as review_text
+            FROM user_ratings ur
+            JOIN series s ON ur.series_id = s.series_id
+            WHERE ur.user_id = %(uid)s
+        )
+        UNION ALL
+        (
+            SELECT uer.id as activity_id, 'episode_rated' as activity_type, uer.created_at,
+                   s.name as series_name, e.series_id, s.poster_path,
+                   e.season_id as season_id, e.episode_number as episode_number, e.name as episode_name,
+                   uer.score as score, NULL::varchar as review_text
+            FROM user_episode_ratings uer
+            JOIN episodes e ON uer.episode_id = e.episode_id
+            JOIN series s ON e.series_id = s.series_id
+            WHERE uer.user_id = %(uid)s
+        )
+        UNION ALL
+        (
+            SELECT usr.review_id as activity_id, 'series_reviewed' as activity_type, usr.created_at,
+                   s.name as series_name, s.series_id, s.poster_path,
+                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as score, usr.review_text as review_text
+            FROM user_series_reviews usr
+            JOIN series s ON usr.series_id = s.series_id
+            WHERE usr.user_id = %(uid)s
+        )
+        ORDER BY created_at DESC
         LIMIT 15
-    """, (user["user_id"],))
+    """, {"uid": user["user_id"]})
     rows = cur.fetchall()
     cur.close()
     conn.close()
@@ -724,6 +798,27 @@ def get_favorite_series(credentials: HTTPAuthorizationCredentials = Depends(secu
         FROM user_series_activity usa
         JOIN series s ON usa.series_id = s.series_id
         WHERE usa.user_id = %s AND usa.activity_type = 'liked'
+        ORDER BY usa.created_at DESC
+        LIMIT 4
+    """, (user["user_id"],))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+@app.get("/profile/watchlist_preview")
+def get_watchlist_preview(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT s.series_id, s.name, s.poster_path, s.rating 
+        FROM user_series_activity usa
+        JOIN series s ON usa.series_id = s.series_id
+        WHERE usa.user_id = %s AND usa.activity_type = 'watchlist'
         ORDER BY usa.created_at DESC
         LIMIT 4
     """, (user["user_id"],))

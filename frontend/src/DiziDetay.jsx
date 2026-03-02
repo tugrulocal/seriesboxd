@@ -79,7 +79,8 @@ function DiziDetay() {
   // --- SEZON / BÖLÜM İZLEME ---
   const sezonIzleToggle = (seasonId) => {
     const token = localStorage.getItem('sb_token');
-    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
     const yeniDurum = !izlenenSezonlar[seasonId];
@@ -96,7 +97,8 @@ function DiziDetay() {
 
   const sezonIzlenecekToggle = (seasonId) => {
     const token = localStorage.getItem('sb_token');
-    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
     const yeniDurum = !izlenecekSezonlar[seasonId];
@@ -115,7 +117,8 @@ function DiziDetay() {
 
   const bolumIzleToggle = (bolum) => {
     const token = localStorage.getItem('sb_token');
-    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
     const yeniDurum = !izlenenBolumler[bolum.episode_id];
@@ -136,7 +139,8 @@ function DiziDetay() {
 
   const bolumIzlenecekToggle = (bolum) => {
     const token = localStorage.getItem('sb_token');
-    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
     const yeniDurum = !izlenecekBolumler[bolum.episode_id];
@@ -148,7 +152,8 @@ function DiziDetay() {
   // --- ACTIVITY ---
   const seriesActivityToggle = (type, aktif, setAktif) => {
     const token = localStorage.getItem('sb_token');
-    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
     setAktif(!aktif);
@@ -159,7 +164,8 @@ function DiziDetay() {
   // --- LİSTE ---
   const listeToggle = (listId) => {
     const token = localStorage.getItem('sb_token');
-    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
     if (dizininListeleri.includes(listId)) {
@@ -170,6 +176,7 @@ function DiziDetay() {
   };
   const yeniListeOlustur = () => {
     const token = localStorage.getItem('sb_token');
+    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
     const jsonHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
     if (!yeniListeAdi.trim()) return;
     fetch('http://127.0.0.1:8000/lists', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ name: yeniListeAdi }) })
@@ -186,25 +193,33 @@ function DiziDetay() {
   };
 
   const puanVer = (puan) => {
+    const token = localStorage.getItem('sb_token');
+    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
     setKullaniciPuani(puan);
-    fetch('http://127.0.0.1:8000/rating', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, score: puan }) });
+    fetch('http://127.0.0.1:8000/rating', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, score: puan }) });
   };
   const puanSil = () => {
+    const token = localStorage.getItem('sb_token');
+    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
     setKullaniciPuani(null);
-    fetch(`http://127.0.0.1:8000/rating/${dizi.series_id}`, { method: 'DELETE' });
+    fetch(`http://127.0.0.1:8000/rating/${dizi.series_id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
   };
 
   const bolumPuanVer = (episodeId, puan) => {
+    const token = localStorage.getItem('sb_token');
+    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const authHeaders = { 'Authorization': `Bearer ${token}` };
+    const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
     if (bolumPuanlari[episodeId] === puan) {
       setBolumPuanlari(prev => { const s = { ...prev }; delete s[episodeId]; return s; });
-      fetch(`http://127.0.0.1:8000/episode-rating/${episodeId}`, { method: 'DELETE' });
+      fetch(`http://127.0.0.1:8000/episode-rating/${episodeId}`, { method: 'DELETE', headers: authHeaders });
     } else {
       setBolumPuanlari(prev => ({ ...prev, [episodeId]: puan }));
-      fetch('http://127.0.0.1:8000/episode-rating', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ episode_id: episodeId, score: puan }) });
+      fetch('http://127.0.0.1:8000/episode-rating', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ episode_id: episodeId, score: puan }) });
     }
   };
 
-  if (yukleniyor) return <div style={{ color: 'white', textAlign: 'center', marginTop: '80px', fontSize: '1.2rem' }}>Yükleniyor...</div>;
+  if (yukleniyor) return null;
   if (!dizi) return <div style={{ color: 'red', textAlign: 'center', marginTop: '80px' }}>Dizi bulunamadı!</div>;
 
   const arkaplanResmi = dizi.backdrop_path ? `https://image.tmdb.org/t/p/original${dizi.backdrop_path}` : `https://image.tmdb.org/t/p/original${dizi.poster_path}`;
@@ -446,9 +461,11 @@ function DiziDetay() {
             </label>
             <button className="review-gonder-btn" disabled={!reviewText.trim() || reviewGonderiliyor}
               onClick={async () => {
+                const token = localStorage.getItem('sb_token');
+                if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
                 setReviewGonderiliyor(true);
                 try {
-                  await fetch('http://127.0.0.1:8000/reviews', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, review_text: reviewText, contains_spoiler: spoilerVar }) });
+                  await fetch('http://127.0.0.1:8000/reviews', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, review_text: reviewText, contains_spoiler: spoilerVar }) });
                   const r = await fetch(`http://127.0.0.1:8000/reviews/${dizi.series_id}`);
                   const d = await r.json();
                   if (Array.isArray(d)) setReviews(d);

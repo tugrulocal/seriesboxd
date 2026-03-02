@@ -173,7 +173,7 @@ function Home({ tumDiziler }) {
 
     const handlePosterClick = (dizi) => navigate(`/dizi/${dizi.series_id}`);
 
-    if (!featured) return <div style={{ color: 'white', textAlign: 'center', marginTop: '80px', fontSize: '1.2rem' }}>Yükleniyor...</div>;
+    if (!featured) return null;
 
     // === VERİ SETLERİ ===
     const topRated = tumDiziler.slice(0, 30);

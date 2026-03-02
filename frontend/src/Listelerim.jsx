@@ -36,9 +36,7 @@ function Listelerim() {
                 📋 Benim Listelerim
             </h2>
 
-            {loading ? (
-                <p>Yükleniyor...</p>
-            ) : listeler.length > 0 ? (
+            {loading ? null : listeler.length > 0 ? (
                 <div className="profil-stats-grid">
                     {listeler.map(liste => (
                         <div key={liste.list_id} className="stat-card" style={{ alignItems: 'flex-start', textAlign: 'left' }}>
