@@ -3133,3 +3133,25 @@ h1.detay-baslik {
   padding-bottom: 12px;
   border-bottom: 2px solid #1e293b;
 }
+
+/* =========================================
+   PLATFORM LOGOLARI (Genre satırında inline)
+========================================= */
+.dv2-provider-logo-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.dv2-provider-logo-link:hover {
+  transform: translateY(-2px);
+  opacity: 0.85;
+}
+
+.dv2-provider-logo {
+  height: 26px;
+  width: 26px;
+  border-radius: 6px;
+  object-fit: cover;
+}

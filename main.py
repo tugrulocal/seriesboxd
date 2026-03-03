@@ -9,6 +9,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import re
+import requests as http_requests
 
 # --- AUTH AYARLARI ---
 SECRET_KEY = "seriesboxd-super-secret-key-2024-itu"
@@ -1180,5 +1181,81 @@ def delete_episode_rating(episode_id: int, credentials: HTTPAuthorizationCredent
     cur.close()
     conn.close()
     return {"status": "deleted"}
+
+# ============================================================
+# --- NEREDE İZLENİR (TMDB Watch Providers) ---
+# ============================================================
+
+TMDB_API_KEY = "8ebd0cda4cf50b4a7f730c2164931769"
+
+@app.get("/watch-providers/{series_id}")
+def get_watch_providers(series_id: int):
+    """TMDB API'den dizinin hangi platformlarda izlenebileceğini döndürür."""
+    provider_urls = {
+        "Netflix": "https://www.netflix.com",
+        "Amazon Prime Video": "https://www.primevideo.com",
+        "Disney Plus": "https://www.disneyplus.com",
+        "HBO Max": "https://www.max.com",
+        "Max": "https://www.max.com",
+        "Hulu": "https://www.hulu.com",
+        "Apple TV Plus": "https://tv.apple.com",
+        "Apple TV": "https://tv.apple.com",
+        "Paramount Plus": "https://www.paramountplus.com",
+        "Paramount+": "https://www.paramountplus.com",
+        "Peacock": "https://www.peacocktv.com",
+        "Peacock Premium": "https://www.peacocktv.com",
+        "Crunchyroll": "https://www.crunchyroll.com",
+        "fuboTV": "https://www.fubo.tv",
+        "Starz": "https://www.starz.com",
+        "Showtime": "https://www.sho.com",
+        "AMC Plus": "https://www.amcplus.com",
+        "AMC+": "https://www.amcplus.com",
+        "BluTV": "https://www.blutv.com",
+        "MUBI": "https://mubi.com",
+        "Curiosity Stream": "https://curiositystream.com",
+        "Tubi TV": "https://tubitv.com",
+        "Pluto TV": "https://pluto.tv",
+        "Stan": "https://www.stan.com.au",
+        "Now TV": "https://www.nowtv.com",
+        "Sky Go": "https://www.sky.com",
+        "Canal+": "https://www.canalplus.com",
+        "Gain": "https://www.gain.tv",
+        "TOD": "https://www.tod.tv",
+        "beIN CONNECT": "https://www.beinconnect.com.tr",
+        "Exxen": "https://www.exxen.com",
+        "puhutv": "https://puhutv.com",
+        "Tabii": "https://www.tabii.com",
+    }
+    try:
+        url = f"https://api.themoviedb.org/3/tv/{series_id}/watch/providers?api_key={TMDB_API_KEY}"
+        resp = http_requests.get(url, timeout=5)
+        if resp.status_code != 200:
+            return {"providers": []}
+        data = resp.json()
+        results = data.get("results", {})
+        country_data = results.get("TR") or results.get("US")
+        if not country_data:
+            if results:
+                country_data = next(iter(results.values()))
+            else:
+                return {"providers": []}
+        providers = []
+        seen = set()
+        for ptype in ["flatrate", "free", "ads", "buy", "rent"]:
+            for p in country_data.get(ptype, []):
+                pid = p.get("provider_id")
+                if pid not in seen:
+                    seen.add(pid)
+                    pname = p.get("provider_name", "")
+                    providers.append({
+                        "provider_id": pid,
+                        "provider_name": pname,
+                        "logo_path": p.get("logo_path"),
+                        "url": provider_urls.get(pname, f"https://www.google.com/search?q={pname.replace(' ', '+')}+streaming")
+                    })
+        return {"providers": providers}
+    except Exception as e:
+        print(f"Watch providers hatası: {e}")
+        return {"providers": []}
 
 

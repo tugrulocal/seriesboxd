@@ -38,6 +38,7 @@ function DiziDetay() {
   const [spoilerVar, setSpoilerVar] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewGonderiliyor, setReviewGonderiliyor] = useState(false);
+  const [watchProviders, setWatchProviders] = useState([]);
 
   useEffect(() => {
     fetch(`http://127.0.0.1:8000/dizi/${id}`)
@@ -74,6 +75,13 @@ function DiziDetay() {
     }
 
     fetch(`http://127.0.0.1:8000/reviews/${id}`).then(r => r.json()).then(d => { if (Array.isArray(d)) setReviews(d); }).catch(() => { });
+
+    fetch(`http://127.0.0.1:8000/watch-providers/${id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.providers) setWatchProviders(d.providers);
+      })
+      .catch(() => { });
   }, [id]);
 
   // --- SEZON / BÖLÜM İZLEME ---
@@ -258,6 +266,13 @@ function DiziDetay() {
             <div className="dv2-genres">
               {genres.map(g => (
                 <span key={g} className="dv2-genre-tag" onClick={() => navigate(`/?genre=${encodeURIComponent(g)}`)}>{g}</span>
+              ))}
+              {watchProviders.map(p => (
+                p.logo_path && (
+                  <a key={p.provider_id} href={p.url || '#'} target="_blank" rel="noopener noreferrer" className="dv2-provider-logo-link" title={p.provider_name}>
+                    <img src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} alt={p.provider_name} className="dv2-provider-logo" />
+                  </a>
+                )
               ))}
             </div>
             <p className="dv2-overview">{dizi.overview || 'Bu dizi için henüz bir özet bulunmuyor.'}</p>
