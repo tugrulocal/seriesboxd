@@ -235,6 +235,17 @@ def ensure_users_table():
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     """)
+    # Bölüm yorumları tablosu
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_episode_reviews (
+            review_id   SERIAL PRIMARY KEY,
+            user_id     INTEGER,
+            episode_id  INTEGER NOT NULL,
+            review_text TEXT NOT NULL,
+            contains_spoiler BOOLEAN DEFAULT FALSE,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
     # Kullanıcı aktiviteleri tablosu (bölüm bazlı izlendi/watchlist)
     cur.execute("""
         CREATE TABLE IF NOT EXISTS user_activity (
@@ -614,6 +625,11 @@ class ReviewModel(BaseModel):
     review_text: str
     contains_spoiler: bool = False
 
+class EpisodeReviewModel(BaseModel):
+    episode_id: int
+    review_text: str
+    contains_spoiler: bool = False
+
 @app.get("/series-activity/{series_id}")
 def get_series_activity(series_id: int, user = Depends(get_current_user)):
     if not user:
@@ -697,6 +713,38 @@ def create_review(review: ReviewModel, user = Depends(get_current_user)):
         """INSERT INTO user_series_reviews (user_id, series_id, review_text, contains_spoiler)
            VALUES (%s, %s, %s, %s) RETURNING review_id""",
         (user["user_id"], review.series_id, review.review_text, review.contains_spoiler)
+    )
+    review_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"status": "ok", "review_id": review_id}
+
+@app.get("/episode-reviews/{episode_id}")
+def get_episode_reviews(episode_id: int):
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute(
+        """SELECT r.*, u.username FROM user_episode_reviews r
+           LEFT JOIN users u ON u.user_id = r.user_id
+           WHERE r.episode_id = %s ORDER BY r.created_at DESC""",
+        (episode_id,)
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+@app.post("/episode-reviews")
+def create_episode_review(review: EpisodeReviewModel, user = Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """INSERT INTO user_episode_reviews (user_id, episode_id, review_text, contains_spoiler)
+           VALUES (%s, %s, %s, %s) RETURNING review_id""",
+        (user["user_id"], review.episode_id, review.review_text, review.contains_spoiler)
     )
     review_id = cur.fetchone()[0]
     conn.commit()
@@ -1403,6 +1451,7 @@ def delete_episode_rating(episode_id: int, user = Depends(get_current_user)):
 # ============================================================
 
 TMDB_API_KEY = "8ebd0cda4cf50b4a7f730c2164931769"
+OPENSUBTITLES_API_KEY = "AtWGbDhFws3BY3scqNFq7yTfezzOojbD"
 
 @app.get("/watch-providers/{series_id}")
 def get_watch_providers(series_id: int):
@@ -1656,54 +1705,173 @@ def stream_endpoint(series_id: int, season: int, episode: int):
     # Torrent altyapısı devre dışı bırakıldı (Plan B - IFrame Embeds)
     embeds = []
     
-    # Provider 1: SuperEmbed -- 1080p, çok sunucu, en iyi kalite (IMDB ID gerektirir)
+    # PRIMARY PLAYER: VidPlus.pro (2Embed VPLS backend - temiz player, reklamsız)
+    embeds.append({
+        "name": "SeriesBoxd Player",
+        "source": "player.vidplus.pro",
+        "url": f"https://player.vidplus.pro/embed/tv/{series_id}/{season}/{episode}?server=boba",
+        "type": "primary",
+        "badge": "HD"
+    })
+    
+    # ALT 1: SuperEmbed -- 1080p, çok sunucu
     if imdb_id:
         embeds.append({
             "name": "SuperEmbed",
             "source": "multiembed.mov",
             "url": f"https://multiembed.mov/?video_id={imdb_id}&s={season}&e={episode}",
-            "type": "iframe",
+            "type": "alternative",
             "badge": "1080p"
         })
 
-    # Provider 2: VidSrc.to -- 1080p, TMDB destekli, en stabil alternatiflerden biri
-    embeds.append({
-        "name": "VidSrc.to",
-        "source": "vidsrc.to",
-        "url": f"https://vidsrc.to/embed/tv/{series_id}/{season}/{episode}",
-        "type": "iframe",
-        "badge": "1080p"
-    })
-    
-    # Provider 3: GoDrivePlayer -- 1080p kalite, VidSrc alternatifi, hızlı CDN
-    embeds.append({
-        "name": "GoDrivePlayer",
-        "source": "godriveplayer.com",
-        "url": f"https://godriveplayer.com/player.php?imdb={imdb_id}&season={season}&episode={episode}" if imdb_id else f"https://godriveplayer.com/player.php?tmdb={series_id}&season={season}&episode={episode}",
-        "type": "iframe",
-        "badge": "1080p"
-    })
-    
-    # Provider 4: 2Embed VPLS -- Doğrudan VPLS sunucusuna bağlı (Boba dahil birkaç yüksek kalite kaynak)
-    # www.2embed.cc/embedtv/ URL'si Viet kaynağını de facto seçiyor, bu nedenle doğrudan VPLS player'ını yüklüyoruz
+    # ALT 2: 2Embed VPLS -- Boba/Wink yüksek kalite kaynaklar
     embeds.append({
         "name": "2Embed VPLS",
         "source": "streamsrcs.2embed.cc",
         "url": f"https://streamsrcs.2embed.cc/vpls-tv?tmdb={series_id}&s={season}&e={episode}",
-        "type": "iframe",
-        "badge": "HD"
+        "type": "alternative",
+        "badge": "1080p"
     })
     
-    # Provider 5: VidSrc (vidsrc.me) -- Yedek olarak, 720p ama çok stabil
+    # ALT 3: VidSrc (vidsrc.me) -- Yedek, 720p ama stabil
     embeds.append({
         "name": "VidSrc",
         "source": "vidsrc.me",
         "url": f"https://vidsrc.me/embed/tv?tmdb={series_id}&season={season}&episode={episode}",
-        "type": "iframe",
+        "type": "alternative",
         "badge": "720p"
     })
     
     return {
         "query": query,
+        "imdb_id": imdb_id,
         "results": embeds
     }
+
+@app.get("/api/stream/resolve/{series_id}/{season}/{episode}", tags=["streaming"])
+def resolve_stream_endpoint(series_id: int, season: int, episode: int):
+    """
+    Returns embed sources instantly. Subtitles are fetched separately by the frontend.
+    """
+    return stream_endpoint(series_id, season, episode)
+
+@app.get("/api/subtitles/search/{imdb_id}/{season}/{episode}", tags=["subtitles"])
+def search_subtitles(imdb_id: str, season: int, episode: int):
+    """
+    Searches Stremio OpenSubtitles v3 Addon for TR and EN subtitles.
+    Returns ALL candidates per language with proxied download URLs.
+    No strict quota limits, and URLs are fetched in one step.
+    """
+    try:
+        url = f"https://opensubtitles-v3.strem.io/subtitles/series/{imdb_id}:{season}:{episode}.json"
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
+        resp = http_requests.get(url, headers=headers, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        subtitles = []
+        for i, item in enumerate(data.get("subtitles", [])[:40]):  # max 40 results
+            lang = item.get("lang")
+            if lang not in ["tur", "eng"]:
+                continue
+                
+            download_link = item.get("url")
+            if not download_link:
+                continue
+                
+            proxy_url = f"http://127.0.0.1:8000/api/subtitles/proxy?url={urllib.parse.quote(download_link, safe='')}"
+            
+            sub_lang = "tr" if lang == "tur" else "en"
+            
+            subtitles.append({
+                "lang": sub_lang,
+                "label": "Türkçe" if sub_lang == "tr" else "English",
+                "file_id": item.get("id", str(i)),
+                "release": f"Altyazı {len(subtitles) + 1} ({item.get('SubEncoding', 'UTF-8')})",
+                "download_count": 0,
+                "url": proxy_url,
+                "default": sub_lang == "tr"
+            })
+        
+        return {"subtitles": subtitles}
+    except Exception as e:
+        print(f"Stremio Subtitles search error: {e}")
+        return {"subtitles": []}
+
+
+import re
+import chardet
+from fastapi import Response
+
+def srt_to_vtt(srt_content: str) -> str:
+    """Converts basic SRT content to WebVTT format."""
+    # Replace comma with dot in timestamps
+    vtt = re.sub(r'(\d{2}:\d{2}:\d{2}),(\d{3})', r'\1.\2', srt_content)
+    # Ensure it starts with WEBVTT
+    if not vtt.strip().startswith("WEBVTT"):
+        vtt = "WEBVTT\n\n" + vtt.strip()
+    return vtt
+
+@app.get("/api/subtitles/proxy", tags=["subtitles"])
+async def proxy_subtitle(url: str):
+    """
+    Fetches a subtitle file from a URL, decodes it properly (handling Turkish encodings),
+    and strictly returns UTF-8 formatted VTT content.
+    Uses chardet for reliable encoding detection.
+    """
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        resp = http_requests.get(url, headers=headers, timeout=10)
+        resp.raise_for_status()
+        
+        raw_content = resp.content
+        text_content = ""
+        
+        # Use chardet to detect encoding with confidence threshold
+        detected = chardet.detect(raw_content)
+        detected_enc = detected.get('encoding', 'utf-8')
+        confidence = detected.get('confidence', 0)
+        
+        if detected_enc and confidence > 0.6:
+            try:
+                text_content = raw_content.decode(detected_enc)
+            except (UnicodeDecodeError, LookupError):
+                detected_enc = None
+        
+        # Fallback chain optimized for Turkish subtitles
+        if not text_content:
+            for enc in ['cp1254', 'iso-8859-9', 'utf-8', 'latin-1']:
+                try:
+                    text_content = raw_content.decode(enc)
+                    break
+                except (UnicodeDecodeError, LookupError):
+                    continue
+                    
+        if not text_content:
+            text_content = raw_content.decode('utf-8', errors='replace')
+            
+        # If it's SRT, convert to VTT for HTML5 video player compatibility
+        if "-->" in text_content and "," in text_content.split("-->")[0]:
+            text_content = srt_to_vtt(text_content)
+        
+        # Ensure WEBVTT header
+        if not text_content.strip().startswith("WEBVTT"):
+            text_content = "WEBVTT\n\n" + text_content.strip()
+            
+        # Return strict UTF-8 bytes with correct content type
+        return Response(
+            content=text_content.encode('utf-8'),
+            media_type="text/vtt; charset=utf-8",
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Cache-Control": "public, max-age=3600"
+            }
+        )
+        
+    except Exception as e:
+        print(f"Subtitle proxy error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))

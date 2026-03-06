@@ -3633,3 +3633,2134 @@ button.sifre-unut-link:hover {
   background: rgba(225, 29, 72, 0.2);
   transform: translateY(-1px);
 }
+
+/* ============================================================ */
+/* --- PLAYER MODAL V2 ---                                      */
+/* ============================================================ */
+
+/* Wider modal for fullscreen player */
+.stremio-modal.player-modal-v2 {
+  max-width: 1200px;
+  width: 95vw;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+  /* So it looks like it attaches to the bottom */
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header layout: title + dropdown on left, close on right */
+.player-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.player-header-left h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Source dropdown button */
+.source-dropdown-wrapper {
+  position: relative;
+}
+
+.source-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 8px;
+  padding: 5px 12px;
+  color: #7dd3fc;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.source-dropdown-btn:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.source-dropdown-active {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-dropdown-caret {
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+/* Glassmorphism dropdown menu */
+.source-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 240px;
+  background: rgba(10, 17, 32, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.source-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  gap: 8px;
+}
+
+.source-dropdown-item:hover {
+  background: rgba(56, 189, 248, 0.08);
+  color: #cbd5e1;
+  border-color: rgba(56, 189, 248, 0.15);
+}
+
+.source-dropdown-item.active {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.source-dropdown-name {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 2Embed info banner */
+.player-info-banner {
+  padding: 8px 14px;
+  background: rgba(234, 179, 8, 0.1);
+  border-bottom: 1px solid rgba(234, 179, 8, 0.2);
+  color: #fbbf24;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.player-info-banner strong {
+  color: #fcd34d;
+}
+
+/* Player main area */
+.player-main-area {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Fullscreen-ish video frame */
+.player-video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  /* Use aspect-ratio instead of padding-top for modern robust 16:9 sizing */
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sub controls label & misc */
+.sub-controls-label {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.sub-loading-text {
+  color: #475569;
+  font-size: 0.72rem;
+}
+
+.sub-controls-right {
+  margin-left: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stremio-modal.player-modal-v2 {
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .player-header-left h3 {
+    font-size: 0.88rem;
+  }
+
+  .source-dropdown-menu {
+    min-width: 200px;
+  }
+
+  .stremio-header {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .source-dropdown-active {
+    max-width: 120px;
+  }
+
+  .custom-player-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+
+
+.source-quality-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.badge-hd {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-sd {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* ============================================================ */
+/* --- SUBTITLE OVERLAY SYSTEM                                  */
+/* ============================================================ */
+
+/* Wrapper that holds iframe + subtitle overlay together */
+.subtitle-overlay-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+  display: block;
+}
+
+/* The invisible ghost layer that renders subtitle text */
+.subtitle-text-layer {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+  /* Fullscreen: layer stays on top of iframe */
+}
+
+/* Subtitle text box */
+.subtitle-text {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.70);
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 4px 14px 5px;
+  border-radius: 4px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9), -1px -1px 3px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.01em;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+/* Fullscreen: slightly larger text */
+.subtitle-overlay-wrapper:fullscreen .subtitle-text {
+  font-size: 1.6rem;
+  padding: 6px 20px 8px;
+}
+
+.subtitle-overlay-wrapper:-webkit-full-screen .subtitle-text {
+  font-size: 1.6rem;
+  padding: 6px 20px 8px;
+}
+
+/* BOTTOM BAR — below the wrapper */
+.player-bottom-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  background: rgba(10, 17, 32, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(56, 189, 248, 0.12);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.sub-lang-selector {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sub-sync-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+}
+
+.sub-bar-label {
+  color: #475569;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-right: 2px;
+}
+
+.sub-bar-btn {
+  background: rgba(71, 85, 105, 0.25);
+  color: #94a3b8;
+  border: 1px solid rgba(71, 85, 105, 0.35);
+  border-radius: 5px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+
+.sub-bar-btn:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.sub-bar-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.15);
+}
+
+.sub-cue-count {
+  color: #334155;
+  font-size: 0.65rem;
+  margin-left: 4px;
+}
+
+/* Per-language subtitle dropdown */
+.sub-lang-dd-wrapper {
+  position: relative;
+}
+
+.sub-lang-dd-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: rgba(10, 17, 32, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 8px;
+  min-width: 280px;
+  max-width: 380px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 999;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.6);
+  padding: 4px;
+  /* Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.3) transparent;
+}
+
+.sub-dd-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.12s;
+  text-align: left;
+}
+
+.sub-dd-item:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.sub-dd-item.active {
+  background: rgba(56, 189, 248, 0.18);
+}
+
+.sub-dd-release {
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.sub-dd-item.active .sub-dd-release {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.sub-dd-count {
+  color: #475569;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Active subtitle info tag */
+.sub-active-info {
+  color: #38bdf8;
+  font-size: 0.65rem;
+  margin-left: 6px;
+  opacity: 0.8;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Open state indicator */
+.sub-bar-btn.open {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #7dd3fc;
+}
+
+.sync-btn {
+  background: rgba(71, 85, 105, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  border-radius: 5px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sync-btn:hover {
+  background: rgba(71, 85, 105, 0.45);
+  color: #e2e8f0;
+}
+
+.sync-offset-display {
+  color: #64748b;
+  font-size: 0.72rem;
+  min-width: 32px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.fs-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  background: rgba(56, 189, 248, 0.1);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fs-toggle-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+/* Fullscreen: bottom bar stays visible inside the wrapper */
+.subtitle-overlay-wrapper:fullscreen .player-bottom-bar,
+.subtitle-overlay-wrapper:-webkit-full-screen .player-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 11;
+}
+
+/* Video.js dark theme override */
+.video-js {
+  font-family: 'Inter', sans-serif;
+}
+
+.video-js .vjs-control-bar {
+  background: rgba(15, 23, 42, 0.85) !important;
+  backdrop-filter: blur(8px);
+}
+
+.video-js .vjs-play-progress {
+  background: #38bdf8 !important;
+}
+
+.video-js .vjs-big-play-button {
+  background: rgba(56, 189, 248, 0.25) !important;
+  border: 2px solid rgba(56, 189, 248, 0.4) !important;
+  border-radius: 50% !important;
+  width: 64px !important;
+  height: 64px !important;
+  line-height: 64px !important;
+  font-size: 2rem !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* =========================================================
+   WATCH PAGE — Cinematic 2-Column Layout
+   z-index: bg(0) overlay(1) grid(5) subtitle(10)
+   ========================================================= */
+
+.watch-page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+  background-color: #080c14;
+  width: 100%;
+  align-self: stretch;
+}
+
+/* ---- Background ---- */
+.watch-bg-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background-size: cover;
+  background-position: center top;
+  filter: blur(40px) brightness(0.18) saturate(1.5);
+  transform: scale(1.08);
+  pointer-events: none;
+}
+
+/* Ambient aura ring around the video area */
+.watch-bg-layer::after {
+  content: '';
+  position: absolute;
+  top: 5%;
+  left: 5%;
+  width: 55%;
+  height: 60%;
+  background: radial-gradient(ellipse 80% 70% at 50% 50%,
+      rgba(56, 130, 210, 0.18) 0%,
+      rgba(56, 189, 248, 0.07) 50%,
+      transparent 100%);
+  pointer-events: none;
+}
+
+.watch-overlay-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 130% 80% at 40% 30%,
+      rgba(8, 12, 20, 0.3) 0%,
+      rgba(8, 12, 20, 0.8) 60%,
+      rgba(8, 12, 20, 0.97) 100%);
+}
+
+/* ---- Content Grid ---- */
+.watch-content-grid {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 12px;
+  padding: 10px 10px 20px;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: start;
+}
+
+/* ============================================================
+   LEFT: PLAYER
+   ============================================================ */
+.cinematic-player-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Source bar above video */
+.player-source-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(8, 12, 20, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 44px;
+}
+
+.player-ep-badge-bar {
+  /* Google Fonts'tan Inter veya Geist çektiğini varsayıyorum */
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  /* Biraz kalın ama hantal değil */
+  font-size: 0.95rem;
+  /* Çok büyük yapma, zarif kalsın */
+  letter-spacing: 0.05em;
+  /* Harflerin arasını çok hafif aç, nefes alsın */
+  color: rgba(255, 255, 255, 0.9);
+  /* Saf beyaz yerine %90 opaklık, daha premium durur */
+  text-transform: capitalize;
+  /* Sadece baş harfler büyük */
+}
+
+.watch-src-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 7px !important;
+  padding: 6px 12px !important;
+  font-size: 0.76rem !important;
+  color: #cbd5e1 !important;
+}
+
+/* ---- Player Main Area ---- */
+.watch-player-area {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* The video wrapper keeps 16:9 naturally */
+.watch-player-area .subtitle-overlay-wrapper {
+  aspect-ratio: 16 / 9 !important;
+  width: 100%;
+  background: #000;
+  overflow: visible;
+}
+
+/* Bottom bar: kept for fullscreen compat, no longer used in normal view */
+.watch-bottom-bar {
+  display: none;
+}
+
+/* ---- Prev / Next episode buttons ---- */
+.ep-nav-btn {
+  display: none;
+  /* replaced by ghost-nav-btn */
+}
+
+/* ============================================================
+   GHOST PLAYER OVERLAY UI
+   ============================================================ */
+
+/* ── Top bar gradient: now hidden, kept for transition ── */
+.ghost-player-top {
+  display: none;
+}
+
+.cinematic-player-wrapper:hover .ghost-player-top {
+  display: none;
+}
+
+.ghost-back-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 5px;
+  pointer-events: auto;
+  transition: color 0.2s;
+  line-height: 1;
+}
+
+.ghost-back-btn:hover {
+  color: #fff;
+}
+
+.ghost-title-text {
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ghost-ep-chip {
+  font-size: 0.78rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.06em;
+}
+
+/* ── Bottom bar: ghost controls floating above iframe ── */
+.ghost-player-bottom {
+  position: absolute;
+  bottom: 56px;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cinematic-player-wrapper:hover .ghost-player-bottom {
+  opacity: 1;
+}
+
+.ghost-ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  background: none;
+  pointer-events: none;
+  flex-wrap: nowrap;
+}
+
+/* All interactive elements inside get pointer-events back */
+.ghost-ctrl-row>*,
+.ghost-ctrl-row .sub-lang-dd-wrapper {
+  pointer-events: auto;
+}
+
+.ghost-nav-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+
+.ghost-nav-btn:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.ghost-nav-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+  pointer-events: none;
+}
+
+.ghost-sep {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+  margin: 0 3px;
+}
+
+.ghost-bar-label {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.ghost-sub-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.ghost-sub-btn:hover {
+  background: rgba(56, 189, 248, 0.14);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #7dd3fc;
+}
+
+.ghost-sub-btn.ghost-sub-active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+}
+
+/* override sub-lang-dd-menu when inside ghost bar */
+.ghost-dd-menu {
+  bottom: calc(100% + 8px) !important;
+  z-index: 30 !important;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.8) !important;
+}
+
+.ghost-sub-status {
+  color: #38bdf8;
+  font-size: 0.64rem;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.ghost-offset-display {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.68rem;
+  min-width: 28px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.ghost-fs-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 4px 7px;
+  cursor: pointer;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+
+.ghost-fs-btn:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+
+/* Fullscreen: hide cursor when idle */
+.subtitle-overlay-wrapper:fullscreen,
+.subtitle-overlay-wrapper:-webkit-full-screen {
+  cursor: none;
+}
+
+.subtitle-overlay-wrapper.fs-ctrl-visible:fullscreen,
+.subtitle-overlay-wrapper.fs-ctrl-visible:-webkit-full-screen {
+  cursor: default;
+}
+
+
+
+/* ---- Fullscreen toggle (legacy, kept for fullscreen compat) ---- */
+.fs-toggle-btn {
+  display: none;
+}
+
+/* ============================================================
+   FULLSCREEN CORNER BUTTON — covers iframe's native FS button
+   ============================================================ */
+.fs-corner-btn {
+  position: absolute;
+  bottom: 1.2px;
+  right: 14.5px;
+  z-index: 22;
+  width: auto !important;
+  height: auto !important;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.fs-corner-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+
+
+  width: 70px;
+  height: 70px;
+
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.fs-corner-btn:hover .fs-corner-icon-badge {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* Normal mode: show on player hover */
+.cinematic-player-wrapper:hover .fs-corner-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.fs-corner-btn:hover {
+  opacity: 1;
+}
+
+/* Fullscreen mode: hide by default, show when mouse moves */
+.subtitle-overlay-wrapper:fullscreen .fs-corner-btn,
+.subtitle-overlay-wrapper:-webkit-full-screen .fs-corner-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.subtitle-overlay-wrapper.fs-ctrl-visible:fullscreen .fs-corner-btn,
+.subtitle-overlay-wrapper.fs-ctrl-visible:-webkit-full-screen .fs-corner-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ============================================================
+   SUBTITLE ICON OVERLAY
+   ============================================================ */
+.sub-icon-overlay {
+  position: absolute;
+  bottom: 16px;
+  right: 295px;
+  z-index: 25;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.cinematic-player-wrapper:hover .sub-icon-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sub-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 61px;
+  height: 61px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.18s;
+  pointer-events: auto;
+}
+
+.sub-icon-btn:hover,
+.sub-icon-btn.sub-icon-open {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+}
+
+.sub-icon-btn.sub-icon-on {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #7dd3fc;
+}
+
+.sub-icon-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  min-width: 178px;
+  background: rgba(8, 12, 22, 0.94);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  overflow: hidden;
+  box-shadow: 0 -6px 36px rgba(0, 0, 0, 0.85);
+  z-index: 30;
+}
+
+.sub-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 13px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.14s, color 0.14s;
+}
+
+.sub-menu-item:last-child {
+  border-bottom: none;
+}
+
+.sub-menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.sub-menu-item.active {
+  background: rgba(56, 189, 248, 0.13);
+  color: #38bdf8;
+}
+
+.sub-menu-item.lang-open {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sub-menu-arrow {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.82rem;
+}
+
+.sub-files-submenu {
+  max-height: 160px;
+  overflow-y: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.sub-files-submenu::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sub-files-submenu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sub-files-submenu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.sub-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 13px 6px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 0.65rem;
+  cursor: pointer;
+  text-align: left;
+  gap: 6px;
+  transition: background 0.14s, color 0.14s;
+}
+
+.sub-file-num {
+  flex-shrink: 0;
+  min-width: 14px;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.58rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.sub-file-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sub-file-item.active {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+}
+
+.sub-file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub-file-dl {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.22);
+  font-size: 0.58rem;
+}
+
+.sub-sync-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.sub-sync-label {
+  color: rgba(255, 255, 255, 0.22);
+  font-size: 0.57rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.sub-sync-step {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.62rem;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all 0.14s;
+}
+
+.sub-sync-step:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+
+.sub-sync-val {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 0.63rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fullscreen: hide sub icon overlay, reveal when mouse moves */
+.subtitle-overlay-wrapper:fullscreen .sub-icon-overlay,
+.subtitle-overlay-wrapper:-webkit-full-screen .sub-icon-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.subtitle-overlay-wrapper.fs-ctrl-visible:fullscreen .sub-icon-overlay,
+.subtitle-overlay-wrapper.fs-ctrl-visible:-webkit-full-screen .sub-icon-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Transparent iframe mouse-catcher overlay */
+.fs-mouse-catcher {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: transparent;
+  cursor: default;
+}
+
+/* Always-on blocker over the native iframe FS button (bottom-right corner) */
+.native-fs-blocker {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 90px;
+  height: 90px;
+  z-index: 21;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* No focus ring on the player wrapper */
+.subtitle-overlay-wrapper:focus {
+  outline: none;
+}
+
+/* ============================================================
+   PREV / NEXT EPISODE — Glassmorphic below info panel
+   ============================================================ */
+.ep-nav-below-panel {
+  display: flex;
+  gap: 8px;
+  padding: 14px 0 6px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ep-nav-glass-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 9px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.ep-nav-glass-btn:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.28);
+  color: #38bdf8;
+  box-shadow: 0 4px 18px rgba(56, 189, 248, 0.1);
+}
+
+.ep-nav-glass-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ============================================================
+   RIGHT: INFO PANEL
+   ============================================================ */
+.watch-info-panel {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 16px 48px -12px rgba(0, 0, 0, 0.7);
+  max-height: calc(100vh - 44px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Backdrop image at top of panel */
+.wip-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  background-size: cover;
+  background-position: center 20%;
+  z-index: 0;
+}
+
+/* Gradient fade from backdrop into dark */
+.wip-backdrop-fade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 240px;
+  z-index: 1;
+  background: linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0.5) 40%,
+      rgba(0, 0, 0, 0.88) 70%,
+      rgba(0, 0, 0, 0.97) 100%);
+  pointer-events: none;
+}
+
+/* Scrollable content inside panel */
+.wip-scroll {
+  position: relative;
+  z-index: 2;
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 16px;
+}
+
+.wip-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.wip-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wip-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* ---- Poster + Meta Header ---- */
+.wip-header {
+  display: flex;
+  gap: 14px;
+  padding: 100px 16px 14px;
+  align-items: flex-end;
+}
+
+.wip-poster {
+  width: 74px;
+  height: 111px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wip-poster:hover {
+  transform: scale(1.04);
+}
+
+.wip-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding-bottom: 4px;
+}
+
+.wip-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #f1f5f9;
+  cursor: pointer;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wip-title:hover {
+  color: #38bdf8;
+}
+
+.wip-rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.wip-votes {
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 300;
+  font-size: 0.72rem;
+}
+
+.wip-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.wip-genre-tag {
+  font-size: 0.65rem;
+  font-weight: 300;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ---- Episode Label ---- */
+.wip-ep-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px 6px;
+  flex-wrap: wrap;
+}
+
+.wip-ep-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.wip-ep-name {
+  font-size: 0.8rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Overview ---- */
+.wip-overview {
+  margin: 0;
+  padding: 6px 16px 12px;
+  font-size: 0.8rem;
+  font-weight: 300;
+  line-height: 1.65;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.45);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- Action Row ---- */
+.wip-action-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.wip-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wip-action-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.wip-action-btn.wip-act-on {
+  color: #38bdf8;
+}
+
+.wip-action-btn.wip-act-watch.wip-act-on {
+  color: #10b981;
+}
+
+.wip-action-btn.wip-act-watch.wip-act-on svg {
+  filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.5));
+}
+
+.wip-action-btn.wip-act-like.wip-act-on {
+  color: #f87171;
+}
+
+.wip-action-btn.wip-act-wl.wip-act-on {
+  color: #38bdf8;
+}
+
+/* ---- Review Panel ---- */
+.wip-review-panel {
+  padding: 0 12px 12px;
+}
+
+.wip-review-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 300;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.wip-review-textarea:focus {
+  outline: none;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.wip-review-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+/* ---- Rating Section ---- */
+.wip-rate-section {
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wip-section-label {
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.wip-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.wip-star {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: color 0.1s, transform 0.1s;
+  line-height: 1;
+}
+
+.wip-star.dolu {
+  color: #f59e0b;
+}
+
+.wip-star:hover {
+  transform: scale(1.2);
+}
+
+.wip-puan-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.wip-puan-sil {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wip-puan-sil:hover {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* ---- Add to List btn ---- */
+.wip-liste-container {
+  padding: 4px 12px 8px;
+  position: relative;
+}
+
+.wip-liste-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  padding: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wip-liste-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+}
+
+.wip-liste-popup {
+  top: 100% !important;
+  left: 12px !important;
+  right: 12px !important;
+  width: auto !important;
+}
+
+/* ---- Divider ---- */
+.wip-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  margin: 8px 12px;
+}
+
+/* ---- Season select (legacy) ---- */
+.wip-season-select {
+  padding: 8px 12px 6px;
+}
+
+/* ---- Season Selector Button ---- */
+.wip-season-selector-container {
+  padding: 4px 12px 6px;
+}
+
+.wip-season-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.wip-season-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.wip-season-caret {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+/* ---- Episode Dropdown (fixed position popup) ---- */
+.wip-ep-dropdown {
+  position: fixed;
+  z-index: 9999;
+  background: rgba(8, 14, 24, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.wip-ep-dropdown-seasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.wip-ep-season-btn {
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.7rem;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.wip-ep-season-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.wip-ep-season-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.wip-ep-dropdown-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 6px;
+}
+
+.wip-ep-dropdown-list::-webkit-scrollbar {
+  width: 3px;
+}
+
+.wip-ep-dropdown-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wip-ep-dropdown-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.wip-dd-ep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.12s;
+  border: 1px solid transparent;
+}
+
+.wip-dd-ep:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.wip-dd-ep.current {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.2);
+  cursor: default;
+}
+
+.wip-dd-ep-num {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.3);
+  min-width: 22px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.wip-dd-ep.current .wip-dd-ep-num {
+  color: #38bdf8;
+}
+
+.wip-dd-ep-title {
+  font-size: 0.78rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.7);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wip-dd-ep.current .wip-dd-ep-title {
+  color: #e2e8f0;
+}
+
+.wip-dd-ep-status {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* ============================================================
+   SHARED: Episode List (used inside right panel)
+   ============================================================ */
+.watch-sidebar {
+  display: none;
+  /* old sidebar hidden, kept for compat */
+}
+
+.sidebar-season-select {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.season-dropdown {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.season-dropdown:focus {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.sidebar-eps-list {
+  overflow-y: auto;
+  padding: 6px 10px;
+  max-height: 340px;
+}
+
+.sidebar-eps-list::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sidebar-eps-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-eps-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.sidebar-ep-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 12px;
+  margin-bottom: 3px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.sidebar-ep-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-ep-card.current-ep {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.3);
+  cursor: default;
+}
+
+.ep-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.ep-number {
+  font-size: 0.85rem;
+  font-weight: 200;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.22);
+  min-width: 22px;
+  flex-shrink: 0;
+}
+
+.current-ep .ep-number {
+  color: #38bdf8;
+  font-weight: 300;
+}
+
+.ep-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+}
+
+.ep-title {
+  font-size: 0.76rem;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.current-ep .ep-title {
+  color: #fff;
+  font-weight: 400;
+}
+
+.ep-progress-track {
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ep-progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #38bdf8, #818cf8);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.ep-card-right {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.ep-watched-icon {
+  color: rgba(16, 185, 129, 0.6);
+}
+
+/* Playing Animation */
+.now-playing-indicator {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.now-playing-indicator div {
+  width: 2px;
+  background: #38bdf8;
+  animation: equalize 1s ease-in-out infinite;
+  border-radius: 2px;
+}
+
+.now-playing-indicator .bar1 {
+  height: 60%;
+  animation-delay: 0.1s;
+}
+
+.now-playing-indicator .bar2 {
+  height: 100%;
+  animation-delay: 0.3s;
+}
+
+.now-playing-indicator .bar3 {
+  height: 40%;
+  animation-delay: 0.5s;
+}
+
+@keyframes equalize {
+  0% {
+    transform: scaleY(0.5);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+
+  100% {
+    transform: scaleY(0.5);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1100px) {
+  .watch-content-grid {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    padding: 14px 16px 28px;
+  }
+}
+
+@media (max-width: 860px) {
+  .watch-content-grid {
+    grid-template-columns: 1fr;
+    padding: 10px 12px 20px;
+  }
+
+  .watch-info-panel {
+    max-height: none;
+  }
+
+  .sidebar-eps-list {
+    max-height: 220px;
+  }
+}
+
+/* ============================================================
+   WIP EPISODE REVIEW — Gönder button (compact)
+   ============================================================ */
+.wip-review-gonder-btn {
+  padding: 7px 18px;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wip-review-gonder-btn:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+}
+
+.wip-review-gonder-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================================
+   EPISODE REVIEWS LIST (inside WatchPage review panel)
+   ============================================================ */
+.wip-ep-reviews {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.wip-ep-review-item {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* ============================================================
+   SPOILER BLUR — shared for both series & episode reviews
+   ============================================================ */
+.spoiler-blur-wrapper {
+  position: relative;
+  cursor: pointer;
+  border-radius: 6px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.spoiler-blur-wrapper .spoiler-text {
+  filter: blur(5px);
+  pointer-events: none;
+  transition: filter 0.3s;
+}
+
+.spoiler-blur-wrapper.revealed .spoiler-text {
+  filter: none;
+  pointer-events: auto;
+}
+
+.spoiler-blur-wrapper.revealed .spoiler-overlay {
+  display: none;
+}
+
+.spoiler-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fb923c;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  letter-spacing: 0.03em;
+  padding: 6px 10px;
+  text-align: center;
+}
+
+
+/* Legacy stubs — watch-details-section removed from JSX */
+.watch-details-section {
+  display: none;
+}

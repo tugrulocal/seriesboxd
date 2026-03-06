@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Eye, Heart, Bookmark, MessageSquare, AlertTriangle, Star, X, Check, Plus, Clock, PlayCircle } from 'lucide-react';
+import Navbar from './Navbar';
 import './App.css';
 
 function DiziDetay() {
@@ -37,16 +38,8 @@ function DiziDetay() {
   const [reviewText, setReviewText] = useState('');
   const [spoilerVar, setSpoilerVar] = useState(false);
   const [reviews, setReviews] = useState([]);
-  const [reviewGonderiliyor, setReviewGonderiliyor] = useState(false);
+  const [revealedSpoilers, setRevealedSpoilers] = useState(new Set());
   const [watchProviders, setWatchProviders] = useState([]);
-
-  // --- STREMIO STATES ---
-  const [stremioModalAcik, setStremioModalAcik] = useState(false);
-  const [seciliBolumForStremio, setSeciliBolumForStremio] = useState(null);
-  const [magnetAramaDurumu, setMagnetAramaDurumu] = useState('idle'); // 'idle', 'searching', 'found', 'error'
-  const [bulunanMagnetler, setBulunanMagnetler] = useState([]);
-  const [seciliVideoUrl, setSeciliVideoUrl] = useState(null);
-  const [seciliMagnetIndex, setSeciliMagnetIndex] = useState(null);
 
   useEffect(() => {
     fetch(`http://127.0.0.1:8000/dizi/${id}`)
@@ -235,39 +228,9 @@ function DiziDetay() {
     }
   };
 
-  // --- STREMIO OYNATICI ---
   const stremioModalAc = (bolum) => {
-    setSeciliBolumForStremio(bolum);
-    setStremioModalAcik(true);
-    setMagnetAramaDurumu('searching');
-    setBulunanMagnetler([]);
-    // API Cagirisi
-    fetch(`http://127.0.0.1:8000/api/stream/${id}/${bolum.season_id > 0 ? sezonlar.find(s => s.season_id === bolum.season_id)?.season_number : 1}/${bolum.episode_number}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.results && d.results.length > 0) {
-          setBulunanMagnetler(d.results);
-          setMagnetAramaDurumu('found');
-        } else {
-          setMagnetAramaDurumu('error');
-        }
-      })
-      .catch(e => {
-        console.error(e);
-        setMagnetAramaDurumu('error');
-      });
-  };
-
-  const torrentBaslat = (url, index) => {
-    setSeciliMagnetIndex(index);
-    setSeciliVideoUrl(url);
-  };
-
-  const stremioModalKapat = () => {
-    setStremioModalAcik(false);
-    setSeciliBolumForStremio(null);
-    setSeciliMagnetIndex(null);
-    setSeciliVideoUrl(null);
+    const seasonNum = bolum.season_id > 0 ? sezonlar.find(s => s.season_id === bolum.season_id)?.season_number : 1;
+    navigate(`/watch/${id}/${seasonNum}/${bolum.episode_number}`);
   };
 
   if (yukleniyor) return null;
@@ -499,8 +462,22 @@ function DiziDetay() {
                   <span className="review-user">@{r.username || 'anonim'}</span>
                   <span className="review-tarih">{new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
                 </div>
-                {r.contains_spoiler && <span className="spoiler-badge"><AlertTriangle size={12} /> Spoiler</span>}
-                <p className="review-text">{r.review_text}</p>
+                {r.contains_spoiler ? (
+                  <div
+                    className={`spoiler-blur-wrapper${revealedSpoilers.has(r.review_id) ? ' revealed' : ''}`}
+                    onClick={() => setRevealedSpoilers(prev => { const n = new Set(prev); n.has(r.review_id) ? n.delete(r.review_id) : n.add(r.review_id); return n; })}
+                  >
+                    <p className="review-text spoiler-text">{r.review_text}</p>
+                    {!revealedSpoilers.has(r.review_id) && (
+                      <div className="spoiler-overlay">
+                        <AlertTriangle size={14} />
+                        Spoiler İçeriyor — Görmek İçin Tıkla
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="review-text">{r.review_text}</p>
+                )}
               </div>
             ))}
           </div>
@@ -540,76 +517,6 @@ function DiziDetay() {
         </div>
       )}
 
-      {/* STREMIO MODAL */}
-      {stremioModalAcik && (
-        <div className="stremio-modal-overlay" onClick={stremioModalKapat}>
-          <div className="stremio-modal" onClick={e => e.stopPropagation()}>
-            <div className="stremio-header">
-              <h3>{dizi.name} - S{seciliBolumForStremio?.season_id > 0 ? sezonlar.find(s => s.season_id === seciliBolumForStremio.season_id)?.season_number : 1}E{seciliBolumForStremio?.episode_number} İzle</h3>
-              <button className="stremio-kapat" onClick={stremioModalKapat}><X size={20} /></button>
-            </div>
-
-            <div className="stremio-content">
-              {magnetAramaDurumu === 'searching' && (
-                <div className="stremio-loading">
-                  <div className="stremio-spinner"></div>
-                  <p>Sunucular aranıyor...</p>
-                </div>
-              )}
-              {magnetAramaDurumu === 'error' && (
-                <div className="stremio-error">
-                  <AlertTriangle size={32} color="#e11d48" />
-                  <p>Bu bölüm için sunucu bulunamadı veya bir hata oluştu.</p>
-                </div>
-              )}
-              {magnetAramaDurumu === 'found' && (
-                <div className="stremio-player-area">
-                  <div className="stremio-sources">
-                    <h4>Kaynaklar</h4>
-                    <ul>
-                      {bulunanMagnetler.map((mag, i) => (
-                        <li key={i} className={`stremio-source-item ${seciliMagnetIndex === i ? 'active' : ''}`} onClick={() => torrentBaslat(mag.url, i)}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px' }}>
-                            <span className="source-name">{mag.name}</span>
-                            {mag.badge && (
-                              <span className={`source-quality-badge ${mag.badge === '1080p' ? 'badge-hd' : mag.badge === '720p' ? 'badge-sd' : 'badge-hd'}`}>{mag.badge}</span>
-                            )}
-                          </div>
-                          <span className="source-badge">{mag.source}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="stremio-video">
-                    {seciliMagnetIndex === null ? (
-                      <div className="stremio-placeholder">
-                        <PlayCircle size={48} color="#475569" />
-                        <p>Oynatmak için soldan bir kaynak seçin.</p>
-                      </div>
-                    ) : (
-                      <div className="stremio-active-player">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                          <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>İzleniyor: <strong>{bulunanMagnetler[seciliMagnetIndex]?.name}</strong></span>
-                        </div>
-                        <div id="stremio-video-container" style={{ position: 'relative', width: '100%', paddingTop: '56.25%', backgroundColor: 'black', borderRadius: '8px', overflow: 'hidden' }}>
-                          {seciliVideoUrl && (
-                            <iframe
-                              src={seciliVideoUrl}
-                              allowFullScreen
-                              frameBorder="0"
-                              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                            ></iframe>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

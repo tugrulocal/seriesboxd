@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Routes, Route, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import Navbar from './Navbar'
 import DiziDetay from './DiziDetay'
+import WatchPage from './WatchPage'
 import Top50 from './Top50'
 import Login from './Login'
 import Home from './Home'
@@ -145,6 +146,7 @@ function AppIcerik() {
         <Route path="/login" element={<Login />} />
         <Route path="/dizi-detay" element={<h2 style={{ color: 'white', marginTop: '50px' }}>🎬 Detay Sayfası</h2>} />
         <Route path="/dizi/:id" element={<DiziDetay />} />
+        <Route path="/watch/:id/:season/:episode" element={<WatchPage />} />
         <Route path="/top50" element={<Top50 />} />
         <Route path="/profil" element={<Profil />} />
         <Route path="/listelerim" element={<Listelerim />} />
