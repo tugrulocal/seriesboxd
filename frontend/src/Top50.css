@@ -1,0 +1,419 @@
+/* Top50.css */
+
+.top50-page {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 100px 4% 40px;
+    min-height: 100vh;
+}
+
+.top50-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+    padding-bottom: 20px;
+}
+
+.top50-title-area h1 {
+    font-size: 2.5rem;
+    color: #f8fafc;
+    margin: 0 0 10px 0;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.top50-subtitle {
+    color: #94a3b8;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+/* Filters */
+.top50-filters-wrapper {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin-bottom: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.top50-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.top50-filter-label {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.top50-select {
+    background: rgba(30, 41, 59, 0.8);
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px 36px 8px 12px;
+    font-size: 0.95rem;
+    appearance: none;
+    cursor: pointer;
+    min-width: 160px;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px top 50%;
+    background-size: 10px auto;
+    transition: all 0.2s;
+}
+
+.top50-select:hover,
+.top50-select:focus {
+    border-color: #38bdf8;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.top50-filter-clear {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #f87171;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.top50-filter-clear:hover {
+    background: rgba(248, 113, 113, 0.1);
+}
+
+
+/* List Layout */
+.top50-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.top50-item {
+    display: flex;
+    align-items: center;
+    background: rgba(20, 30, 55, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.top50-item:hover {
+    background: rgba(30, 41, 75, 0.7);
+    border-color: rgba(56, 189, 248, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.top50-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: transparent;
+    transition: background 0.3s;
+}
+
+.top50-item:hover::before {
+    background: #38bdf8;
+}
+
+/* Rank Number */
+.top50-rank-container {
+    width: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.top50-rank {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #475569;
+    line-height: 1;
+    transition: color 0.3s;
+}
+
+.top50-item:hover .top50-rank {
+    color: #f8fafc;
+}
+
+.top50-rank-icon {
+    color: #f59e0b;
+    margin-top: 4px;
+}
+
+/* Poster */
+.top50-poster-wrapper {
+    width: 80px;
+    height: 120px;
+    flex-shrink: 0;
+    margin-right: 24px;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.top50-poster {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
+
+.top50-item:hover .top50-poster {
+    transform: scale(1.05);
+}
+
+/* Info */
+.top50-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
+.top50-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.top50-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.top50-year {
+    color: #94a3b8;
+    font-size: 1rem;
+}
+
+.top50-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 10px;
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.top50-rating-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(15, 23, 42, 0.6);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.top50-star {
+    color: #f59e0b;
+}
+
+.top50-rating-val {
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.top50-votes {
+    color: #64748b;
+    font-size: 0.8rem;
+}
+
+.top50-genres {
+    display: flex;
+    gap: 6px;
+}
+
+.top50-genre-tag {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.top50-overview {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* User Actions */
+.top50-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 20px;
+    padding-left: 20px;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.top50-action-btn {
+    background: rgba(30, 41, 59, 0.6);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.top50-action-btn:hover {
+    background: #334155;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.top50-action-btn.active.watch {
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.top50-action-btn.active.like {
+    color: #f43f5e;
+    border-color: rgba(244, 63, 94, 0.3);
+}
+
+.top50-action-btn.active.wl {
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.3);
+}
+
+/* No Results */
+.top50-empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.top50-empty-icon {
+    color: #475569;
+    margin-bottom: 16px;
+}
+
+.top50-empty h3 {
+    color: #f8fafc;
+    margin: 0 0 8px 0;
+}
+
+.top50-empty p {
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* Loading */
+.top50-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: #38bdf8;
+}
+
+.top50-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(56, 189, 248, 0.2);
+    border-top-color: #38bdf8;
+    border-radius: 50%;
+    animation: top50-spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes top50-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .top50-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .top50-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .top50-rank-container {
+        flex-direction: row;
+        width: auto;
+        margin-bottom: 12px;
+        gap: 10px;
+    }
+
+    .top50-poster-wrapper {
+        display: none;
+        /* Hide poster on mobile for list view, or adjust layout */
+    }
+
+    .top50-actions {
+        margin-left: 0;
+        padding-left: 0;
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 16px;
+        margin-top: 16px;
+        width: 100%;
+        justify-content: flex-start;
+    }
+}

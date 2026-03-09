@@ -1,0 +1,14 @@
+node_modules/
+.env
+__pycache__/
+*.pyc
+.venv/
+# Large downloads folder
+downloads/
+
+# Environment variables
+.env
+.env.local
+
+# Large IMDB cache files (too big for GitHub)
+imdb_cache/

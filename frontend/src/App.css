@@ -1,0 +1,6158 @@
+* {
+  box-sizing: border-box;
+}
+
+/* Genel Sayfa Ayarları */
+:root {
+  background-color: #0f172a;
+  /* Koyu, modern bir arka plan */
+  color: #f1f5f9;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+html,
+body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.App {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+}
+
+/* =======================================
+   NAVBAR — GLASSMORPHISM
+   ======================================= */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 5%;
+  background: rgba(10, 17, 35, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.18);
+  box-shadow: 0 1px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.navbar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 5%;
+  right: 5%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.5), rgba(129, 140, 248, 0.4), transparent);
+  pointer-events: none;
+}
+
+.logo a {
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: 1px;
+  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.35));
+  transition: filter 0.3s ease;
+}
+
+.logo a:hover {
+  filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.6));
+}
+
+.menu-linkler {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+}
+
+.menu-linkler>a {
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  position: relative;
+  padding-bottom: 3px;
+  transition: color 0.25s ease;
+}
+
+.menu-linkler>a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.menu-linkler>a:hover {
+  color: #f8fafc;
+}
+
+.menu-linkler>a:hover::after {
+  width: 100%;
+}
+
+.login-btn {
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: #0f172a !important;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-weight: 700 !important;
+  font-size: 0.9rem;
+  transition: all 0.25s ease;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.login-btn:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.5), 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 45px;
+  color: #38bdf8;
+  /* Seriesboxd Mavisi */
+
+  letter-spacing: 1px;
+}
+
+/* Kartların Dizilimi (Flexbox) */
+/* Kartların toplandığı ana alan */
+.dizi-listesi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 25px;
+  justify-content: center;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 4%;
+}
+
+.dizi-kart {
+  position: relative;
+  /* İçindeki yazıları karta göre hizalamak için ŞART */
+  width: 160px;
+  /* Letterboxd afiş boyutu */
+  border-radius: 10px;
+  overflow: hidden;
+  /* Taşan kısımları ve yazıları gizler */
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* O sıkışık hissi veren kenarlığı sildik, yerine dışarı doğru esneyen mavi parlama ekledik */
+.dizi-kart:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(56, 189, 248, 0.4);
+}
+
+/* Afiş Ayarları */
+.dizi-poster {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  display: block;
+  margin: 0;
+  /* Alttaki o can sıkıcı boşluğu sildik */
+}
+
+/* İŞTE SİHİR BURADA: Sadece Hover'da Beliren Katman */
+.dizi-bilgi {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Resmin üzerini tamamen kaplar */
+
+  /* Alttan yukarı doğru kararan şık bir sinema (vignette) efekti */
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0) 60%);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  /* Yazıları afişin en altına iter */
+  padding: 15px;
+
+  opacity: 0;
+  /* Başlangıçta görünmez (Hayalet Modu) */
+  transition: opacity 0.3s ease;
+  /* Yumuşakça belirme efekti */
+}
+
+/* Mouse kartın üzerine gelince yazılar görünür olur */
+.dizi-kart:hover .dizi-bilgi {
+  opacity: 1;
+}
+
+/* Katman İçindeki Yazı Ayarları */
+.dizi-bilgi h2 {
+  font-size: 1rem;
+  margin: 0 0 5px 0;
+  color: #f8fafc;
+  white-space: normal;
+  /* Artık geniş yerimiz var, uzun isimler 2 satıra inebilir */
+}
+
+.dizi-bilgi p {
+  font-size: 0.9rem;
+  color: #fbbf24;
+  margin: 0;
+  font-weight: bold;
+}
+
+/* Arama Kutusu Tasarımı */
+.arama-kutusu {
+  width: 100%;
+  max-width: 400px;
+  /* Çok uzamasını engeller */
+  padding: 12px 20px;
+  margin-bottom: 40px;
+  /* Kartlarla arasına boşluk koyar */
+  border-radius: 25px;
+  border: 1px solid #334155;
+  background-color: #1e293b;
+  color: #f8fafc;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.arama-kutusu:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.bulunamadi {
+  color: #94a3b8;
+  width: 100%;
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Arka planı karartıp tıklanmaz yapan katman */
+.modal-arkaplan {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(5, 10, 25, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+}
+
+/* Pencerenin kendisi */
+.modal-icerik {
+  background: rgba(20, 30, 55, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  width: 90%;
+  max-width: 700px;
+  border-radius: 18px;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: modalAcilis 0.3s ease-out;
+}
+
+@keyframes modalAcilis {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Kapat Butonu */
+.kapat-butonu {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(15, 23, 42, 0.6);
+  color: #f8fafc;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.kapat-butonu:hover {
+  background: #ef4444;
+  /* Kırmızımsı hover */
+}
+
+/* Modal İçindeki Poster */
+.modal-poster {
+  width: 250px;
+  object-fit: cover;
+}
+
+/* Modal İçindeki Yazılar */
+.modal-metin {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.modal-metin h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.8rem;
+  color: #f8fafc;
+}
+
+.modal-puan {
+  font-size: 1.2rem;
+  color: #fbbf24;
+  font-weight: bold;
+
+
+}
+
+.modal-ayirici {
+  height: 1px;
+  background-color: #334155;
+  margin: 15px 0;
+}
+
+.modal-metin p {
+  color: #94a3b8;
+  font-size: 1rem;
+  line-height: 1.7;
+  overflow-y: auto;
+  /* Çok uzunsa kaydırma çubuğu çıkarır */
+  max-height: 250px;
+}
+
+/* Puan ve Butonu Yan Yana Hizalama */
+.puan-ve-buton {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  /* Puan ile buton arasındaki nefes boşluğu */
+  margin-bottom: 15px;
+  /* Çizgiyle (ayırıcı) arasına boşluk */
+}
+
+/* Modal Puanı (Eski haline getirdik) */
+.modal-puan {
+  font-size: 1.2rem;
+  color: #fbbf24;
+  font-weight: bold;
+}
+
+/* İŞTE YENİ DETAY BUTONUMUZ */
+.detay-butonu {
+  background-color: #38bdf8;
+  /* Seriesboxd Mavisi */
+  color: #0f172a;
+  /* Koyu lacivert, okunabilir bir yazı rengi */
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  /* Yumuşak köşeler */
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  cursor: pointer;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2);
+  /* Hafif mavi bir parlama */
+  transition: all 0.2s ease;
+}
+
+/* Mouse ile Üzerine Gelince (Hover) */
+.detay-butonu:hover {
+  background-color: #0284c7;
+  /* Rengi hafif koyulaşır */
+  transform: translateY(-2px);
+  /* Çok hafif yukarı zıplar */
+  box-shadow: 0 6px 15px rgba(56, 189, 248, 0.4);
+}
+
+/* Modal Kapanış Animasyonları */
+@keyframes modalKapanis {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+}
+
+.modal-gizle {
+  animation: modalKapanis 0.3s ease-in forwards;
+}
+
+@keyframes arkaplanKapanis {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+.arkaplan-gizle {
+  animation: arkaplanKapanis 0.3s ease-in forwards;
+}
+
+/* =========================================
+   DİZİ DETAY V2 — HERO-DRIVEN LAYOUT
+========================================= */
+.detay-v2 {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* ===== HERO BANNER ===== */
+.dv2-hero {
+  position: relative;
+  width: 100%;
+  min-height: 500px;
+  background-size: cover;
+  background-position: center 20%;
+  background-repeat: no-repeat;
+  margin-top: -75px;
+  padding-top: 75px;
+}
+
+.dv2-hero-grad-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 65%;
+  height: 100%;
+  background: linear-gradient(to right, #0f172a 0%, rgba(15, 23, 42, 0.85) 30%, rgba(15, 23, 42, 0.3) 65%, transparent 100%);
+  z-index: 1;
+}
+
+.dv2-hero-grad-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(to top, #0f172a 0%, rgba(15, 23, 42, 0.6) 50%, transparent 100%);
+  z-index: 1;
+}
+
+.dv2-hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 4% 40px;
+  display: flex;
+  gap: 30px;
+  align-items: flex-end;
+}
+
+.dv2-hero-poster {
+  width: 200px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.dv2-hero-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dv2-title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  line-height: 1.15;
+  text-shadow: 2px 3px 10px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dv2-yil {
+  font-size: 1.3rem;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.dv2-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.92rem;
+  color: #94a3b8;
+}
+
+.dv2-rating {
+  color: #f59e0b;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dv2-votes {
+  color: #64748b;
+}
+
+.dv2-durum {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.dv2-tarih {
+  color: #94a3b8;
+}
+
+.dv2-genres {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.dv2-genre-tag {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  transition: all 0.2s;
+}
+
+.dv2-genre-tag:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: white;
+  border-color: #38bdf8;
+}
+
+.dv2-overview {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  line-height: 1.55;
+  margin: 4px 0 0 0;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Actions (Right) */
+.dv2-hero-actions {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-self: flex-start;
+  margin-top: 20px;
+}
+
+.dv2-action-icons {
+  display: flex;
+  justify-content: space-around;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 12px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dv2-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-size: 0.75rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  font-weight: 500;
+}
+
+.dv2-action svg {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+}
+
+.dv2-action:hover {
+  color: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.dv2-action.act-watch {
+  color: #10b981;
+}
+
+.dv2-action.act-watch svg {
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.5));
+}
+
+.dv2-action.act-like {
+  color: #f43f5e;
+}
+
+.dv2-action.act-like svg {
+  filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.5));
+}
+
+.dv2-action.act-wl {
+  color: #38bdf8;
+}
+
+.dv2-action.act-wl svg {
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));
+}
+
+.dv2-rate-box {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.dv2-rate-label {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  display: block;
+  margin-bottom: 4px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.dv2-stars {
+  font-size: 1.15rem;
+  letter-spacing: 1px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+}
+
+.dv2-star {
+  color: #334155;
+  cursor: pointer;
+  transition: color 0.15s, transform 0.15s;
+}
+
+.dv2-star:hover,
+.dv2-star.dolu {
+  color: #f59e0b;
+}
+
+.dv2-puan-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.dv2-puan-sil {
+  background: none;
+  border: 1px solid #475569;
+  color: #f87171;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s;
+}
+
+.dv2-puan-sil:hover {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: #f87171;
+}
+
+.dv2-rating-display {
+  text-align: center;
+}
+
+.dv2-big-rating {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.dv2-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px;
+  background: rgba(30, 41, 59, 0.7);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+}
+
+.dv2-btn:hover {
+  background: #334155;
+  color: #fff;
+}
+
+.dv2-liste-container {
+  position: relative;
+}
+
+.dv2-btn-play {
+  background: rgba(225, 29, 72, 0.15);
+  color: #fff;
+  border: 1px solid rgba(225, 29, 72, 0.4);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  font-size: 1rem;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: normal;
+  letter-spacing: 1px;
+  padding: 12px;
+  margin-top: 8px;
+  box-shadow: 0 4px 15px rgba(225, 29, 72, 0.2);
+  transition: all 0.3s ease;
+}
+
+.dv2-btn-play:hover {
+  background: rgba(225, 29, 72, 0.35);
+  border-color: rgba(225, 29, 72, 0.7);
+  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.4);
+  transform: translateY(-2px);
+}
+
+/* ===== CONTENT BELOW HERO ===== */
+.dv2-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 4%;
+}
+
+.dv2-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 2px solid #1e293b;
+  padding-bottom: 0;
+  margin-bottom: 24px;
+}
+
+.dv2-tabs span {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dv2-tabs span:hover {
+  color: #e2e8f0;
+}
+
+.dv2-tab-active {
+  color: #fff !important;
+  border-bottom-color: #38bdf8 !important;
+}
+
+.dv2-tab-content {
+  min-height: 300px;
+}
+
+.dv2-reviews-section {
+  margin-top: 40px;
+  border-top: 1px solid #1e293b;
+  padding-top: 24px;
+}
+
+.dv2-reviews-section h3 {
+  color: #e2e8f0;
+  font-size: 1.1rem;
+  margin: 0 0 16px 0;
+}
+
+/* Puanlama yıldızları (uyumluluk) */
+.puanlama-yildizlari {
+  font-size: 1.3rem;
+  letter-spacing: 2px;
+}
+
+.tek-yildiz {
+  color: #334155;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.tek-yildiz.dolu {
+  color: #f59e0b;
+}
+
+.detay-sayfasi {
+  position: relative;
+  width: 100%;
+  min-height: 80vh;
+  display: flex;
+  justify-content: center;
+  margin-top: -20px;
+  /* Navbar ile arayı kapatır */
+  padding-top: 40px;
+}
+
+/* 1. DÜZELTME: Eski h1 kuralının burayı bozmasını KESİNLİKLE engelliyoruz */
+h1.detay-baslik {
+  font-size: 2.2rem;
+  font-family: 'Merriweather', 'Georgia', serif;
+  /* Letterboxd asilliği */
+  color: #f8fafc !important;
+  /* Mavi iptal, beyaz oldu */
+  text-transform: none !important;
+  /* Lowercase iptal, orijinaline döndü */
+  letter-spacing: normal;
+  margin: 0 0 10px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 15px;
+}
+
+/* ===== HERO BANNER (Detay Sayfası) ===== */
+.detay-hero {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  height: 50vh;
+  min-height: 350px;
+  background-size: cover;
+  background-position: center 20%;
+  background-repeat: no-repeat;
+}
+
+.detay-hero-gradient-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(to right, #0f172a 0%, rgba(15, 23, 42, 0.75) 35%, transparent 100%);
+  z-index: 1;
+}
+
+.detay-hero-gradient-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60%;
+  background: linear-gradient(to top, #0f172a 0%, rgba(15, 23, 42, 0.5) 40%, transparent 100%);
+  z-index: 1;
+}
+
+.detay-hero-content {
+  position: absolute;
+  bottom: 12%;
+  left: 4%;
+  width: 45%;
+  min-width: 320px;
+  max-width: 600px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detay-hero-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  line-height: 1.1;
+  text-shadow: 2px 3px 10px rgba(0, 0, 0, 0.7);
+}
+
+.detay-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+}
+
+.detay-hero-rating {
+  color: #f59e0b;
+  font-weight: bold;
+}
+
+.detay-hero-votes {
+  color: #94a3b8;
+}
+
+.detay-hero-yil {
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+.detay-hero-durum {
+  color: #38bdf8;
+  font-weight: 500;
+}
+
+.detay-hero-genres {
+  color: #7dd3fc;
+}
+
+.detay-hero-overview {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+  margin: 0;
+}
+
+/* 3 Sütunlu Izgara Yapısı */
+.detay-icerik {
+  display: flex;
+  gap: 40px;
+  width: 100%;
+  max-width: 1100px;
+  z-index: 1;
+}
+
+/* SOL - Afiş */
+.detay-sol {
+  width: 230px;
+  flex-shrink: 0;
+}
+
+.detay-poster {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #475569;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.poster-alti-ikonlar {
+  display: flex;
+  justify-content: space-between;
+  color: #64748b;
+  font-size: 0.8rem;
+  padding: 10px 5px;
+  border-bottom: 1px solid #334155;
+}
+
+/* ORTA - Metinler */
+.detay-orta {
+  flex: 1;
+  color: #94a3b8;
+}
+
+.detay-yil {
+  font-size: 1.2rem;
+  color: #94a3b8;
+  font-family: 'Segoe UI', sans-serif;
+  font-weight: normal;
+}
+
+.detay-yonetmen {
+  font-size: 0.85rem;
+  margin-bottom: 25px;
+}
+
+.detay-yonetmen span {
+  color: #e2e8f0;
+}
+
+.detay-ozet {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #94a3b8;
+  margin-bottom: 30px;
+}
+
+/* Sekmeler (Cast, Crew vs) */
+.detay-sekmeler {
+  display: flex;
+  gap: 20px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #64748b;
+}
+
+.detay-sekmeler span {
+  cursor: pointer;
+}
+
+.aktif-sekme {
+  color: #fff !important;
+  border-bottom: 2px solid #fff;
+  padding-bottom: 5px;
+}
+
+.sekme-cizgisi {
+  height: 1px;
+  background-color: #334155;
+  margin-top: 5px;
+}
+
+/* SAĞ - Letterboxd Paneli */
+.detay-sag-panel {
+  width: 260px;
+  background: rgba(12, 20, 40, 0.72);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.aksiyon-ikonlari {
+  display: flex;
+  justify-content: space-around;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.ikon-kutusu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 10px 14px;
+  border-radius: 10px;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.ikon-kutusu svg {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+}
+
+/* Hover: yukarı zıpla + ikon büyür */
+.ikon-kutusu:hover {
+  transform: translateY(-3px);
+  color: #fff;
+}
+
+.ikon-kutusu:hover svg {
+  transform: scale(1.2);
+}
+
+/* Watch hover */
+.ikon-kutusu:not(.watch-aktif):hover svg {
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.6));
+}
+
+/* Like hover */
+.ikon-kutusu:not(.like-aktif):nth-child(2):hover svg {
+  filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.6));
+}
+
+/* Watchlist hover */
+.ikon-kutusu:not(.watchlist-aktif):nth-child(3):hover svg {
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+}
+
+.ikon-metin {
+  font-size: 0.72rem;
+  letter-spacing: 0.5px;
+  transition: color 0.2s ease;
+}
+
+/* Aktif Durumlar */
+.ikon-kutusu.watch-aktif {
+  color: #10b981;
+}
+
+.ikon-kutusu.watch-aktif svg {
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.7));
+  transform: scale(1.1);
+}
+
+.ikon-kutusu.like-aktif {
+  color: #f43f5e;
+}
+
+.ikon-kutusu.like-aktif svg {
+  filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.7));
+  transform: scale(1.1);
+}
+
+.ikon-kutusu.watchlist-aktif {
+  color: #38bdf8;
+}
+
+.ikon-kutusu.watchlist-aktif svg {
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.7));
+  transform: scale(1.1);
+}
+
+.puanlama-alani {
+  text-align: center;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.puan-baslik {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.yildizlar {
+  font-size: 1.5rem;
+  color: #475569;
+  cursor: pointer;
+  letter-spacing: 2px;
+}
+
+.yildizlar:hover {
+  color: #10b981;
+}
+
+/* Yeşil Letterboxd rengi */
+
+.panel-buton {
+  background: rgba(20, 32, 58, 0.7);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  color: #cbd5e1;
+  text-align: center;
+  padding: 10px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.panel-buton:hover {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #fff;
+}
+
+.review-log-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+/* REVIEW MODAL */
+.review-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.review-modal {
+  background: rgba(14, 22, 42, 0.88);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 16px;
+  width: 520px;
+  max-width: 92vw;
+  max-height: 82vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 32px 72px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.review-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.review-modal-header h3 {
+  color: white;
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.review-modal-kapat {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.review-modal-kapat:hover {
+  color: white;
+  background: #334155;
+}
+
+.review-textarea {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #f1f5f9;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color 0.2s;
+}
+
+.review-textarea:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+
+.review-textarea::placeholder {
+  color: #475569;
+}
+
+.spoiler-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin: 10px 0;
+  cursor: pointer;
+}
+
+.spoiler-label input[type="checkbox"] {
+  accent-color: #f59e0b;
+}
+
+.review-gonder-btn {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.review-gonder-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+}
+
+.review-gonder-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.review-listesi {
+  margin-top: 20px;
+  border-top: 1px solid #334155;
+  padding-top: 14px;
+}
+
+.review-listesi h4 {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin: 0 0 12px 0;
+}
+
+.review-item {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.review-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.review-user {
+  color: #38bdf8;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.review-tarih {
+  color: #475569;
+  font-size: 0.8rem;
+}
+
+.review-text {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.spoiler-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.ortalama-puan-kutusu {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #334155;
+  padding-top: 15px;
+}
+
+.rating-yazisi {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.puan-grubu {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.dev-puan {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #f8fafc;
+}
+
+.kullanici-puan-gostergesi {
+  font-size: 0.9rem;
+  color: #38bdf8;
+  /* Mavi renk senin puanın olduğunu belli eder */
+  font-weight: bold;
+}
+
+.kucuk-yildiz {
+  color: #38bdf8;
+}
+
+/* =========================================
+   SEZONLAR SEKMESİ TASARIMI
+========================================= */
+.sezon-listesi {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 25px;
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.sezon-satir {
+  display: flex;
+  align-items: center;
+  background: rgba(20, 30, 55, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.12);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.sezon-satir:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(30, 45, 75, 0.75);
+  transform: translateX(5px);
+  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.sezon-poster-kucuk {
+  width: 45px;
+  border-radius: 4px;
+  margin-right: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.sezon-bilgi {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sezon-baslik {
+  color: #f8fafc;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.sezon-detay {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  margin-top: 3px;
+}
+
+/* Sezon Sağ Taraf (İkonlar Grubu) */
+.sezon-sag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* İLERLEME ÇUBUĞU (PROGRESS BAR) */
+.progress-container {
+  width: 100%;
+  height: 4px;
+  background-color: #334155;
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #10b981;
+  /* Letterboxd Yeşili */
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+/* BÖLÜMLER (ACCORDION İÇERİĞİ) */
+.bolum-listesi-container {
+  background-color: #0f172a;
+  border-left: 2px solid #334155;
+  margin-left: 20px;
+  margin-bottom: 15px;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  animation: modalAcilis 0.2s ease-out;
+}
+
+.bolum-satir {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  border-bottom: 1px solid #1e293b;
+  transition: background 0.2s;
+}
+
+.bolum-satir:hover {
+  background-color: #1e293b;
+}
+
+.bolum-sol {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.bolum-no {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: bold;
+  min-width: 25px;
+}
+
+.bolum-bilgi-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.bolum-meta {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.bolum-adi {
+  color: #e2e8f0;
+  font-size: 0.95rem;
+}
+
+.bolum-aksiyonlar {
+  display: flex;
+  gap: 10px;
+}
+
+.bolum-ikon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  background-color: #334155;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+
+.bolum-ikon:hover {
+  background-color: #475569;
+  color: #fff;
+}
+
+/* İZLEDİM KUTUCUĞU (CHECKBOX) */
+.izlendi-kutusu {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #475569;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #475569;
+  /* İkonlar artık varsayılan olarak sönük gri görünür */
+  font-size: 1.2rem;
+}
+
+.izlendi-kutusu:hover {
+  border-color: #10b981;
+  /* Letterboxd Yeşili */
+}
+
+.izlendi-kutusu.secili {
+  background-color: #10b981;
+  border-color: #10b981;
+  color: #0f172a;
+  /* Tik rengi koyu */
+}
+
+/* Bölüm İkonları Aktif Halleri */
+.bolum-ikon.izlendi-aktif {
+  background-color: #10b981;
+  /* Yeşil */
+  color: #0f172a;
+}
+
+.bolum-ikon.izlenecek-aktif {
+  background-color: #38bdf8;
+  color: #0f172a;
+}
+
+/* Sezon butonları */
+.sezon-butonlar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sezon-izle-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+
+.sezon-izle-btn:hover {
+  border-color: #94a3b8;
+  color: #e2e8f0;
+}
+
+.sezon-izle-btn.aktif-izle {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+.sezon-izle-btn.aktif-izlenecek {
+  background: #38bdf8;
+  border-color: #38bdf8;
+  color: white;
+}
+
+/* Sezon progress bar */
+.sezon-progress-bar {
+  width: 100%;
+  height: 3px;
+  background: #334155;
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.sezon-progress-fill {
+  height: 100%;
+  background: #10b981;
+  transition: width 0.3s;
+}
+
+.sezon-izlenme-text {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Bölüm listesi wrapper (accordion content) */
+.bolum-listesi-wrapper {
+  background: #0f172a;
+  border-left: 2px solid #334155;
+  margin-left: 20px;
+  margin-bottom: 15px;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  animation: modalAcilis 0.2s ease-out;
+}
+
+.bolum-bilgi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bolum-tarih {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.bolum-rating {
+  color: #f59e0b;
+  font-size: 0.78rem;
+}
+
+/* Bölüm izle/watchlist butonları */
+.bolum-izle-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  background: #334155;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+
+.bolum-izle-btn:hover {
+  background: #475569;
+  color: #e2e8f0;
+}
+
+.bolum-izle-btn.izlendi {
+  background: #10b981;
+  color: white;
+}
+
+.bolum-izle-btn.izlenecek {
+  background: #38bdf8;
+  color: white;
+}
+
+/* Bölüm puanlama */
+.bolum-puanlama-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bolum-puan-toggle {
+  background: none;
+  border: 1px solid #475569;
+  color: #f59e0b;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bolum-puan-toggle:hover {
+  border-color: #f59e0b;
+}
+
+.bolum-yildizlar {
+  position: absolute;
+  right: 100%;
+  margin-right: 6px;
+  display: flex;
+  gap: 1px;
+  background: #1e293b;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  white-space: nowrap;
+}
+
+.bolum-tek-yildiz {
+  color: #334155;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: color 0.15s;
+}
+
+.bolum-tek-yildiz.dolu {
+  color: #f59e0b;
+}
+
+/* =========================================
+   CAST GRID (Yeni)
+========================================= */
+.cast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.cast-kart {
+  background: rgba(20, 32, 58, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.cast-kart:hover {
+  transform: translateY(-5px);
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.15);
+}
+
+.cast-foto {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.cast-foto-yok {
+  width: 100%;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  font-size: 2.5rem;
+  color: #334155;
+}
+
+.cast-bilgi {
+  padding: 10px;
+  text-align: center;
+}
+
+.cast-isim {
+  color: #f1f5f9;
+  font-weight: 600;
+  font-size: 0.88rem;
+  display: block;
+}
+
+.cast-rol {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-style: italic;
+  display: block;
+  margin-top: 2px;
+}
+
+/* =========================================
+   CREW GRID (Yeni)
+========================================= */
+.crew-bolumler {
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.crew-departman {
+  margin-bottom: 28px;
+}
+
+.crew-dept-baslik {
+  font-size: 0.85rem;
+  color: #38bdf8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 8px;
+  margin: 0 0 14px 0;
+}
+
+.crew-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.crew-kart {
+  background: #1e293b;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.crew-kart:hover {
+  transform: translateY(-4px);
+  border-color: #38bdf8;
+}
+
+/* =========================================
+   CAST (OYUNCULAR) SEKMESİ
+========================================= */
+.oyuncu-listesi {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 20px;
+  margin-top: 25px;
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.oyuncu-kart {
+  background-color: #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  transition: transform 0.2s;
+}
+
+.oyuncu-kart:hover {
+  transform: translateY(-5px);
+  border-color: #38bdf8;
+}
+
+.oyuncu-foto {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.oyuncu-bilgi {
+  padding: 10px;
+  text-align: center;
+}
+
+.oyuncu-isim {
+  font-size: 0.9rem;
+  color: #f8fafc;
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.oyuncu-karakter {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* =========================================
+   CREW (EKİP) SEKMESİ
+========================================= */
+.crew-container {
+  margin-top: 25px;
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.crew-group {
+  margin-bottom: 30px;
+}
+
+.crew-dept-title {
+  font-size: 0.9rem;
+  color: #38bdf8;
+  /* Başlıklar mavi */
+  border-bottom: 1px solid #334155;
+  padding-bottom: 5px;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+
+.crew-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.crew-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.crew-name {
+  font-size: 0.95rem;
+  color: #f8fafc;
+  font-weight: 500;
+}
+
+.crew-job {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* =========================================
+   GENRES (TÜRLER) SEKMESİ
+========================================= */
+.genre-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 25px;
+  animation: modalAcilis 0.3s ease-out;
+}
+
+.genre-tag {
+  background-color: #1e293b;
+  color: #94a3b8;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid #334155;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.genre-tag:hover {
+  background-color: #334155;
+  color: #f8fafc;
+  border-color: #94a3b8;
+}
+
+/* =========================================
+   LİSTE MENÜSÜ (POPUP)
+========================================= */
+.liste-menu-container {
+  position: relative;
+}
+
+.liste-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 240px;
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 10px;
+  z-index: 100;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  margin-top: 5px;
+  animation: modalAcilis 0.2s ease-out;
+}
+
+.liste-satir {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.liste-satir:hover {
+  background-color: #334155;
+}
+
+.liste-checkbox {
+  accent-color: #38bdf8;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.liste-adi {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+}
+
+.yeni-liste-form {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #334155;
+  display: flex;
+  gap: 5px;
+}
+
+.yeni-liste-input {
+  flex: 1;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #fff;
+  padding: 5px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.liste-ekle-btn {
+  background: #38bdf8;
+  border: none;
+  color: #0f172a;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0 8px;
+}
+
+/* =========================================
+   PUANLAMA YILDIZLARI
+========================================= */
+.puanlama-yildizlari {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+.tek-yildiz {
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: #334155;
+  /* Varsayılan sönük renk */
+  transition: color 0.2s;
+}
+
+.tek-yildiz.dolu {
+  color: #38bdf8;
+}
+
+/* Seçili veya hover olunca mavi */
+.tek-yildiz:hover {
+  transform: scale(1.2);
+}
+
+/* =========================================
+   TOP 50 SAYFASI TASARIMI (YATAY LİSTE)
+========================================= */
+.top50-listesi {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding-bottom: 50px;
+  width: 100%;
+  max-width: 800px;
+  /* Okunabilirlik için çok geniş olmasın */
+  margin: 0 auto;
+}
+
+.top50-satir {
+  display: flex;
+  align-items: center;
+  background-color: #1e293b;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.top50-satir:hover {
+  border-color: #38bdf8;
+  transform: translateX(5px);
+  background-color: #253346;
+}
+
+.top50-sira {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #64748b;
+  width: 40px;
+  text-align: center;
+  flex-shrink: 0;
+  margin-right: 15px;
+}
+
+.top50-poster {
+  width: 70px;
+  height: 105px;
+  /* 2:3 oran */
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 20px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.top50-bilgi {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Taşmaları engelle */
+}
+
+.top50-baslik-satiri {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.top50-baslik {
+  font-size: 1.1rem;
+  color: #f8fafc;
+  margin: 0;
+  font-weight: bold;
+}
+
+.top50-puan {
+  color: #10b981;
+  /* Yeşil */
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.top50-ozet {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 0;
+
+  /* 3 Satır Sınırlaması (Line Clamp) */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* =========================================
+   GELİŞMİŞ ARAMA ÇUBUĞU (NAVBAR)
+========================================= */
+
+.searchbar-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Arama Satırı (ikon + input + filtre ikonu) */
+.searchbar-satir {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 22px;
+  padding: 5px 8px;
+  transition: background 0.3s ease, border-color 0.3s ease, width 0.3s ease;
+  width: 40px;
+  /* Kapalı: sadece ikon */
+  overflow: hidden;
+}
+
+.searchbar-satir.acik {
+  width: 280px;
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.searchbar-satir.acik:focus-within {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+/* Büyüteç / Spinner ikonu */
+.search-ikon-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  transition: color 0.2s;
+}
+
+.search-ikon-btn:hover {
+  color: #38bdf8;
+}
+
+.search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  padding: 4px 8px;
+  min-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.searchbar-satir.acik .search-input {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.search-input::placeholder {
+  color: #64748b;
+}
+
+/* Filtre ikonu */
+.filtre-ikon-btn {
+  background: none;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 7px;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.filtre-ikon-btn:hover,
+.filtre-ikon-btn.panel-acik {
+  color: #f8fafc;
+  border-color: #60748b;
+  background: #1a2740;
+}
+
+.filtre-ikon-btn.aktif {
+  color: #38bdf8;
+  border-color: #38bdf8;
+}
+
+/* Aktif filtre noktası */
+.filtre-nokta {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+}
+
+/* X temizle butonu */
+.temizle-x-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 4px 6px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.temizle-x-btn:hover {
+  color: #f8fafc;
+}
+
+/* Yükleniyor spinner */
+.search-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #334155;
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================
+   FİLTRE PANELİ
+========================================= */
+.filtre-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  left: auto;
+  width: 340px;
+  background: rgba(8, 15, 35, 0.9);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 16px;
+  padding: 18px;
+  z-index: 999;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  animation: panelAcilis 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes panelAcilis {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Üçgen ok */
+.filtre-panel::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: 20px;
+  left: auto;
+  width: 14px;
+  height: 7px;
+  background: rgba(56, 189, 248, 0.25);
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+/* =========================================
+   ÖNERİ DROPDOWN (glassmorphic)
+========================================= */
+.oneri-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  left: auto;
+  min-width: 280px;
+  background: rgba(8, 15, 35, 0.92);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 14px;
+  overflow: hidden;
+  z-index: 1000;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  animation: oneriAcilis 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes oneriAcilis {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.oneri-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.oneri-item:last-child {
+  border-bottom: none;
+}
+
+.oneri-item:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.oneri-poster {
+  width: 36px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: #1e293b;
+}
+
+.oneri-poster-placeholder {
+  background: #1e293b;
+}
+
+.oneri-bilgi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.oneri-isim {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.oneri-puan {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+
+
+.filtre-bolum {
+  margin-bottom: 18px;
+}
+
+.filtre-bolum:last-child {
+  margin-bottom: 0;
+}
+
+.filtre-baslik-satir {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.filtre-baslik {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #64748b;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.filtre-deger-badge {
+  font-size: 0.82rem;
+  font-weight: bold;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* =========================================
+   ÇİFT RANGE SLIDER
+========================================= */
+.range-wrapper {
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+.range-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #334155;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.range-fill {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(to right, #0ea5e9, #38bdf8);
+  border-radius: 2px;
+}
+
+.range-slider {
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  pointer-events: none;
+  outline: none;
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #38bdf8;
+  border: 2px solid #0f172a;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 6px rgba(56, 189, 248, 0.4);
+  transition: transform 0.15s ease;
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.range-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #38bdf8;
+  border: 2px solid #0f172a;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 6px rgba(56, 189, 248, 0.4);
+}
+
+.range-etiketler {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #475569;
+  margin-top: 6px;
+}
+
+/* =========================================
+   TÜR BADGELERİ
+========================================= */
+.tur-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.tur-badge {
+  background: rgba(20, 32, 58, 0.7);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  color: #94a3b8;
+  font-size: 0.78rem;
+  padding: 5px 11px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.tur-badge:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #f8fafc;
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.tur-badge.secili {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+/* =========================================
+   SIRALAMA BUTONLARI
+========================================= */
+.siralama-grup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.siralama-btn {
+  background: rgba(20, 32, 58, 0.7);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  color: #94a3b8;
+  font-size: 0.78rem;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.siralama-btn:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #f8fafc;
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.siralama-btn.aktif {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+/* Filtreleri Temizle */
+.filtre-temizle-btn {
+  width: 100%;
+  margin-top: 14px;
+  background: none;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  font-size: 0.82rem;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filtre-temizle-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+/* =========================================
+   KULLANICI AVATAR & DROPDOWN (NAVBAR)
+========================================= */
+.kullanici-menu {
+  position: relative;
+}
+
+.avatar-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid rgba(56, 189, 248, 0.3);
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+  padding: 0;
+}
+
+.avatar-btn:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2), 0 0 14px rgba(56, 189, 248, 0.3);
+  transform: scale(1.06);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-harf {
+  font-size: 1rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.kullanici-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 240px;
+  background: rgba(8, 15, 35, 0.88);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 14px;
+  padding: 12px;
+  z-index: 1000;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  animation: panelAc 0.2s ease-out;
+}
+
+@keyframes panelAc {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdown-kullanici-bilgi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 4px 10px;
+}
+
+.dropdown-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 2px solid #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #38bdf8;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.dropdown-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dropdown-username {
+  color: #f8fafc;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.dropdown-email {
+  color: #64748b;
+  font-size: 0.75rem;
+  margin: 2px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 145px;
+}
+
+.dropdown-ayirici {
+  height: 1px;
+  background: rgba(56, 189, 248, 0.12);
+  margin: 6px 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: rgba(56, 189, 248, 0.1);
+  color: #f8fafc;
+}
+
+.dropdown-item.cikis {
+  color: #ef4444;
+}
+
+.dropdown-item.cikis:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* =========================================
+   AUTH SAYFASI (LOGIN / REGISTER)
+========================================= */
+.auth-sayfa {
+  min-height: 100vh;
+  min-width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  /* .App padding'ini override et */
+  margin: -40px -20px;
+  padding: 40px 20px;
+}
+
+/* Arkaplan katmanı */
+.auth-arka {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 80% 80%, rgba(99, 102, 241, 0.07) 0%, transparent 60%);
+  z-index: 0;
+}
+
+.auth-arka-gradyan {
+  position: fixed;
+  inset: 0;
+  background:
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2338bdf8' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  z-index: 0;
+}
+
+/* Kart */
+.auth-kart {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 40px 36px 32px;
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.06),
+    0 32px 64px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.auth-logo {
+  display: block;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #38bdf8;
+  text-decoration: none;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.auth-slogan {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
+  margin: 0 0 28px;
+}
+
+/* Sekme (Tab) */
+.auth-tab-wrapper {
+  position: relative;
+  display: flex;
+  border-bottom: 2px solid #1e293b;
+  margin-bottom: 24px;
+}
+
+.auth-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.95rem;
+  padding: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.auth-tab.aktif {
+  color: #f8fafc;
+}
+
+.auth-tab-cizgi {
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 50%;
+  height: 2px;
+  background: #38bdf8;
+  border-radius: 2px;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+.auth-tab-cizgi.sagda {
+  left: 50%;
+}
+
+/* Hata mesajı */
+.auth-hata {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  color: #fca5a5;
+  font-size: 0.875rem;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: auth-shake 0.4s ease;
+}
+
+@keyframes auth-shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-6px);
+  }
+
+  40% {
+    transform: translateX(6px);
+  }
+
+  60% {
+    transform: translateX(-4px);
+  }
+
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+/* Başarı mesajı */
+.auth-basari {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 10px;
+  color: #6ee7b7;
+  font-size: 0.875rem;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Form */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-alan {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-alan label {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.auth-label-satir {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sifre-unut-link {
+  font-size: 0.78rem;
+  color: #38bdf8;
+  text-decoration: none;
+}
+
+.sifre-unut-link:hover {
+  text-decoration: underline;
+}
+
+/* Input alanı */
+.auth-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 0 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  gap: 8px;
+}
+
+.auth-input-wrapper:focus-within {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.auth-input-wrapper.yanlis {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.auth-input-wrapper.dogru {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.auth-input-ikon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.auth-input-wrapper input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  padding: 12px 0;
+}
+
+.auth-input-wrapper input::placeholder {
+  color: #475569;
+}
+
+.goster-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.goster-btn:hover {
+  opacity: 1;
+}
+
+/* Şifre gücü */
+.sifre-guc-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.sifre-guc-bar {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.sifre-guc-segment {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  transition: background 0.3s ease;
+}
+
+.sifre-guc-etiket {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+  transition: color 0.3s;
+}
+
+/* Küçük ipucu yazıları */
+.auth-ipucu {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.auth-ipucu.hata-rengi {
+  color: #ef4444;
+}
+
+.auth-ipucu.basari-rengi {
+  color: #10b981;
+}
+
+/* Beni hatırla */
+.hatirla-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.hatirla-checkbox input {
+  accent-color: #38bdf8;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* Submit butonu */
+.auth-submit-btn {
+  background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+  color: #0f172a;
+  border: none;
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(56, 189, 248, 0.45);
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Auth sayfasında spinner */
+.auth-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(15, 23, 42, 0.3);
+  border-top-color: #0f172a;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* Alt geçiş linki */
+.auth-alt-link {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.auth-alt-link button {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+}
+
+.auth-alt-link button:hover {
+  text-decoration: underline;
+}
+
+/* Doğrulama & Şifre Sıfırlama Başlık */
+.auth-dogrulama-baslik {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.auth-dogrulama-ikon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.auth-dogrulama-baslik h3 {
+  color: #f8fafc;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.auth-dogrulama-aciklama {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.auth-dogrulama-aciklama strong {
+  color: #38bdf8;
+}
+
+/* Kod input - daha büyük, ortala */
+.auth-kod-input {
+  font-size: 1.4rem !important;
+  letter-spacing: 6px;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* Şifremi unuttum butonu (link gibi) */
+button.sifre-unut-link {
+  background: none;
+  border: none;
+  font-size: 0.78rem;
+  color: #38bdf8;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+
+button.sifre-unut-link:hover {
+  text-decoration: underline;
+}
+
+/* =========================================
+   BÖLÜM PUANLAMA (YILDIZLAR + TMDB BADGE)
+========================================= */
+
+/* TMDB puan rozeti */
+.bolum-tmdb-puan {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 8px;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  color: #eab308;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+/* Bölüm yıldız satırı */
+.bolum-yildizlar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Tek yıldız */
+.bolum-yildiz {
+  font-size: 1rem;
+  color: #334155;
+  cursor: pointer;
+  transition: color 0.12s ease, transform 0.1s ease;
+  line-height: 1;
+  user-select: none;
+}
+
+.bolum-yildiz:hover,
+.bolum-yildiz.dolu {
+  color: #f59e0b;
+}
+
+.bolum-yildiz:hover {
+  transform: scale(1.2);
+}
+
+/* Verilen puan etiketi (örn: "6/10") */
+.bolum-verilen-puan {
+  font-size: 0.7rem;
+  color: #f59e0b;
+  font-weight: 600;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+/* Yeni eklenen: Puanlama Açma Butonu ve Kapatma İkonu */
+.bolum-rate-btn {
+  font-size: 1.1rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.1s ease;
+  line-height: 1;
+  user-select: none;
+  padding: 4px;
+}
+
+.bolum-rate-btn:hover {
+  color: #f59e0b;
+  transform: scale(1.15);
+}
+
+.bolum-puan-kapat {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  cursor: pointer;
+  margin-left: 6px;
+  padding: 2px 4px;
+  transition: color 0.15s ease;
+}
+
+.bolum-puan-kapat:hover {
+  color: #f87171;
+}
+
+.bolum-puanlama-alani {
+  display: flex;
+  align-items: center;
+  min-width: 90px;
+  justify-content: flex-end;
+}
+
+/* Genre Page Title */
+.genre-sayfa-baslik {
+  width: 100%;
+  color: #f1f5f9;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #1e293b;
+}
+
+/* =========================================
+   PLATFORM LOGOLARI (Genre satırında inline)
+========================================= */
+.dv2-provider-logo-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.dv2-provider-logo-link:hover {
+  transform: translateY(-2px);
+  opacity: 0.85;
+}
+
+.dv2-provider-logo {
+  height: 26px;
+  width: 26px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.stremio-player-bottom {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.stremio-vlc-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f97316;
+  /* VLC orange */
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.stremio-vlc-btn:hover {
+  background: #ea580c;
+  transform: translateY(-1px);
+}
+
+.stremio-webrtc-warning {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  font-size: 0.8rem;
+  padding: 10px 15px;
+  border-top: 1px solid rgba(239, 68, 68, 0.3);
+  text-align: center;
+  margin-top: auto;
+}
+
+.stremio-webrtc-warning strong {
+  color: #fecaca;
+}
+
+/* --- STREMIO MODAL --- */
+.stremio-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+}
+
+.stremio-modal {
+  background: rgba(5, 10, 30, 0.92);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 16px;
+  width: 95vw;
+  max-width: 1200px;
+  height: 88vh;
+  max-height: 820px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.stremio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 22px;
+  background: rgba(15, 25, 50, 0.8);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+}
+
+.stremio-header h3 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 1.2rem;
+}
+
+.stremio-kapat {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.stremio-kapat:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.stremio-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+.stremio-loading,
+.stremio-error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  gap: 15px;
+}
+
+.stremio-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(56, 189, 248, 0.2);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.stremio-player-area {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.stremio-sources {
+  width: 230px;
+  min-width: 200px;
+  background: rgba(10, 18, 40, 0.8);
+  border-right: 1px solid rgba(56, 189, 248, 0.12);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.stremio-sources h4 {
+  margin: 0;
+  padding: 15px;
+  color: #64748b;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+}
+
+.stremio-sources ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.stremio-source-item {
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.stremio-source-item:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.stremio-source-item.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-left: 3px solid #38bdf8;
+}
+
+.source-name {
+  color: #f1f5f9;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.source-badge {
+  font-size: 0.65rem;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.source-quality-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.badge-hd {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-sd {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.stremio-video {
+  flex: 1;
+  background: #000;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.stremio-active-player {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#stremio-video-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#stremio-video-container video {
+  width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.stremio-placeholder {
+  color: #475569;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.stremio-stats {
+  background: rgba(0, 0, 0, 0.8);
+  color: #cbd5e1;
+  padding: 8px 15px;
+  display: flex;
+  gap: 20px;
+  font-size: 0.8rem;
+  justify-content: center;
+}
+
+.bolum-stremio-btn {
+  background: rgba(225, 29, 72, 0.1);
+  color: #fda4af;
+  border: 1px solid rgba(225, 29, 72, 0.2);
+  border-radius: 6px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  margin-left: auto;
+  margin-right: 10px;
+}
+
+.bolum-stremio-btn:hover {
+  background: rgba(225, 29, 72, 0.2);
+  transform: translateY(-1px);
+}
+
+/* ============================================================ */
+/* --- PLAYER MODAL V2 ---                                      */
+/* ============================================================ */
+
+/* Wider modal for fullscreen player */
+.stremio-modal.player-modal-v2 {
+  max-width: 1200px;
+  width: 95vw;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+  /* So it looks like it attaches to the bottom */
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header layout: title + dropdown on left, close on right */
+.player-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.player-header-left h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Source dropdown button */
+.source-dropdown-wrapper {
+  position: relative;
+}
+
+.source-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 8px;
+  padding: 5px 12px;
+  color: #7dd3fc;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.source-dropdown-btn:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.source-dropdown-active {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-dropdown-caret {
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+/* Glassmorphism dropdown menu */
+.source-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 240px;
+  background: rgba(10, 17, 32, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.source-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  gap: 8px;
+}
+
+.source-dropdown-item:hover {
+  background: rgba(56, 189, 248, 0.08);
+  color: #cbd5e1;
+  border-color: rgba(56, 189, 248, 0.15);
+}
+
+.source-dropdown-item.active {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.source-dropdown-name {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 2Embed info banner */
+.player-info-banner {
+  padding: 8px 14px;
+  background: rgba(234, 179, 8, 0.1);
+  border-bottom: 1px solid rgba(234, 179, 8, 0.2);
+  color: #fbbf24;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.player-info-banner strong {
+  color: #fcd34d;
+}
+
+/* Player main area */
+.player-main-area {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Fullscreen-ish video frame */
+.player-video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  /* Use aspect-ratio instead of padding-top for modern robust 16:9 sizing */
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sub controls label & misc */
+.sub-controls-label {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.sub-loading-text {
+  color: #475569;
+  font-size: 0.72rem;
+}
+
+.sub-controls-right {
+  margin-left: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stremio-modal.player-modal-v2 {
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .player-header-left h3 {
+    font-size: 0.88rem;
+  }
+
+  .source-dropdown-menu {
+    min-width: 200px;
+  }
+
+  .stremio-header {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .source-dropdown-active {
+    max-width: 120px;
+  }
+
+  .custom-player-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+
+
+.source-quality-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.badge-hd {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-sd {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* ============================================================ */
+/* --- SUBTITLE OVERLAY SYSTEM                                  */
+/* ============================================================ */
+
+/* Wrapper that holds iframe + subtitle overlay together */
+.subtitle-overlay-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+  display: block;
+}
+
+/* The invisible ghost layer that renders subtitle text */
+.subtitle-text-layer {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+  /* Fullscreen: layer stays on top of iframe */
+}
+
+/* Subtitle text box */
+.subtitle-text {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.70);
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 4px 14px 5px;
+  border-radius: 4px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9), -1px -1px 3px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.01em;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+/* Fullscreen: slightly larger text */
+.subtitle-overlay-wrapper:fullscreen .subtitle-text {
+  font-size: 1.6rem;
+  padding: 6px 20px 8px;
+}
+
+.subtitle-overlay-wrapper:-webkit-full-screen .subtitle-text {
+  font-size: 1.6rem;
+  padding: 6px 20px 8px;
+}
+
+/* BOTTOM BAR — below the wrapper */
+.player-bottom-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  background: rgba(10, 17, 32, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(56, 189, 248, 0.12);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.sub-lang-selector {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sub-sync-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+}
+
+.sub-bar-label {
+  color: #475569;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-right: 2px;
+}
+
+.sub-bar-btn {
+  background: rgba(71, 85, 105, 0.25);
+  color: #94a3b8;
+  border: 1px solid rgba(71, 85, 105, 0.35);
+  border-radius: 5px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+
+.sub-bar-btn:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.sub-bar-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.15);
+}
+
+.sub-cue-count {
+  color: #334155;
+  font-size: 0.65rem;
+  margin-left: 4px;
+}
+
+/* Per-language subtitle dropdown */
+.sub-lang-dd-wrapper {
+  position: relative;
+}
+
+.sub-lang-dd-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: rgba(10, 17, 32, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 8px;
+  min-width: 280px;
+  max-width: 380px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 999;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.6);
+  padding: 4px;
+  /* Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.3) transparent;
+}
+
+.sub-dd-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.12s;
+  text-align: left;
+}
+
+.sub-dd-item:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.sub-dd-item.active {
+  background: rgba(56, 189, 248, 0.18);
+}
+
+.sub-dd-release {
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.sub-dd-item.active .sub-dd-release {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.sub-dd-count {
+  color: #475569;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Active subtitle info tag */
+.sub-active-info {
+  color: #38bdf8;
+  font-size: 0.65rem;
+  margin-left: 6px;
+  opacity: 0.8;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Open state indicator */
+.sub-bar-btn.open {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #7dd3fc;
+}
+
+.sync-btn {
+  background: rgba(71, 85, 105, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  border-radius: 5px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sync-btn:hover {
+  background: rgba(71, 85, 105, 0.45);
+  color: #e2e8f0;
+}
+
+.sync-offset-display {
+  color: #64748b;
+  font-size: 0.72rem;
+  min-width: 32px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.fs-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  background: rgba(56, 189, 248, 0.1);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fs-toggle-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+/* Fullscreen: bottom bar stays visible inside the wrapper */
+.subtitle-overlay-wrapper:fullscreen .player-bottom-bar,
+.subtitle-overlay-wrapper:-webkit-full-screen .player-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 11;
+}
+
+/* Video.js dark theme override */
+.video-js {
+  font-family: 'Inter', sans-serif;
+}
+
+.video-js .vjs-control-bar {
+  background: rgba(15, 23, 42, 0.85) !important;
+  backdrop-filter: blur(8px);
+}
+
+.video-js .vjs-play-progress {
+  background: #38bdf8 !important;
+}
+
+.video-js .vjs-big-play-button {
+  background: rgba(56, 189, 248, 0.25) !important;
+  border: 2px solid rgba(56, 189, 248, 0.4) !important;
+  border-radius: 50% !important;
+  width: 64px !important;
+  height: 64px !important;
+  line-height: 64px !important;
+  font-size: 2rem !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* =========================================================
+   WATCH PAGE — Cinematic 2-Column Layout
+   z-index: bg(0) overlay(1) grid(5) subtitle(10)
+   ========================================================= */
+
+.watch-page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+  background-color: #080c14;
+  width: 100%;
+  align-self: stretch;
+}
+
+/* ---- Background ---- */
+.watch-bg-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background-size: cover;
+  background-position: center top;
+  filter: blur(40px) brightness(0.18) saturate(1.5);
+  transform: scale(1.08);
+  pointer-events: none;
+}
+
+/* Ambient aura ring around the video area */
+.watch-bg-layer::after {
+  content: '';
+  position: absolute;
+  top: 5%;
+  left: 5%;
+  width: 55%;
+  height: 60%;
+  background: radial-gradient(ellipse 80% 70% at 50% 50%,
+      rgba(56, 130, 210, 0.18) 0%,
+      rgba(56, 189, 248, 0.07) 50%,
+      transparent 100%);
+  pointer-events: none;
+}
+
+.watch-overlay-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 130% 80% at 40% 30%,
+      rgba(8, 12, 20, 0.3) 0%,
+      rgba(8, 12, 20, 0.8) 60%,
+      rgba(8, 12, 20, 0.97) 100%);
+}
+
+/* ---- Content Grid ---- */
+.watch-content-grid {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 12px;
+  padding: 10px 10px 20px;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: start;
+}
+
+/* ============================================================
+   LEFT: PLAYER
+   ============================================================ */
+.cinematic-player-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Source bar above video */
+.player-source-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(8, 12, 20, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 44px;
+  position: relative;
+  z-index: 1050;
+}
+
+.player-ep-badge-bar {
+  /* Google Fonts'tan Inter veya Geist çektiğini varsayıyorum */
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  /* Biraz kalın ama hantal değil */
+  font-size: 0.95rem;
+  /* Çok büyük yapma, zarif kalsın */
+  letter-spacing: 0.05em;
+  /* Harflerin arasını çok hafif aç, nefes alsın */
+  color: rgba(255, 255, 255, 0.9);
+  /* Saf beyaz yerine %90 opaklık, daha premium durur */
+  text-transform: capitalize;
+  /* Sadece baş harfler büyük */
+}
+
+.watch-src-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 7px !important;
+  padding: 6px 12px !important;
+  font-size: 0.76rem !important;
+  color: #cbd5e1 !important;
+}
+
+/* ---- Player Main Area ---- */
+.watch-player-area {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* The video wrapper keeps 16:9 naturally */
+.watch-player-area .subtitle-overlay-wrapper {
+  aspect-ratio: 16 / 9 !important;
+  width: 100%;
+  background: #000;
+  overflow: visible;
+}
+
+/* Bottom bar: kept for fullscreen compat, no longer used in normal view */
+.watch-bottom-bar {
+  display: none;
+}
+
+/* ---- Prev / Next episode buttons ---- */
+.ep-nav-btn {
+  display: none;
+  /* replaced by ghost-nav-btn */
+}
+
+/* ============================================================
+   GHOST PLAYER OVERLAY UI
+   ============================================================ */
+
+/* ── Top bar gradient: now hidden, kept for transition ── */
+.ghost-player-top {
+  display: none;
+}
+
+.cinematic-player-wrapper:hover .ghost-player-top {
+  display: none;
+}
+
+.ghost-back-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 5px;
+  pointer-events: auto;
+  transition: color 0.2s;
+  line-height: 1;
+}
+
+.ghost-back-btn:hover {
+  color: #fff;
+}
+
+.ghost-title-text {
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ghost-ep-chip {
+  font-size: 0.78rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.06em;
+}
+
+/* ── Bottom bar: ghost controls floating above iframe ── */
+.ghost-player-bottom {
+  position: absolute;
+  bottom: 56px;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cinematic-player-wrapper:hover .ghost-player-bottom {
+  opacity: 1;
+}
+
+.ghost-ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  background: none;
+  pointer-events: none;
+  flex-wrap: nowrap;
+}
+
+/* All interactive elements inside get pointer-events back */
+.ghost-ctrl-row>*,
+.ghost-ctrl-row .sub-lang-dd-wrapper {
+  pointer-events: auto;
+}
+
+.ghost-nav-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+
+.ghost-nav-btn:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.ghost-nav-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+  pointer-events: none;
+}
+
+.ghost-sep {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+  margin: 0 3px;
+}
+
+.ghost-bar-label {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.ghost-sub-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.ghost-sub-btn:hover {
+  background: rgba(56, 189, 248, 0.14);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #7dd3fc;
+}
+
+.ghost-sub-btn.ghost-sub-active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+}
+
+/* override sub-lang-dd-menu when inside ghost bar */
+.ghost-dd-menu {
+  bottom: calc(100% + 8px) !important;
+  z-index: 30 !important;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.8) !important;
+}
+
+.ghost-sub-status {
+  color: #38bdf8;
+  font-size: 0.64rem;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.ghost-offset-display {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.68rem;
+  min-width: 28px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.ghost-fs-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 4px 7px;
+  cursor: pointer;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+
+.ghost-fs-btn:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+
+/* Fullscreen: hide cursor when idle */
+.subtitle-overlay-wrapper:fullscreen,
+.subtitle-overlay-wrapper:-webkit-full-screen {
+  cursor: none;
+}
+
+.subtitle-overlay-wrapper.fs-ctrl-visible:fullscreen,
+.subtitle-overlay-wrapper.fs-ctrl-visible:-webkit-full-screen {
+  cursor: default;
+}
+
+
+
+/* ---- Fullscreen toggle (legacy, kept for fullscreen compat) ---- */
+.fs-toggle-btn {
+  display: none;
+}
+
+/* ============================================================
+   FULLSCREEN CORNER BUTTON — covers iframe's native FS button
+   ============================================================ */
+.fs-corner-btn {
+  position: absolute;
+  bottom: 1.2px;
+  right: 14.5px;
+  z-index: 22;
+  width: auto !important;
+  height: auto !important;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.fs-corner-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+
+
+  width: 70px;
+  height: 70px;
+
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.fs-corner-btn:hover .fs-corner-icon-badge {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* Normal mode: show on player hover */
+.cinematic-player-wrapper:hover .fs-corner-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.fs-corner-btn:hover {
+  opacity: 1;
+}
+
+/* Fullscreen mode: hide by default, show when mouse moves */
+.subtitle-overlay-wrapper:fullscreen .fs-corner-btn,
+.subtitle-overlay-wrapper:-webkit-full-screen .fs-corner-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.subtitle-overlay-wrapper.fs-ctrl-visible:fullscreen .fs-corner-btn,
+.subtitle-overlay-wrapper.fs-ctrl-visible:-webkit-full-screen .fs-corner-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ============================================================
+   SUBTITLE ICON OVERLAY
+   ============================================================ */
+.sub-icon-overlay {
+  position: absolute;
+  bottom: 16px;
+  right: 295px;
+  z-index: 25;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.cinematic-player-wrapper:hover .sub-icon-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sub-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 61px;
+  height: 61px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.18s;
+  pointer-events: auto;
+}
+
+.sub-icon-btn:hover,
+.sub-icon-btn.sub-icon-open {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+}
+
+.sub-icon-btn.sub-icon-on {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #7dd3fc;
+}
+
+.sub-icon-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  min-width: 178px;
+  background: rgba(8, 12, 22, 0.94);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  overflow: hidden;
+  box-shadow: 0 -6px 36px rgba(0, 0, 0, 0.85);
+  z-index: 30;
+}
+
+.sub-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 13px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.14s, color 0.14s;
+}
+
+.sub-menu-item:last-child {
+  border-bottom: none;
+}
+
+.sub-menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.sub-menu-item.active {
+  background: rgba(56, 189, 248, 0.13);
+  color: #38bdf8;
+}
+
+.sub-menu-item.lang-open {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sub-menu-arrow {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.82rem;
+}
+
+.sub-files-submenu {
+  max-height: 160px;
+  overflow-y: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.sub-files-submenu::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sub-files-submenu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sub-files-submenu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.sub-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 13px 6px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 0.65rem;
+  cursor: pointer;
+  text-align: left;
+  gap: 6px;
+  transition: background 0.14s, color 0.14s;
+}
+
+.sub-file-num {
+  flex-shrink: 0;
+  min-width: 14px;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.58rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.sub-file-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sub-file-item.active {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+}
+
+.sub-file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub-file-dl {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.22);
+  font-size: 0.58rem;
+}
+
+.sub-sync-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.sub-sync-label {
+  color: rgba(255, 255, 255, 0.22);
+  font-size: 0.57rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.sub-sync-step {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.62rem;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all 0.14s;
+}
+
+.sub-sync-step:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+
+.sub-sync-val {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 0.63rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fullscreen: hide sub icon overlay, reveal when mouse moves */
+.subtitle-overlay-wrapper:fullscreen .sub-icon-overlay,
+.subtitle-overlay-wrapper:-webkit-full-screen .sub-icon-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.subtitle-overlay-wrapper.fs-ctrl-visible:fullscreen .sub-icon-overlay,
+.subtitle-overlay-wrapper.fs-ctrl-visible:-webkit-full-screen .sub-icon-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Transparent iframe mouse-catcher overlay */
+.fs-mouse-catcher {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: transparent;
+  cursor: default;
+}
+
+/* Always-on blocker over the native iframe FS button (bottom-right corner) */
+.native-fs-blocker {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 90px;
+  height: 90px;
+  z-index: 21;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* No focus ring on the player wrapper */
+.subtitle-overlay-wrapper:focus {
+  outline: none;
+}
+
+/* ============================================================
+   PREV / NEXT EPISODE — Glassmorphic below info panel
+   ============================================================ */
+.ep-nav-below-panel {
+  display: flex;
+  gap: 8px;
+  padding: 14px 0 6px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ep-nav-glass-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 9px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.ep-nav-glass-btn:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.28);
+  color: #38bdf8;
+  box-shadow: 0 4px 18px rgba(56, 189, 248, 0.1);
+}
+
+.ep-nav-glass-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ============================================================
+   RIGHT: INFO PANEL
+   ============================================================ */
+.watch-info-panel {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 16px 48px -12px rgba(0, 0, 0, 0.7);
+  max-height: calc(100vh - 44px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Backdrop image at top of panel */
+.wip-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  background-size: cover;
+  background-position: center 20%;
+  z-index: 0;
+}
+
+/* Gradient fade from backdrop into dark */
+.wip-backdrop-fade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 240px;
+  z-index: 1;
+  background: linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0.5) 40%,
+      rgba(0, 0, 0, 0.88) 70%,
+      rgba(0, 0, 0, 0.97) 100%);
+  pointer-events: none;
+}
+
+/* Scrollable content inside panel */
+.wip-scroll {
+  position: relative;
+  z-index: 2;
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 16px;
+}
+
+.wip-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.wip-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wip-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* ---- Poster + Meta Header ---- */
+.wip-header {
+  display: flex;
+  gap: 14px;
+  padding: 100px 16px 14px;
+  align-items: flex-end;
+}
+
+.wip-poster {
+  width: 74px;
+  height: 111px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wip-poster:hover {
+  transform: scale(1.04);
+}
+
+.wip-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding-bottom: 4px;
+}
+
+.wip-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #f1f5f9;
+  cursor: pointer;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wip-title:hover {
+  color: #38bdf8;
+}
+
+.wip-rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.wip-votes {
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 300;
+  font-size: 0.72rem;
+}
+
+.wip-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.wip-genre-tag {
+  font-size: 0.65rem;
+  font-weight: 300;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ---- Episode Label ---- */
+.wip-ep-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px 6px;
+  flex-wrap: wrap;
+}
+
+.wip-ep-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.wip-ep-name {
+  font-size: 0.8rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Overview ---- */
+.wip-overview {
+  margin: 0;
+  padding: 6px 16px 12px;
+  font-size: 0.8rem;
+  font-weight: 300;
+  line-height: 1.65;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.45);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- Action Row ---- */
+.wip-action-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.wip-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wip-action-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.wip-action-btn.wip-act-on {
+  color: #38bdf8;
+}
+
+.wip-action-btn.wip-act-watch.wip-act-on {
+  color: #10b981;
+}
+
+.wip-action-btn.wip-act-watch.wip-act-on svg {
+  filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.5));
+}
+
+.wip-action-btn.wip-act-like.wip-act-on {
+  color: #f87171;
+}
+
+.wip-action-btn.wip-act-wl.wip-act-on {
+  color: #38bdf8;
+}
+
+/* ---- Review Panel ---- */
+.wip-review-panel {
+  padding: 0 12px 12px;
+}
+
+.wip-review-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 300;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.wip-review-textarea:focus {
+  outline: none;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.wip-review-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+/* ---- Rating Section ---- */
+.wip-rate-section {
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wip-section-label {
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.wip-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.wip-star {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: color 0.1s, transform 0.1s;
+  line-height: 1;
+}
+
+.wip-star.dolu {
+  color: #f59e0b;
+}
+
+.wip-star:hover {
+  transform: scale(1.2);
+}
+
+.wip-puan-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.wip-puan-sil {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wip-puan-sil:hover {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* ---- Add to List btn ---- */
+.wip-liste-container {
+  padding: 4px 12px 8px;
+  position: relative;
+}
+
+.wip-liste-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  padding: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wip-liste-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+}
+
+.wip-liste-popup {
+  top: 100% !important;
+  left: 12px !important;
+  right: 12px !important;
+  width: auto !important;
+}
+
+/* ---- Divider ---- */
+.wip-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  margin: 8px 12px;
+}
+
+/* ---- Season select (legacy) ---- */
+.wip-season-select {
+  padding: 8px 12px 6px;
+}
+
+/* ---- Season Selector Button ---- */
+.wip-season-selector-container {
+  padding: 4px 12px 6px;
+}
+
+.wip-season-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.wip-season-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.wip-season-caret {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+/* ---- Episode Dropdown (fixed position popup) ---- */
+.wip-ep-dropdown {
+  position: fixed;
+  z-index: 9999;
+  background: rgba(8, 14, 24, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.wip-ep-dropdown-seasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.wip-ep-season-btn {
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.7rem;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.wip-ep-season-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.wip-ep-season-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.wip-ep-dropdown-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 6px;
+}
+
+.wip-ep-dropdown-list::-webkit-scrollbar {
+  width: 3px;
+}
+
+.wip-ep-dropdown-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wip-ep-dropdown-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.wip-dd-ep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.12s;
+  border: 1px solid transparent;
+}
+
+.wip-dd-ep:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.wip-dd-ep.current {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.2);
+  cursor: default;
+}
+
+.wip-dd-ep-num {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.3);
+  min-width: 22px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.wip-dd-ep.current .wip-dd-ep-num {
+  color: #38bdf8;
+}
+
+.wip-dd-ep-title {
+  font-size: 0.78rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.7);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wip-dd-ep.current .wip-dd-ep-title {
+  color: #e2e8f0;
+}
+
+.wip-dd-ep-status {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* ============================================================
+   SHARED: Episode List (used inside right panel)
+   ============================================================ */
+.watch-sidebar {
+  display: none;
+  /* old sidebar hidden, kept for compat */
+}
+
+.sidebar-season-select {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.season-dropdown {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.season-dropdown:focus {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.sidebar-eps-list {
+  overflow-y: auto;
+  padding: 6px 10px;
+  max-height: 340px;
+}
+
+.sidebar-eps-list::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sidebar-eps-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-eps-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.sidebar-ep-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 12px;
+  margin-bottom: 3px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.sidebar-ep-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-ep-card.current-ep {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.3);
+  cursor: default;
+}
+
+.ep-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.ep-number {
+  font-size: 0.85rem;
+  font-weight: 200;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.22);
+  min-width: 22px;
+  flex-shrink: 0;
+}
+
+.current-ep .ep-number {
+  color: #38bdf8;
+  font-weight: 300;
+}
+
+.ep-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+}
+
+.ep-title {
+  font-size: 0.76rem;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.current-ep .ep-title {
+  color: #fff;
+  font-weight: 400;
+}
+
+.ep-progress-track {
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ep-progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #38bdf8, #818cf8);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.ep-card-right {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.ep-watched-icon {
+  color: rgba(16, 185, 129, 0.6);
+}
+
+/* Playing Animation */
+.now-playing-indicator {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.now-playing-indicator div {
+  width: 2px;
+  background: #38bdf8;
+  animation: equalize 1s ease-in-out infinite;
+  border-radius: 2px;
+}
+
+.now-playing-indicator .bar1 {
+  height: 60%;
+  animation-delay: 0.1s;
+}
+
+.now-playing-indicator .bar2 {
+  height: 100%;
+  animation-delay: 0.3s;
+}
+
+.now-playing-indicator .bar3 {
+  height: 40%;
+  animation-delay: 0.5s;
+}
+
+@keyframes equalize {
+  0% {
+    transform: scaleY(0.5);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+
+  100% {
+    transform: scaleY(0.5);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1100px) {
+  .watch-content-grid {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    padding: 14px 16px 28px;
+  }
+}
+
+@media (max-width: 860px) {
+  .watch-content-grid {
+    grid-template-columns: 1fr;
+    padding: 10px 12px 20px;
+  }
+
+  .watch-info-panel {
+    max-height: none;
+  }
+
+  .sidebar-eps-list {
+    max-height: 220px;
+  }
+}
+
+/* ============================================================
+   WIP EPISODE REVIEW — Gönder button (compact)
+   ============================================================ */
+.wip-review-gonder-btn {
+  padding: 7px 18px;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wip-review-gonder-btn:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+}
+
+.wip-review-gonder-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================================
+   EPISODE REVIEWS LIST (inside WatchPage review panel)
+   ============================================================ */
+.wip-ep-reviews {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.wip-ep-review-item {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* ============================================================
+   SPOILER BLUR — shared for both series & episode reviews
+   ============================================================ */
+.spoiler-blur-wrapper {
+  position: relative;
+  cursor: pointer;
+  border-radius: 6px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.spoiler-blur-wrapper .spoiler-text {
+  filter: blur(5px);
+  pointer-events: none;
+  transition: filter 0.3s;
+}
+
+.spoiler-blur-wrapper.revealed .spoiler-text {
+  filter: none;
+  pointer-events: auto;
+}
+
+.spoiler-blur-wrapper.revealed .spoiler-overlay {
+  display: none;
+}
+
+.spoiler-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fb923c;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  letter-spacing: 0.03em;
+  padding: 6px 10px;
+  text-align: center;
+}
+
+
+/* Legacy stubs — watch-details-section removed from JSX */
+.watch-details-section {
+  display: none;
+}
+
+/* ============================================================
+   EMAIL VERIFICATION MODAL (Glassmorphism)
+   ============================================================ */
+.verification-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.verification-modal {
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  border-radius: 16px;
+  padding: 30px;
+  width: 90%;
+  max-width: 400px;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+.blur-background {
+  filter: blur(4px);
+  pointer-events: none;
+  transition: filter 0.3s;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: #475569;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.auth-divider span {
+  padding: 0 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.google-login-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.custom-google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 50px;
+  /* Pill shape */
+  color: #e2e8f0;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.custom-google-btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+}
+
+.custom-google-btn:active {
+  transform: translateY(0);
+}
+
+.custom-google-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* WatchPage Tip Icon Hover Card */
+.tip-hover-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tip-icon {
+  transition: all 0.2s ease;
+}
+
+.tip-icon:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.5));
+}
+
+.tip-hover-card {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(5px);
+  opacity: 0;
+  visibility: hidden;
+  background: rgba(30, 41, 59, 0.45);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #f8fafc;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-weight: 300;
+  font-size: 0.85rem;
+  letter-spacing: 0.3px;
+  width: max-content;
+  max-width: 300px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 999999;
+  pointer-events: none;
+  line-height: 1.5;
+}
+
+.tip-hover-container:hover .tip-hover-card {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tip-hover-card::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent rgba(245, 158, 11, 0.3) transparent;
+}
+
+.tip-hover-card::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent rgba(30, 41, 59, 0.85) transparent;
+  margin-bottom: -1px;
+}
+
+/* ===== REKLAMI ATLA BUTONU ===== */
+.skip-ad-container {
+  position: absolute;
+  bottom: 80px;
+  right: 30px;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.skip-ad-btn {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+.skip-ad-btn:hover {
+  background: rgba(225, 29, 72, 0.9);
+  border-color: rgba(225, 29, 72, 1);
+  transform: scale(1.05);
+}
+
+/* --- MANUAL SUBTITLE CONTROLS --- */
+.manual-sub-controls {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 50;
+  pointer-events: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  transition: opacity 0.3s;
+}
+
+.manual-sub-badge {
+  color: #f59e0b;
+  font-size: 0.70rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.manual-sub-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.manual-sub-buttons button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.manual-sub-buttons button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.manual-sub-buttons button:active {
+  transform: translateY(1px);
+}
+
