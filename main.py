@@ -117,14 +117,41 @@ def send_verification_email(to_email: str, code: str, purpose: str = "verify"):
         print(f"E-posta gönderme hatası: {e}")
         return False
 
-# 1. Uygulamayı sadece BİR kez oluşturuyoruz
-app = FastAPI()
+# --- ORTAM AYARLARI ---
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+IS_PRODUCTION = ENVIRONMENT == "production"
 
-# Video Streaming IFrame ile yapıldığı için proxy'e gerek kalmadı
-# 2. CORS ayarlarını hemen altına ekliyoruz (React ile konuşabilmesi için)
+# Loglama: production'da sadece WARNING+, dev'de her şey
+import logging
+log_level = logging.WARNING if IS_PRODUCTION else logging.DEBUG
+logging.basicConfig(
+    level=log_level,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("seriesboxd")
+
+# 1. Uygulamayı sadece BİR kez oluşturuyoruz
+app = FastAPI(
+    title="Seriesboxd API",
+    docs_url=None if IS_PRODUCTION else "/docs",   # prod'da /docs kapalı
+    redoc_url=None if IS_PRODUCTION else "/redoc",
+)
+
+# 2. CORS — production'da env'den al, dev'de localhost'a aç
+_LOCAL_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+]
+_PROD_ORIGINS_RAW  = os.getenv("ALLOWED_ORIGINS", "")           # virgülle ayrılmış domain listesi
+_PROD_ORIGINS      = [o.strip() for o in _PROD_ORIGINS_RAW.split(",") if o.strip()]
+
+CORS_ORIGINS = _PROD_ORIGINS if (IS_PRODUCTION and _PROD_ORIGINS) else _LOCAL_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -169,11 +196,16 @@ class ResetPasswordModel(BaseModel):
 
 # Veritabanı bağlantısı
 def get_db_conn():
+    db_url = os.getenv("REMOTE_DATABASE_URL") if IS_PRODUCTION else None
+    if db_url:
+        return psycopg2.connect(db_url, sslmode="require")
+    # Yerel geliştirme ortamı
     return psycopg2.connect(
-        dbname="seriesboxd", 
-        user="postgres", 
-        password="1234", 
-        host="localhost"
+        dbname=os.getenv("DB_NAME", "seriesboxd"),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD", "1234"),
+        host=os.getenv("DB_HOST", "localhost"),
+        port=os.getenv("DB_PORT", "5432"),
     )
 
 def ensure_users_table():

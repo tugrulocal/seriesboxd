@@ -1,0 +1,22 @@
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+
+# Database
+psycopg2-binary==2.9.10
+
+# Auth & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.20
+
+# Environment & Config
+python-dotenv==1.0.1
+
+# HTTP & Scraping
+requests==2.32.3
+beautifulsoup4==4.12.3
+httpx==0.27.2
+
+# Data validation (FastAPI already pulls this, pinned for stability)
+pydantic==2.10.4
