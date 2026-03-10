@@ -253,8 +253,11 @@ def ensure_users_table():
             used      BOOLEAN DEFAULT FALSE
         );
     """)
-    # Episodes tablosuna vote_average kolonu ekle (yoksa)
-    cur.execute("ALTER TABLE episodes ADD COLUMN IF NOT EXISTS vote_average NUMERIC(4,2) DEFAULT NULL;")
+    # Episodes tablosuna vote_average kolonu ekle (yoksa — tablo yoksa atla)
+    try:
+        cur.execute("ALTER TABLE episodes ADD COLUMN IF NOT EXISTS vote_average NUMERIC(4,2) DEFAULT NULL;")
+    except Exception:
+        conn.rollback()
     # Mevcut kullanıcıları doğrulanmış olarak işaretle
     cur.execute("UPDATE users SET is_verified = TRUE WHERE is_verified = FALSE OR is_verified IS NULL;")
     # Kullanıcı bölüm puanları tablosu
