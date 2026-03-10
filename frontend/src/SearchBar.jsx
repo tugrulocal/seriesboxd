@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DracarysEffect from './DracarysEffect';
+import API_BASE from './config';
 
 const SIRALAMA_SECENEKLERI = [
     { deger: 'rating_desc', etiket: '⭐ Azalan Puan ⬇' },
@@ -43,7 +44,7 @@ function SearchBar({ onSonuclar }) {
 
     // Türleri backend'den çek
     useEffect(() => {
-        fetch('http://127.0.0.1:8000/turler')
+        fetch(`${API_BASE}/turler`)
             .then(r => r.json())
             .then(setTumTurler)
             .catch(() => { });
@@ -75,7 +76,7 @@ function SearchBar({ onSonuclar }) {
                 if (turler.length) params.set('tur', turler.join(','));
                 params.set('siralama', sir);
 
-                const res = await fetch(`http://127.0.0.1:8000/arama?${params}`);
+                const res = await fetch(`${API_BASE}/arama?${params}`);
                 const data = await res.json();
 
                 const isSearchActive = panelKullanildi || !!q || mn > 0 || mx < 10 || turler.length > 0 || sir !== 'rating_desc';
@@ -99,7 +100,7 @@ function SearchBar({ onSonuclar }) {
         oneriDebounceRef.current = setTimeout(async () => {
             try {
                 const params = new URLSearchParams({ q: aramaMetni, siralama: 'rating_desc' });
-                const res = await fetch(`http://127.0.0.1:8000/arama?${params}`);
+                const res = await fetch(`${API_BASE}/arama?${params}`);
                 const data = await res.json();
                 setOneriler(Array.isArray(data) ? data.slice(0, 4) : []);
                 setOneriAcik(true);

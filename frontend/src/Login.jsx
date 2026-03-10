@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { useGoogleLogin } from '@react-oauth/google';
 
-const API = 'http://127.0.0.1:8000';
+import API_BASE from './config';
+const API = API_BASE;
 
 // Şifre gücü hesaplayıcı
 function sifreGucu(sifre) {

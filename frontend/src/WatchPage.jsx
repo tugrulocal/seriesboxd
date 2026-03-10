@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Maximize2, Minimize2, Check, Eye, Heart, Bookmark, MessageSquare, Star, X, Plus, ChevronLeft, ChevronRight, Captions, Lightbulb } from 'lucide-react';
 import SubtitleOverlay from './SubtitleOverlay';
 import './App.css';
+import API_BASE from './config';
 
 function formatTimeAgo(dateString) {
     const date = new Date(dateString);
@@ -110,7 +111,7 @@ function WatchPage() {
 
     // 1. Initial Data Load
     useEffect(() => {
-        fetch(`http://127.0.0.1:8000/dizi/${id}`)
+        fetch(`${API_BASE}/dizi/${id}`)
             .then(res => res.json())
             .then(data => {
                 if (data.dizi) {
@@ -129,7 +130,7 @@ function WatchPage() {
             const h = { 'Authorization': `Bearer ${token}` };
             const jh = { ...h, 'Content-Type': 'application/json' };
 
-            fetch(`http://127.0.0.1:8000/activity/${id}`, { headers: h })
+            fetch(`${API_BASE}/activity/${id}`, { headers: h })
                 .then(r => r.json())
                 .then(data => {
                     const watched = {}, watchlist = {}, liked = {};
@@ -146,7 +147,7 @@ function WatchPage() {
                 })
                 .catch(() => { });
 
-            fetch(`http://127.0.0.1:8000/series-activity/${id}`, { headers: h })
+            fetch(`${API_BASE}/series-activity/${id}`, { headers: h })
                 .then(r => r.json())
                 .then(data => {
                     if (Array.isArray(data)) {
@@ -157,22 +158,22 @@ function WatchPage() {
                 })
                 .catch(() => { });
 
-            fetch(`http://127.0.0.1:8000/rating/${id}`, { headers: h })
+            fetch(`${API_BASE}/rating/${id}`, { headers: h })
                 .then(r => r.json())
                 .then(d => setKullaniciPuani(d.score))
                 .catch(() => { });
 
-            fetch('http://127.0.0.1:8000/lists', { headers: h })
+            fetch(`${API_BASE}/lists`, { headers: h })
                 .then(r => r.json()).then(setKullaniciListeleri).catch(() => { });
 
-            fetch(`http://127.0.0.1:8000/lists/check/${id}`, { headers: h })
+            fetch(`${API_BASE}/lists/check/${id}`, { headers: h })
                 .then(r => r.json()).then(setDizininListeleri).catch(() => { });
 
-            fetch(`http://127.0.0.1:8000/episode-ratings/${id}`, { headers: h })
+            fetch(`${API_BASE}/episode-ratings/${id}`, { headers: h })
                 .then(r => r.json()).then(setBolumPuanlari).catch(() => { });
         }
 
-        fetch(`http://127.0.0.1:8000/reviews/${id}`)
+        fetch(`${API_BASE}/reviews/${id}`)
             .then(r => r.json())
             .then(d => { if (Array.isArray(d)) setReviews(d); })
             .catch(() => { });
@@ -182,7 +183,7 @@ function WatchPage() {
     useEffect(() => {
         const epData = bolumler.find(b => b.episode_number === parseInt(episode) && b.season_id === seciliSezonId);
         if (!epData) return;
-        fetch(`http://127.0.0.1:8000/episode-reviews/${epData.episode_id}`)
+        fetch(`${API_BASE}/episode-reviews/${epData.episode_id}`)
             .then(r => r.json())
             .then(d => { if (Array.isArray(d)) setEpisodeReviews(d); })
             .catch(() => { });
@@ -211,7 +212,7 @@ function WatchPage() {
         setRevealedSpoilers(new Set());
 
         // Fetch video sources
-        fetch(`http://127.0.0.1:8000/api/stream/resolve/${id}/${season}/${episode}`)
+        fetch(`${API_BASE}/api/stream/resolve/${id}/${season}/${episode}`)
             .then(r => r.json())
             .then(d => {
                 if (d.results && d.results.length > 0) {
@@ -226,7 +227,7 @@ function WatchPage() {
 
                     // Fetch subtitles
                     if (d.imdb_id) {
-                        fetch(`http://127.0.0.1:8000/api/subtitles/search/${d.imdb_id}/${season}/${episode}`)
+                        fetch(`${API_BASE}/api/subtitles/search/${d.imdb_id}/${season}/${episode}`)
                             .then(r => r.json())
                             .then(subData => {
                                 if (subData.subtitles && subData.subtitles.length > 0) {
@@ -259,8 +260,8 @@ function WatchPage() {
         if (!token) { alert('Bu eylemi gerçekleştirmek için giriş yapınız.'); return; }
         const h = { 'Authorization': `Bearer ${token}` };
         setAktif(!aktif);
-        if (!aktif) fetch('http://127.0.0.1:8000/series-activity', { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), activity_type: type }) });
-        else fetch(`http://127.0.0.1:8000/series-activity/${id}/${type}`, { method: 'DELETE', headers: h });
+        if (!aktif) fetch(`${API_BASE}/series-activity`, { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), activity_type: type }) });
+        else fetch(`${API_BASE}/series-activity/${id}/${type}`, { method: 'DELETE', headers: h });
     };
 
     // Series Rating
@@ -268,13 +269,13 @@ function WatchPage() {
         const token = localStorage.getItem('sb_token');
         if (!token) { alert('Bu eylemi gerçekleştirmek için giriş yapınız.'); return; }
         setKullaniciPuani(puan);
-        fetch('http://127.0.0.1:8000/rating', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), score: puan }) });
+        fetch(`${API_BASE}/rating`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), score: puan }) });
     };
     const puanSil = () => {
         const token = localStorage.getItem('sb_token');
         if (!token) return;
         setKullaniciPuani(null);
-        fetch(`http://127.0.0.1:8000/rating/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        fetch(`${API_BASE}/rating/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
     };
 
     // Episode Activity Toggles
@@ -284,8 +285,8 @@ function WatchPage() {
         const h = { 'Authorization': `Bearer ${token}` };
         const isWatched = !!izlenenBolumler[epId];
         setIzlenenBolumler(prev => { if (isWatched) { const n = { ...prev }; delete n[epId]; return n; } return { ...prev, [epId]: true }; });
-        if (!isWatched) fetch('http://127.0.0.1:8000/activity', { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), season_id: seciliSezonId, episode_id: epId, activity_type: 'watched' }) });
-        else fetch(`http://127.0.0.1:8000/activity/${epId}/watched`, { method: 'DELETE', headers: h });
+        if (!isWatched) fetch(`${API_BASE}/activity`, { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), season_id: seciliSezonId, episode_id: epId, activity_type: 'watched' }) });
+        else fetch(`${API_BASE}/activity/${epId}/watched`, { method: 'DELETE', headers: h });
     };
     const episodeLikeToggle = (epId) => {
         const token = localStorage.getItem('sb_token');
@@ -293,8 +294,8 @@ function WatchPage() {
         const h = { 'Authorization': `Bearer ${token}` };
         const isLiked = !!epLikedMap[epId];
         setEpLikedMap(prev => { if (isLiked) { const n = { ...prev }; delete n[epId]; return n; } return { ...prev, [epId]: true }; });
-        if (!isLiked) fetch('http://127.0.0.1:8000/activity', { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), season_id: seciliSezonId, episode_id: epId, activity_type: 'liked' }) });
-        else fetch(`http://127.0.0.1:8000/activity/${epId}/liked`, { method: 'DELETE', headers: h });
+        if (!isLiked) fetch(`${API_BASE}/activity`, { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), season_id: seciliSezonId, episode_id: epId, activity_type: 'liked' }) });
+        else fetch(`${API_BASE}/activity/${epId}/liked`, { method: 'DELETE', headers: h });
     };
     const episodeWatchlistToggle = (epId) => {
         const token = localStorage.getItem('sb_token');
@@ -302,8 +303,8 @@ function WatchPage() {
         const h = { 'Authorization': `Bearer ${token}` };
         const isWL = !!epWatchlistMap[epId];
         setEpWatchlistMap(prev => { if (isWL) { const n = { ...prev }; delete n[epId]; return n; } return { ...prev, [epId]: true }; });
-        if (!isWL) fetch('http://127.0.0.1:8000/activity', { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), season_id: seciliSezonId, episode_id: epId, activity_type: 'watchlist' }) });
-        else fetch(`http://127.0.0.1:8000/activity/${epId}/watchlist`, { method: 'DELETE', headers: h });
+        if (!isWL) fetch(`${API_BASE}/activity`, { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), season_id: seciliSezonId, episode_id: epId, activity_type: 'watchlist' }) });
+        else fetch(`${API_BASE}/activity/${epId}/watchlist`, { method: 'DELETE', headers: h });
     };
     const toggleSezonDropdown = () => {
         if (!sezonDropdownAcik && sezonBtnRef.current) {
@@ -320,10 +321,10 @@ function WatchPage() {
         const h = { 'Authorization': `Bearer ${token}` };
         if (bolumPuanlari[episodeId] === puan) {
             setBolumPuanlari(prev => { const s = { ...prev }; delete s[episodeId]; return s; });
-            fetch(`http://127.0.0.1:8000/episode-rating/${episodeId}`, { method: 'DELETE', headers: h });
+            fetch(`${API_BASE}/episode-rating/${episodeId}`, { method: 'DELETE', headers: h });
         } else {
             setBolumPuanlari(prev => ({ ...prev, [episodeId]: puan }));
-            fetch('http://127.0.0.1:8000/episode-rating', { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ episode_id: episodeId, score: puan }) });
+            fetch(`${API_BASE}/episode-rating`, { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ episode_id: episodeId, score: puan }) });
         }
     };
 
@@ -333,10 +334,10 @@ function WatchPage() {
         if (!token) { alert('Bu eylemi gerçekleştirmek için giriş yapınız.'); return; }
         const h = { 'Authorization': `Bearer ${token}` };
         if (dizininListeleri.includes(listId)) {
-            fetch(`http://127.0.0.1:8000/lists/${listId}/items/${id}`, { method: 'DELETE', headers: h })
+            fetch(`${API_BASE}/lists/${listId}/items/${id}`, { method: 'DELETE', headers: h })
                 .then(() => setDizininListeleri(prev => prev.filter(i => i !== listId)));
         } else {
-            fetch(`http://127.0.0.1:8000/lists/${listId}/items`, { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id) }) })
+            fetch(`${API_BASE}/lists/${listId}/items`, { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id) }) })
                 .then(() => setDizininListeleri(prev => [...prev, listId]));
         }
     };
@@ -344,7 +345,7 @@ function WatchPage() {
         const token = localStorage.getItem('sb_token');
         if (!token || !yeniListeAdi.trim()) return;
         const jh = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-        fetch('http://127.0.0.1:8000/lists', { method: 'POST', headers: jh, body: JSON.stringify({ name: yeniListeAdi }) })
+        fetch(`${API_BASE}/lists`, { method: 'POST', headers: jh, body: JSON.stringify({ name: yeniListeAdi }) })
             .then(r => r.json())
             .then(l => { setKullaniciListeleri(prev => [...prev, { list_id: l.list_id, name: l.name }]); setYeniListeAdi(''); });
     };
@@ -924,8 +925,8 @@ function WatchPage() {
                                                 if (!currentEpId) return;
                                                 setReviewGonderiliyor(true);
                                                 try {
-                                                    await fetch('http://127.0.0.1:8000/episode-reviews', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ episode_id: currentEpId, review_text: reviewText, contains_spoiler: spoilerVar }) });
-                                                    const r = await fetch(`http://127.0.0.1:8000/episode-reviews/${currentEpId}`);
+                                                    await fetch(`${API_BASE}/episode-reviews`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ episode_id: currentEpId, review_text: reviewText, contains_spoiler: spoilerVar }) });
+                                                    const r = await fetch(`${API_BASE}/episode-reviews/${currentEpId}`);
                                                     const d = await r.json();
                                                     if (Array.isArray(d)) setEpisodeReviews(d);
                                                     setReviewText(''); setSpoilerVar(false);
@@ -983,7 +984,7 @@ function WatchPage() {
                                             <button className="wip-puan-sil" onClick={() => {
                                                 setBolumPuanlari(prev => { const n = { ...prev }; delete n[currentEpId]; return n; });
                                                 const token = localStorage.getItem('sb_token');
-                                                if (token) fetch(`http://127.0.0.1:8000/episode-rating/${currentEpId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                                                if (token) fetch(`${API_BASE}/episode-rating/${currentEpId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
                                             }}><X size={12} /> Geri Al</button>
                                         </div>
                                     )}

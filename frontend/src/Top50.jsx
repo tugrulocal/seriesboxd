@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { Star, Eye, Heart, Bookmark, Award, FilterX, Trophy } from 'lucide-react';
 import './Top50.css';
+import API_BASE from './config';
 
 function Top50() {
   const [diziler, setDiziler] = useState([]);
@@ -22,8 +23,8 @@ function Top50() {
 
   useEffect(() => {
     Promise.all([
-      fetch('http://127.0.0.1:8000/top50').then(res => res.json()),
-      fetch('http://127.0.0.1:8000/turler').then(res => res.json())
+      fetch(`${API_BASE}/top50`).then(res => res.json()),
+      fetch(`${API_BASE}/turler`).then(res => res.json())
     ])
       .then(([diziData, genreData]) => {
         if (Array.isArray(diziData)) setDiziler(diziData);
@@ -39,7 +40,7 @@ function Top50() {
     const token = localStorage.getItem('sb_token');
     if (!token) return;
 
-    fetch('http://127.0.0.1:8000/profile/stats', {
+    fetch(`${API_BASE}/profile/stats`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       // For simplicity in this dummy view, we'll just mock activity if the real endpoint isn't fully returning mass series states.

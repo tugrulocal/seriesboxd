@@ -7,6 +7,7 @@ import {
     Star, TrendingUp, Sparkles
 } from 'lucide-react';
 import './Home.css';
+import API_BASE from './config';
 
 /* ========== Genres to exclude from HeroBanner ========== */
 const EXCLUDED_GENRES = [
@@ -126,7 +127,7 @@ function Home({ tumDiziler }) {
     const fetchActivity = useCallback(() => {
         const token = localStorage.getItem('sb_token');
         if (featured && token) {
-            fetch(`http://127.0.0.1:8000/series-activity/${featured.series_id}`, {
+            fetch(`${API_BASE}/series-activity/${featured.series_id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
                 .then(res => res.ok ? res.json() : [])
@@ -188,14 +189,14 @@ function Home({ tumDiziler }) {
         try {
             if (currentState) {
                 // Kaldır: DELETE /series-activity/{series_id}/{activity_type}
-                const res = await fetch(`http://127.0.0.1:8000/series-activity/${featured.series_id}/${activityType}`, {
+                const res = await fetch(`${API_BASE}/series-activity/${featured.series_id}/${activityType}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!res.ok) setStateFunc(currentState);
             } else {
                 // Ekle: POST /series-activity
-                const res = await fetch('http://127.0.0.1:8000/series-activity', {
+                const res = await fetch(`${API_BASE}/series-activity`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -12,6 +12,7 @@ import Dizilerim from './Dizilerim'
 import Footer from './Footer'
 import { AuthProvider } from './AuthContext'
 import './App.css'
+import API_BASE from './config';
 
 function AppIcerik() {
   const [kapanisAnimasyonu, setKapanisAnimasyonu] = useState(false);
@@ -25,7 +26,7 @@ function AppIcerik() {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/arama?siralama=rating_desc')
+    fetch(`${API_BASE}/arama?siralama=rating_desc`)
       .then(res => {
         if (!res.ok) throw new Error("Backend adresi bulunamadı (404)!");
         return res.json();
@@ -42,14 +43,14 @@ function AppIcerik() {
     if (genre) {
       setGenreBaslik(`${genre} Dizileri`);
       setAramaAktif(true);
-      fetch(`http://127.0.0.1:8000/arama?tur=${encodeURIComponent(genre)}&siralama=rating_desc`)
+      fetch(`${API_BASE}/arama?tur=${encodeURIComponent(genre)}&siralama=rating_desc`)
         .then(res => res.json())
         .then(data => { if (Array.isArray(data)) setDiziler(data); })
         .catch(() => { });
     } else if (q) {
       setGenreBaslik(null);
       setAramaAktif(true);
-      fetch(`http://127.0.0.1:8000/arama?q=${encodeURIComponent(q)}&siralama=rating_desc`)
+      fetch(`${API_BASE}/arama?q=${encodeURIComponent(q)}&siralama=rating_desc`)
         .then(res => res.json())
         .then(data => { if (Array.isArray(data)) setDiziler(data); })
         .catch(() => { });
@@ -66,7 +67,7 @@ function AppIcerik() {
     setGenreBaslik(null);
     navigate('/');
     // İlk yükleme verisini tekrar çek
-    fetch('http://127.0.0.1:8000/arama?siralama=rating_desc')
+    fetch(`${API_BASE}/arama?siralama=rating_desc`)
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setDiziler(data); })
       .catch(() => { });

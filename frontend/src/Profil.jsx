@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { Bookmark, Star, Heart, Eye, ChevronDown, ChevronUp, Plus, X, Search, Film, List, MessageSquare } from 'lucide-react';
 import './Profil.css';
+import API_BASE from './config';
 
 function Profil() {
     const { kullanici, yukleniyor: authLoading } = useAuth();
@@ -46,12 +47,12 @@ function Profil() {
         }
 
         Promise.all([
-            fetch('http://127.0.0.1:8000/profile/stats', { headers }).then(res => res.json()),
-            fetch('http://127.0.0.1:8000/profile/recent-activity?limit=3', { headers }).then(res => res.json()),
-            fetch('http://127.0.0.1:8000/profile/favorites', { headers }).then(res => res.json()),
-            fetch('http://127.0.0.1:8000/profile/watchlist_preview', { headers }).then(res => res.json()),
-            fetch('http://127.0.0.1:8000/profile/ratings-distribution', { headers }).then(res => res.json()),
-            fetch('http://127.0.0.1:8000/turler').then(res => res.json())
+            fetch(`${API_BASE}/profile/stats`, { headers }).then(res => res.json()),
+            fetch(`${API_BASE}/profile/recent-activity?limit=3`, { headers }).then(res => res.json()),
+            fetch(`${API_BASE}/profile/favorites`, { headers }).then(res => res.json()),
+            fetch(`${API_BASE}/profile/watchlist_preview`, { headers }).then(res => res.json()),
+            fetch(`${API_BASE}/profile/ratings-distribution`, { headers }).then(res => res.json()),
+            fetch(`${API_BASE}/turler`).then(res => res.json())
         ])
             .then(([st, rec, favs, wlist, rdist, genreList]) => {
                 setStats(st);
@@ -73,13 +74,13 @@ function Profil() {
             const params = new URLSearchParams();
             if (genre) params.append('genre', genre);
             params.append('sort', sort);
-            url = `http://127.0.0.1:8000/profile/watched-series?${params}`;
+            url = `${API_BASE}/profile/watched-series?${params}`;
         } else if (tab === 'incelemeler') {
-            url = 'http://127.0.0.1:8000/profile/user-reviews';
+            url = `${API_BASE}/profile/user-reviews`;
         } else if (tab === 'listeler') {
-            url = 'http://127.0.0.1:8000/profile/lists-detail';
+            url = `${API_BASE}/profile/lists-detail`;
         } else if (tab === 'begeniler') {
-            url = 'http://127.0.0.1:8000/profile/liked-series';
+            url = `${API_BASE}/profile/liked-series`;
         }
         fetch(url, { headers })
             .then(res => res.json())
@@ -111,7 +112,7 @@ function Profil() {
         if (!query.trim()) { setFavSearchResults([]); return; }
         setFavSearching(true);
         favSearchTimeout.current = setTimeout(() => {
-            fetch(`http://127.0.0.1:8000/arama?q=${encodeURIComponent(query.trim())}`)
+            fetch(`${API_BASE}/arama?q=${encodeURIComponent(query.trim())}`)
                 .then(res => res.json())
                 .then(data => { if (Array.isArray(data)) setFavSearchResults(data.slice(0, 8)); })
                 .catch(() => { })
@@ -120,7 +121,7 @@ function Profil() {
     };
 
     const handleFavSelect = (series) => {
-        fetch('http://127.0.0.1:8000/profile/favorites', {
+        fetch(`${API_BASE}/profile/favorites`, {
             method: 'POST',
             headers: { ...headers, 'Content-Type': 'application/json' },
             body: JSON.stringify({ series_id: series.series_id, slot: favModalSlot })
@@ -143,7 +144,7 @@ function Profil() {
     const handleFavRemove = (slot, e) => {
         e.stopPropagation();
         e.preventDefault();
-        fetch(`http://127.0.0.1:8000/profile/favorites/${slot}`, { method: 'DELETE', headers })
+        fetch(`${API_BASE}/profile/favorites/${slot}`, { method: 'DELETE', headers })
             .then(() => setFavorites(prev => prev.filter(f => f.slot !== slot)))
             .catch(() => { });
     };
@@ -157,7 +158,7 @@ function Profil() {
 
     const handleExpandActivity = () => {
         if (!recentExpanded && recentFull.length === 0) {
-            fetch('http://127.0.0.1:8000/profile/recent-activity?limit=50&days=30', { headers })
+            fetch(`${API_BASE}/profile/recent-activity?limit=50&days=30`, { headers })
                 .then(res => res.json())
                 .then(data => { if (Array.isArray(data)) setRecentFull(data); })
                 .catch(() => { });

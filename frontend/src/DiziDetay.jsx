@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Eye, Heart, Bookmark, MessageSquare, AlertTriangle, Star, X, Check, Plus, Clock, PlayCircle } from 'lucide-react';
 import Navbar from './Navbar';
 import './App.css';
+import API_BASE from './config';
 
 function DiziDetay() {
   const { id } = useParams();
@@ -43,7 +44,7 @@ function DiziDetay() {
   const [reviewGonderiliyor, setReviewGonderiliyor] = useState(false);
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/dizi/${id}`)
+    fetch(`${API_BASE}/dizi/${id}`)
       .then(res => { if (!res.ok) throw new Error("Veri çekilemedi"); return res.json(); })
       .then(data => {
         if (data.dizi) { setDizi(data.dizi); setSezonlar(data.sezonlar || []); setBolumler(data.bolumler || []); setOyuncular(data.cast || []); setEkip(data.crew || []); }
@@ -55,11 +56,11 @@ function DiziDetay() {
     const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
 
     if (token) {
-      fetch('http://127.0.0.1:8000/lists', { headers: authHeaders }).then(r => r.json()).then(setKullaniciListeleri).catch(() => { });
-      fetch(`http://127.0.0.1:8000/lists/check/${id}`, { headers: authHeaders }).then(r => r.json()).then(setDizininListeleri).catch(() => { });
-      fetch(`http://127.0.0.1:8000/rating/${id}`, { headers: authHeaders }).then(r => r.json()).then(d => setKullaniciPuani(d.score)).catch(() => { });
+      fetch(`${API_BASE}/lists`, { headers: authHeaders }).then(r => r.json()).then(setKullaniciListeleri).catch(() => { });
+      fetch(`${API_BASE}/lists/check/${id}`, { headers: authHeaders }).then(r => r.json()).then(setDizininListeleri).catch(() => { });
+      fetch(`${API_BASE}/rating/${id}`, { headers: authHeaders }).then(r => r.json()).then(d => setKullaniciPuani(d.score)).catch(() => { });
 
-      fetch(`http://127.0.0.1:8000/activity/${id}`, { headers: authHeaders }).then(r => r.json()).then(data => {
+      fetch(`${API_BASE}/activity/${id}`, { headers: authHeaders }).then(r => r.json()).then(data => {
         const watched = {}, watchlist = {};
         if (Array.isArray(data)) {
           data.forEach(a => { if (a.activity_type === 'watched') watched[a.episode_id] = true; if (a.activity_type === 'watchlist') watchlist[a.episode_id] = true; });
@@ -67,18 +68,18 @@ function DiziDetay() {
         setIzlenenBolumler(watched); setIzlenecekBolumler(watchlist);
       }).catch(() => { });
 
-      fetch(`http://127.0.0.1:8000/series-activity/${id}`, { headers: authHeaders }).then(r => r.json()).then(data => {
+      fetch(`${API_BASE}/series-activity/${id}`, { headers: authHeaders }).then(r => r.json()).then(data => {
         if (Array.isArray(data)) {
           setDiziIzlendi(data.includes('watched')); setDiziLiked(data.includes('liked')); setDiziWatchlist(data.includes('watchlist'));
         }
       }).catch(() => { });
 
-      fetch(`http://127.0.0.1:8000/episode-ratings/${id}`, { headers: authHeaders }).then(r => r.json()).then(setBolumPuanlari).catch(() => { });
+      fetch(`${API_BASE}/episode-ratings/${id}`, { headers: authHeaders }).then(r => r.json()).then(setBolumPuanlari).catch(() => { });
     }
 
-    fetch(`http://127.0.0.1:8000/reviews/${id}`).then(r => r.json()).then(d => { if (Array.isArray(d)) setReviews(d); }).catch(() => { });
+    fetch(`${API_BASE}/reviews/${id}`).then(r => r.json()).then(d => { if (Array.isArray(d)) setReviews(d); }).catch(() => { });
 
-    fetch(`http://127.0.0.1:8000/watch-providers/${id}`)
+    fetch(`${API_BASE}/watch-providers/${id}`)
       .then(r => r.json())
       .then(d => {
         if (d.providers) setWatchProviders(d.providers);
@@ -99,8 +100,8 @@ function DiziDetay() {
     const yeni = {};
     buSezonunBolumleri.forEach(b => {
       yeni[b.episode_id] = yeniDurum;
-      if (yeniDurum) fetch('http://127.0.0.1:8000/activity', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: b.episode_id, activity_type: 'watched' }) });
-      else fetch(`http://127.0.0.1:8000/activity/${b.episode_id}/watched`, { method: 'DELETE', headers: authHeaders });
+      if (yeniDurum) fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: b.episode_id, activity_type: 'watched' }) });
+      else fetch(`${API_BASE}/activity/${b.episode_id}/watched`, { method: 'DELETE', headers: authHeaders });
     });
     setIzlenenBolumler(prev => ({ ...prev, ...yeni }));
   };
@@ -117,8 +118,8 @@ function DiziDetay() {
     const yeni = {};
     buSezonunBolumleri.forEach(b => {
       yeni[b.episode_id] = yeniDurum;
-      if (yeniDurum) fetch('http://127.0.0.1:8000/activity', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: b.episode_id, activity_type: 'watchlist' }) });
-      else fetch(`http://127.0.0.1:8000/activity/${b.episode_id}/watchlist`, { method: 'DELETE', headers: authHeaders });
+      if (yeniDurum) fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: b.episode_id, activity_type: 'watchlist' }) });
+      else fetch(`${API_BASE}/activity/${b.episode_id}/watchlist`, { method: 'DELETE', headers: authHeaders });
     });
     setIzlenecekBolumler(prev => ({ ...prev, ...yeni }));
   };
@@ -140,8 +141,8 @@ function DiziDetay() {
     setIzlenenBolumler(yeniState);
     Object.entries(guncellenecek).forEach(([epId, izlendi]) => {
       const ep = bolumler.find(b => b.episode_id === parseInt(epId));
-      if (izlendi) fetch('http://127.0.0.1:8000/activity', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: ep ? ep.season_id : bolum.season_id, episode_id: parseInt(epId), activity_type: 'watched' }) });
-      else fetch(`http://127.0.0.1:8000/activity/${epId}/watched`, { method: 'DELETE', headers: authHeaders });
+      if (izlendi) fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: ep ? ep.season_id : bolum.season_id, episode_id: parseInt(epId), activity_type: 'watched' }) });
+      else fetch(`${API_BASE}/activity/${epId}/watched`, { method: 'DELETE', headers: authHeaders });
     });
     const hepsi = bolumler.filter(b => b.season_id === bolum.season_id).every(b => yeniState[b.episode_id]);
     setIzlenenSezonlar(prev => ({ ...prev, [bolum.season_id]: hepsi }));
@@ -155,8 +156,8 @@ function DiziDetay() {
 
     const yeniDurum = !izlenecekBolumler[bolum.episode_id];
     setIzlenecekBolumler(prev => ({ ...prev, [bolum.episode_id]: yeniDurum }));
-    if (yeniDurum) fetch('http://127.0.0.1:8000/activity', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: bolum.season_id, episode_id: bolum.episode_id, activity_type: 'watchlist' }) });
-    else fetch(`http://127.0.0.1:8000/activity/${bolum.episode_id}/watchlist`, { method: 'DELETE', headers: authHeaders });
+    if (yeniDurum) fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: bolum.season_id, episode_id: bolum.episode_id, activity_type: 'watchlist' }) });
+    else fetch(`${API_BASE}/activity/${bolum.episode_id}/watchlist`, { method: 'DELETE', headers: authHeaders });
   };
 
   // --- ACTIVITY ---
@@ -167,8 +168,8 @@ function DiziDetay() {
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
     setAktif(!aktif);
-    if (!aktif) fetch('http://127.0.0.1:8000/series-activity', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, activity_type: type }) });
-    else fetch(`http://127.0.0.1:8000/series-activity/${dizi.series_id}/${type}`, { method: 'DELETE', headers: authHeaders });
+    if (!aktif) fetch(`${API_BASE}/series-activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, activity_type: type }) });
+    else fetch(`${API_BASE}/series-activity/${dizi.series_id}/${type}`, { method: 'DELETE', headers: authHeaders });
   };
 
   // --- LİSTE ---
@@ -179,9 +180,9 @@ function DiziDetay() {
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
     if (dizininListeleri.includes(listId)) {
-      fetch(`http://127.0.0.1:8000/lists/${listId}/items/${dizi.series_id}`, { method: 'DELETE', headers: authHeaders }).then(() => setDizininListeleri(prev => prev.filter(id => id !== listId)));
+      fetch(`${API_BASE}/lists/${listId}/items/${dizi.series_id}`, { method: 'DELETE', headers: authHeaders }).then(() => setDizininListeleri(prev => prev.filter(id => id !== listId)));
     } else {
-      fetch(`http://127.0.0.1:8000/lists/${listId}/items`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id }) }).then(() => setDizininListeleri(prev => [...prev, listId]));
+      fetch(`${API_BASE}/lists/${listId}/items`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id }) }).then(() => setDizininListeleri(prev => [...prev, listId]));
     }
   };
   const yeniListeOlustur = () => {
@@ -189,7 +190,7 @@ function DiziDetay() {
     if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
     const jsonHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
     if (!yeniListeAdi.trim()) return;
-    fetch('http://127.0.0.1:8000/lists', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ name: yeniListeAdi }) })
+    fetch(`${API_BASE}/lists`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ name: yeniListeAdi }) })
       .then(r => r.json()).then(l => { setKullaniciListeleri(prev => [...prev, { list_id: l.list_id, name: l.name }]); setYeniListeAdi(""); });
   };
 
@@ -206,13 +207,13 @@ function DiziDetay() {
     const token = localStorage.getItem('sb_token');
     if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
     setKullaniciPuani(puan);
-    fetch('http://127.0.0.1:8000/rating', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, score: puan }) });
+    fetch(`${API_BASE}/rating`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, score: puan }) });
   };
   const puanSil = () => {
     const token = localStorage.getItem('sb_token');
     if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
     setKullaniciPuani(null);
-    fetch(`http://127.0.0.1:8000/rating/${dizi.series_id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    fetch(`${API_BASE}/rating/${dizi.series_id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
   };
 
   const bolumPuanVer = (episodeId, puan) => {
@@ -222,10 +223,10 @@ function DiziDetay() {
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
     if (bolumPuanlari[episodeId] === puan) {
       setBolumPuanlari(prev => { const s = { ...prev }; delete s[episodeId]; return s; });
-      fetch(`http://127.0.0.1:8000/episode-rating/${episodeId}`, { method: 'DELETE', headers: authHeaders });
+      fetch(`${API_BASE}/episode-rating/${episodeId}`, { method: 'DELETE', headers: authHeaders });
     } else {
       setBolumPuanlari(prev => ({ ...prev, [episodeId]: puan }));
-      fetch('http://127.0.0.1:8000/episode-rating', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ episode_id: episodeId, score: puan }) });
+      fetch(`${API_BASE}/episode-rating`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ episode_id: episodeId, score: puan }) });
     }
   };
 
@@ -515,8 +516,8 @@ function DiziDetay() {
                 if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
                 setReviewGonderiliyor(true);
                 try {
-                  await fetch('http://127.0.0.1:8000/reviews', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, review_text: reviewText, contains_spoiler: spoilerVar }) });
-                  const r = await fetch(`http://127.0.0.1:8000/reviews/${dizi.series_id}`);
+                  await fetch(`${API_BASE}/reviews`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, review_text: reviewText, contains_spoiler: spoilerVar }) });
+                  const r = await fetch(`${API_BASE}/reviews/${dizi.series_id}`);
                   const d = await r.json();
                   if (Array.isArray(d)) setReviews(d);
                   setReviewText(''); setSpoilerVar(false); setReviewModalAcik(false);

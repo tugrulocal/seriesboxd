@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { List, ArrowLeft, Bookmark } from 'lucide-react';
 import './Profil.css';
+import API_BASE from './config';
 
 function Listelerim() {
     const { kullanici, yukleniyor: authLoading } = useAuth();
@@ -22,9 +23,9 @@ function Listelerim() {
         }
 
         Promise.all([
-            fetch('http://127.0.0.1:8000/profile/lists-detail', { headers }).then(r => r.json()),
-            fetch('http://127.0.0.1:8000/profile/watchlist', { headers })
-                .then(r => r.ok ? r.json() : fetch('http://127.0.0.1:8000/profile/watchlist_preview', { headers }).then(r => r.json()))
+            fetch(`${API_BASE}/profile/lists-detail`, { headers }).then(r => r.json()),
+            fetch(`${API_BASE}/profile/watchlist`, { headers })
+                .then(r => r.ok ? r.json() : fetch(`${API_BASE}/profile/watchlist_preview`, { headers }).then(r => r.json()))
                 .catch(() => [])
         ])
             .then(([listsData, watchlistData]) => {

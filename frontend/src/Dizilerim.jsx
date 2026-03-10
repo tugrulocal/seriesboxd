@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ChevronDown, ArrowLeft } from 'lucide-react';
 import './Dizilerim.css';
+import API_BASE from './config';
 
 function Dizilerim() {
     const { kullanici } = useAuth();
@@ -44,8 +45,8 @@ function Dizilerim() {
         }
         // Fetch genres and services for filter dropdowns
         Promise.all([
-            fetch('http://127.0.0.1:8000/turler').then(r => r.json()),
-            fetch('http://127.0.0.1:8000/services').then(r => r.json())
+            fetch(`${API_BASE}/turler`).then(r => r.json()),
+            fetch(`${API_BASE}/services`).then(r => r.json())
         ])
             .then(([g, s]) => {
                 if (Array.isArray(g)) setGenres(g);
@@ -64,7 +65,7 @@ function Dizilerim() {
         if (service) params.append('service', service);
         params.append('sort', sort);
 
-        fetch(`http://127.0.0.1:8000/profile/watched-series?${params}`, { headers })
+        fetch(`${API_BASE}/profile/watched-series?${params}`, { headers })
             .then(r => r.json())
             .then(data => { if (Array.isArray(data)) setSeries(data); })
             .catch(() => setSeries([]))
