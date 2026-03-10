@@ -196,9 +196,16 @@ class ResetPasswordModel(BaseModel):
 
 # Veritabanı bağlantısı
 def get_db_conn():
-    db_url = os.getenv("REMOTE_DATABASE_URL") if IS_PRODUCTION else None
+    # Öncelik sırası:
+    # 1. DATABASE_URL      → DigitalOcean managed DB component eklendiğinde otomatik inject edilir
+    # 2. REMOTE_DATABASE_URL → bizim manuel eklediğimiz prod URL
+    # 3. Yerel DB          → local geliştirme ortamı
+    db_url = os.getenv("DATABASE_URL") or os.getenv("REMOTE_DATABASE_URL")
     if db_url:
-        return psycopg2.connect(db_url, sslmode="require")
+        # sslmode URL'de yoksa ekle (DigitalOcean zorunlu kılar)
+        if "sslmode" not in db_url:
+            db_url += ("&" if "?" in db_url else "?") + "sslmode=require"
+        return psycopg2.connect(db_url)
     # Yerel geliştirme ortamı
     return psycopg2.connect(
         dbname=os.getenv("DB_NAME", "seriesboxd"),
@@ -339,7 +346,12 @@ def ensure_users_table():
     cur.close()
     conn.close()
 
-ensure_users_table()
+try:
+    ensure_users_table()
+except Exception as _db_init_err:
+    import traceback
+    print(f"[UYARI] DB başlatma hatası (uygulama çalışmaya devam ediyor): {_db_init_err}")
+    traceback.print_exc()
 
 @app.get("/")
 def ana_sayfa():
