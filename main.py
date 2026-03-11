@@ -143,6 +143,10 @@ _LOCAL_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
+    "http://localhost:5175",       # ← ekle
+    "http://127.0.0.1:5175"
+    "http://localhost:5176",
+    "http://127.0.0.1:5176",      # ← ekle
 ]
 _PROD_ORIGINS_RAW  = os.getenv("ALLOWED_ORIGINS", "")           # virgülle ayrılmış domain listesi
 _PROD_ORIGINS      = [o.strip() for o in _PROD_ORIGINS_RAW.split(",") if o.strip()]
@@ -462,17 +466,26 @@ def dizi_detay_getir(series_id: int):
         return {"hata": "Dizi bulunamadı"}
 
     # 2. Dizinin sezonlarını çek (Sezon numarasına göre sıralı)
-    cur.execute("SELECT * FROM seasons WHERE series_id = %s ORDER BY season_number", (series_id,))
-    sezonlar = cur.fetchall()
+    try:
+        cur.execute("SELECT * FROM seasons WHERE series_id = %s ORDER BY season_number", (series_id,))
+        sezonlar = cur.fetchall()
+    except Exception as e:
+        print(f"Seasons tablosu hatası: {e}")
+        conn.rollback()
+        sezonlar = []
 
     # 3. Sezonlara ait bölümleri çek
     bolumler = []
-    if sezonlar:
-        season_ids = tuple([s['season_id'] for s in sezonlar])
-        # SQL'de IN kullanımı için tuple boş olmamalı
-        if season_ids:
-            cur.execute("SELECT * FROM episodes WHERE season_id IN %s ORDER BY episode_number", (season_ids,))
-            bolumler = cur.fetchall()
+    try:
+        if sezonlar:
+            season_ids = tuple([s['season_id'] for s in sezonlar])
+            if season_ids:
+                cur.execute("SELECT * FROM episodes WHERE season_id IN %s ORDER BY episode_number", (season_ids,))
+                bolumler = cur.fetchall()
+    except Exception as e:
+        print(f"Episodes tablosu hatası: {e}")
+        conn.rollback()
+        bolumler = []
 
     # 4. Oyuncuları çek
     try:
