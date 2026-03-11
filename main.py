@@ -257,13 +257,20 @@ def ensure_users_table():
             used      BOOLEAN DEFAULT FALSE
         );
     """)
+    # Buraya kadar olan tabloları commit et (episodes ALTER TABLE başarısız olursa rollback etmesin)
+    conn.commit()
     # Episodes tablosuna vote_average kolonu ekle (yoksa — tablo yoksa atla)
     try:
         cur.execute("ALTER TABLE episodes ADD COLUMN IF NOT EXISTS vote_average NUMERIC(4,2) DEFAULT NULL;")
+        conn.commit()
     except Exception:
         conn.rollback()
     # Mevcut kullanıcıları doğrulanmış olarak işaretle
-    cur.execute("UPDATE users SET is_verified = TRUE WHERE is_verified = FALSE OR is_verified IS NULL;")
+    try:
+        cur.execute("UPDATE users SET is_verified = TRUE WHERE is_verified = FALSE OR is_verified IS NULL;")
+        conn.commit()
+    except Exception:
+        conn.rollback()
     # Kullanıcı bölüm puanları tablosu
     cur.execute("""
         CREATE TABLE IF NOT EXISTS user_episode_ratings (
@@ -332,10 +339,13 @@ def ensure_users_table():
             UNIQUE(user_id, series_id)
         );
     """)
+    # Buraya kadar olan tabloları commit et
+    conn.commit()
     # Mevcut tablolara created_at kolonu ekle (eksikse)
     for tbl in ['user_activity', 'user_series_activity', 'user_ratings']:
         try:
             cur.execute(f"ALTER TABLE {tbl} ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;")
+            conn.commit()
         except Exception:
             conn.rollback()
     # Kullanıcının favori dizileri (profilde 5 slot)
