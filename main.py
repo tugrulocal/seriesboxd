@@ -923,7 +923,7 @@ def verify_email(data: VerifyEmailModel, response: Response):
         token = create_token(user["user_id"], user["username"])
         response.set_cookie(
             key=COOKIE_NAME, value=token,
-            httponly=True, samesite="lax", secure=False,
+            httponly=True, samesite="lax", secure=IS_PRODUCTION,
             max_age=ACCESS_TOKEN_EXPIRE_DAYS * 86400
         )
         return {
@@ -971,7 +971,7 @@ def login(data: LoginModel, response: Response):
         token = create_token(user["user_id"], user["username"])
         response.set_cookie(
             key=COOKIE_NAME, value=token,
-            httponly=True, samesite="lax", secure=False,
+            httponly=True, samesite="lax", secure=IS_PRODUCTION,
             max_age=ACCESS_TOKEN_EXPIRE_DAYS * 86400
         )
         return {
@@ -1040,7 +1040,7 @@ def google_auth(data: GoogleAuthModel, response: Response):
         token = create_token(user["user_id"], user["username"])
         response.set_cookie(
             key=COOKIE_NAME, value=token,
-            httponly=True, samesite="lax", secure=False,
+            httponly=True, samesite="lax", secure=IS_PRODUCTION,
             max_age=ACCESS_TOKEN_EXPIRE_DAYS * 86400
         )
         
