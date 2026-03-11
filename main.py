@@ -755,18 +755,22 @@ def delete_series_activity(series_id: int, activity_type: str, user = Depends(ge
 
 @app.get("/reviews/{series_id}")
 def get_reviews(series_id: int):
-    conn = get_db_conn()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute(
-        """SELECT r.*, u.username FROM user_series_reviews r
-           LEFT JOIN users u ON u.user_id = r.user_id
-           WHERE r.series_id = %s ORDER BY r.created_at DESC""",
-        (series_id,)
-    )
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return rows
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute(
+            """SELECT r.*, u.username FROM user_series_reviews r
+               LEFT JOIN users u ON u.user_id = r.user_id
+               WHERE r.series_id = %s ORDER BY r.created_at DESC""",
+            (series_id,)
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return rows
+    except Exception as e:
+        print(f"Reviews hatası: {e}")
+        return []
 
 @app.post("/reviews")
 def create_review(review: ReviewModel, user = Depends(get_current_user)):
