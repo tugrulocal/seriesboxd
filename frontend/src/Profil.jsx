@@ -448,7 +448,12 @@ function Profil() {
                     {/* WATCHLIST */}
                     <div className="sidebar-block">
                         <div className="sidebar-block-header">
-                            <h4 className="sidebar-title">WATCHLIST</h4>
+                            <h4 className="sidebar-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                İZLEME LİSTESİ
+                                {(stats?.watchlist_count || 0) > 4 && (
+                                    <Link to="/watchlist" style={{ color: '#94a3b8', fontSize: '0.8rem', textDecoration: 'none' }}>Tümünü Gör</Link>
+                                )}
+                            </h4>
                             <span className="sidebar-count">{stats?.watchlist_count || 0}</span>
                         </div>
                         {watchlistPreview.length > 0 ? (

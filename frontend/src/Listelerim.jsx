@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import { List, ArrowLeft, Bookmark } from 'lucide-react';
+import { List, ArrowLeft, Bookmark, ChevronRight } from 'lucide-react';
 import './Profil.css';
 import API_BASE from './config';
 
@@ -24,9 +24,7 @@ function Listelerim() {
 
         Promise.all([
             fetch(`${API_BASE}/profile/lists-detail`, { headers }).then(r => r.json()),
-            fetch(`${API_BASE}/profile/watchlist`, { headers })
-                .then(r => r.ok ? r.json() : fetch(`${API_BASE}/profile/watchlist_preview`, { headers }).then(r => r.json()))
-                .catch(() => [])
+            fetch(`${API_BASE}/profile/watchlist`, { headers }).then(r => r.json()).catch(() => [])
         ])
             .then(([listsData, watchlistData]) => {
                 if (Array.isArray(listsData)) setListeler(listsData);
@@ -46,7 +44,7 @@ function Listelerim() {
                     <Link to="/profil" className="dizilerim-back" style={{ color: '#cbd5e1', marginRight: '16px' }}>
                         <ArrowLeft size={24} />
                     </Link>
-                    <h1 style={{ fontSize: '2.2rem', margin: 0, color: '#f8fafc' }}>Benim Listelerim</h1>
+                    <h1 style={{ fontSize: '2.2rem', margin: 0, color: '#f8fafc' }}>Listelerim</h1>
                 </div>
             </div>
 
@@ -56,12 +54,19 @@ function Listelerim() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '50px' }}>
                     {/* Watchlist Section */}
                     <div className="profil-section">
-                        <h3 className="section-title-lb" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', marginBottom: '20px' }}>
-                            <Bookmark size={20} color="#38bdf8" /> WATCHLIST
-                        </h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 className="section-title-lb" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', margin: 0 }}>
+                                <Bookmark size={20} color="#38bdf8" /> İZLEME LİSTESİ
+                            </h3>
+                            {watchlist.length > 8 && (
+                                <Link to="/watchlist" style={{ color: '#94a3b8', fontSize: '0.9rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    Tümünü Gör <ChevronRight size={14} />
+                                </Link>
+                            )}
+                        </div>
                         {watchlist.length > 0 ? (
                             <div className="tab-poster-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
-                                {watchlist.map(w => (
+                                {watchlist.slice(0, 8).map(w => (
                                     <Link to={`/dizi/${w.series_id}`} key={w.series_id} className="tab-poster-card">
                                         <img src={`https://image.tmdb.org/t/p/w300${w.poster_path}`} alt={w.name} />
                                         <div className="tab-poster-overlay">
@@ -78,12 +83,12 @@ function Listelerim() {
                     {/* Custom Lists Section */}
                     <div className="profil-section">
                         <h3 className="section-title-lb" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', marginBottom: '20px' }}>
-                            <List size={20} color="#a78bfa" /> LİSTELERİMİZ
+                            <List size={20} color="#a78bfa" /> LİSTELERİM
                         </h3>
                         {listeler.length > 0 ? (
                             <div className="tab-lists-grid">
                                 {listeler.map(lst => (
-                                    <div key={lst.list_id} className="tab-list-card">
+                                    <Link to={`/liste/${lst.list_id}`} key={lst.list_id} className="tab-list-card" style={{ textDecoration: 'none' }}>
                                         <div className="tab-list-posters">
                                             {lst.items && lst.items.length > 0 ? (
                                                 lst.items.slice(0, 5).map(item => (
@@ -96,10 +101,10 @@ function Listelerim() {
                                             )}
                                         </div>
                                         <div className="tab-list-info">
-                                            <h4 className="tab-list-name">{lst.list_name}</h4>
+                                            <h4 className="tab-list-name" style={{ color: '#f8fafc' }}>{lst.list_name}</h4>
                                             <span className="tab-list-count">{lst.item_count} dizi</span>
                                         </div>
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         ) : (

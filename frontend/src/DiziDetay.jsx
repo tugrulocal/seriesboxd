@@ -300,15 +300,15 @@ function DiziDetay() {
             <div className="dv2-action-icons">
               <div className={`dv2-action ${diziIzlendi ? 'act-watch' : ''}`} onClick={() => seriesActivityToggle('watched', diziIzlendi, setDiziIzlendi)} title={diziIzlendi ? 'İzlendi' : 'İzledim'}>
                 <Eye size={22} strokeWidth={diziIzlendi ? 2.5 : 1.5} />
-                <span>Watch</span>
+                <span>İzledim</span>
               </div>
               <div className={`dv2-action ${diziLiked ? 'act-like' : ''}`} onClick={() => seriesActivityToggle('liked', diziLiked, setDiziLiked)} title={diziLiked ? 'Beğenildi' : 'Beğen'}>
                 <Heart size={22} strokeWidth={diziLiked ? 2.5 : 1.5} fill={diziLiked ? 'currentColor' : 'none'} />
-                <span>Like</span>
+                <span>Beğendim</span>
               </div>
               <div className={`dv2-action ${diziWatchlist ? 'act-wl' : ''}`} onClick={() => seriesActivityToggle('watchlist', diziWatchlist, setDiziWatchlist)} title={diziWatchlist ? 'Listede' : 'Listeye ekle'}>
                 <Bookmark size={22} strokeWidth={diziWatchlist ? 2.5 : 1.5} fill={diziWatchlist ? 'currentColor' : 'none'} />
-                <span>Watchlist</span>
+                <span>İzleyeceğim</span>
               </div>
             </div>
 
@@ -422,7 +422,7 @@ function DiziDetay() {
                                 )}
                               </div>
 
-                              <button className={`bolum-izle-btn ${izlenenBolumler[bolum.episode_id] ? 'izlendi' : ''}`} onClick={() => bolumIzleToggle(bolum)} title="İzledim"><Eye size={16} /></button>
+                              <button className={`bolum-izle-btn ${izlenenBolumler[bolum.episode_id] ? 'izlendi' : ''}`} onClick={() => bolumIzleToggle(bolum)} title="İzleedim"><Eye size={16} /></button>
                               <button className={`bolum-izle-btn ${izlenecekBolumler[bolum.episode_id] ? 'izlenecek' : ''}`} onClick={() => bolumIzlenecekToggle(bolum)} title="İzleyeceğim"><Clock size={16} /></button>
                             </div>
                           </div>

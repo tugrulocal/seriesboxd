@@ -8,6 +8,7 @@ import Login from './Login'
 import Home from './Home'
 import Profil from './Profil'
 import Listelerim from './Listelerim'
+import ListeDetay from './ListeDetay'
 import Dizilerim from './Dizilerim'
 import Footer from './Footer'
 import { AuthProvider } from './AuthContext'
@@ -161,6 +162,8 @@ function AppIcerik() {
         <Route path="/top50" element={<Top50 />} />
         <Route path="/profil" element={<Profil />} />
         <Route path="/listelerim" element={<Listelerim />} />
+        <Route path="/liste/:list_id" element={<ListeDetay isWatchlist={false} />} />
+        <Route path="/watchlist" element={<ListeDetay isWatchlist={true} />} />
         <Route path="/dizilerim" element={<Dizilerim />} />
       </Routes>
       <Footer />

@@ -1352,6 +1352,63 @@ def get_watchlist_preview(user = Depends(get_current_user)):
     conn.close()
     return rows
 
+@app.get("/profile/watchlist")
+def get_watchlist(user = Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT s.series_id, s.name, s.poster_path, s.rating, s.genres, s.networks,
+               usa.created_at as added_at,
+               ur.score as user_score
+        FROM user_series_activity usa
+        JOIN series s ON usa.series_id = s.series_id
+        LEFT JOIN user_ratings ur ON ur.series_id = s.series_id AND ur.user_id = usa.user_id
+        WHERE usa.user_id = %s AND usa.activity_type = 'watchlist'
+        ORDER BY usa.created_at DESC
+    """, (user["user_id"],))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+@app.get("/profile/list/{list_id}")
+def get_list_detail(list_id: int, user = Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+        
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    # Check if list exists and belongs to user
+    cur.execute("SELECT list_id, name as list_name, created_at FROM user_lists WHERE list_id = %s", (list_id,))
+    lst = cur.fetchone()
+    if not lst:
+        cur.close()
+        conn.close()
+        raise HTTPException(status_code=404, detail="Liste bulunamadı.")
+        
+    # Get all items in the list
+    cur.execute("""
+        SELECT s.series_id, s.name, s.poster_path, s.rating, s.genres, s.networks,
+               li.added_at,
+               ur.score as user_score
+        FROM list_items li
+        JOIN series s ON li.series_id = s.series_id
+        LEFT JOIN user_ratings ur ON ur.series_id = s.series_id AND ur.user_id = %s
+        WHERE li.list_id = %s
+        ORDER BY li.added_at DESC
+    """, (user["user_id"], list_id))
+    
+    items = cur.fetchall()
+    lst["items"] = items
+    
+    cur.close()
+    conn.close()
+    return lst
+
 @app.get("/profile/watched-series")
 def get_watched_series(
     genre: Optional[str] = None,

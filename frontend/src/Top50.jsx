@@ -14,6 +14,7 @@ function Top50() {
   const [filterGenre, setFilterGenre] = useState('');
   const [filterDecade, setFilterDecade] = useState('');
   const [sortBy, setSortBy] = useState('rating'); // rating, popularity, newest
+  const [showFilters, setShowFilters] = useState(false);
 
   // User Activity
   const { kullanici } = useAuth();
@@ -124,38 +125,51 @@ function Top50() {
         </div>
       </div>
 
-      <div className="top50-filters-wrapper">
-        <div className="top50-filter-group">
-          <label className="top50-filter-label">Sırala</label>
-          <select className="top50-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="rating">Puan (Yüksekten Düşüğe)</option>
-            <option value="popularity">Popülerlik (Oy Sayısı)</option>
-            <option value="newest">Yenilik (En Son Çıkanlar)</option>
-          </select>
-        </div>
-
-        <div className="top50-filter-group">
-          <label className="top50-filter-label">Tür</label>
-          <select className="top50-select" value={filterGenre} onChange={(e) => setFilterGenre(e.target.value)}>
-            <option value="">Tüm Türler</option>
-            {genres.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
-        </div>
-
-        <div className="top50-filter-group">
-          <label className="top50-filter-label">Yıllar</label>
-          <select className="top50-select" value={filterDecade} onChange={(e) => setFilterDecade(e.target.value)}>
-            <option value="">Tüm Yıllar</option>
-            {decades.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </div>
-
-        {(filterGenre || filterDecade || sortBy !== 'rating') && (
-          <button className="top50-filter-clear" onClick={clearFilters}>
-            <FilterX size={16} /> Temizle
-          </button>
-        )}
+      <div className="top50-filter-toggle-container" style={{ textAlign: 'center', marginBottom: '15px' }}>
+        <button
+          className="top50-filter-toggle-btn"
+          onClick={() => setShowFilters(!showFilters)}
+          style={{ background: 'rgba(30, 41, 59, 0.8)', color: '#fff', border: '1px solid #38bdf8', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+        >
+          <span style={{ fontSize: '1.2em', marginRight: '4px' }}>⧩</span> {showFilters ? 'Filtreleri Gizle' : 'Filtrele & Sırala'}
+        </button>
       </div>
+
+      {showFilters && (
+        <div className="top50-filters-wrapper">
+          <div className="top50-filter-group">
+            <label className="top50-filter-label">Sırala</label>
+            <select className="top50-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <option value="rating">Puan (Yüksekten Düşüğe)</option>
+              <option value="popularity">Popülerlik (Oy Sayısı)</option>
+              <option value="newest">Yenilik (En Son Çıkanlar)</option>
+            </select>
+          </div>
+
+          <div className="top50-filter-group">
+            <label className="top50-filter-label">Tür</label>
+            <select className="top50-select" value={filterGenre} onChange={(e) => setFilterGenre(e.target.value)}>
+              <option value="">Tüm Türler</option>
+              {genres.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          </div>
+
+          <div className="top50-filter-group">
+            <label className="top50-filter-label">Yıllar</label>
+            <select className="top50-select" value={filterDecade} onChange={(e) => setFilterDecade(e.target.value)}>
+              <option value="">Tüm Yıllar</option>
+              {decades.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+
+          {(filterGenre || filterDecade || sortBy !== 'rating') && (
+            <button className="top50-filter-clear" onClick={clearFilters}>
+              <FilterX size={16} /> Temizle
+            </button>
+          )}
+        </div>
+
+      )}
 
       {loading ? (
         <div className="top50-loading">

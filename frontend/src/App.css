@@ -108,6 +108,10 @@ body {
   width: 100%;
 }
 
+.mobile-nav-search {
+  display: none;
+}
+
 .login-btn {
   background: linear-gradient(135deg, #38bdf8, #818cf8);
   color: #0f172a !important;
@@ -593,7 +597,7 @@ h1 {
 
 /* Actions (Right) */
 .dv2-hero-actions {
-  width: 220px;
+  width: 260px; /* Increased from 220px to fit 'İZLEYECEĞİM' */
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -616,15 +620,23 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   color: #94a3b8;
   cursor: pointer;
   padding: 6px 10px;
   border-radius: 8px;
   transition: all 0.2s;
-  font-size: 0.75rem;
+  font-size: 0.70rem; /* smaller font for very long translation words */
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
   font-weight: 500;
+  flex: 1;
+}
+
+.dv2-action span {
+  display: block;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .dv2-action svg {
@@ -6211,6 +6223,7 @@ button.sifre-unut-link:hover {
   .dv2-hero-actions {
     width: 100%;
     max-width: 350px;
+    align-self: center; /* Center on mobile! */
   }
 
   .dv2-genres {
@@ -6236,5 +6249,60 @@ button.sifre-unut-link:hover {
   .puan-ve-buton {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .kullanici-dropdown {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px;
+  }
+
+  .menu-linkler {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .kullanici-menu,
+  .login-btn {
+    order: -1;
+    margin-bottom: 10px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Navbar Right Actions Layout */
+  .mobile-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Spacing between search icon and hamburger */
+    position: relative;
+    z-index: 1002;
+  }
+
+  .mobile-nav-search {
+    display: block;
+    position: relative;
+    z-index: 1001;
+  }
+
+  .gizli-mobil-logo {
+    display: none !important;
+  }
+  
+  .mobile-top-actions.search-active {
+    flex: 1; /* Take up all space */
+  }
+
+  .mobile-top-actions.search-active .mobile-nav-search {
+    flex: 1; /* Grow to fill space before hamburger */
+  }
+
+  .mobile-top-actions.search-active .mobile-nav-search .searchbar-container,
+  .mobile-top-actions.search-active .mobile-nav-search .arama-kutusu,
+  .mobile-top-actions.search-active .mobile-nav-search .searchbar-satir {
+    width: 100% !important;
   }
 }

@@ -882,19 +882,19 @@ function WatchPage() {
                                     onClick={() => currentEpId && episodeWatchToggle(currentEpId)}
                                     title={currentEpWatched ? 'İzlendi' : 'İzledim'}>
                                     <Eye size={17} strokeWidth={currentEpWatched ? 2.5 : 1.5} />
-                                    <span>Watch</span>
+                                    <span>İZLEDİM</span>
                                 </button>
                                 <button className={`wip-action-btn ${currentEpLiked ? 'wip-act-on wip-act-like' : ''}`}
                                     onClick={() => currentEpId && episodeLikeToggle(currentEpId)}
                                     title={currentEpLiked ? 'Beğenildi' : 'Beğen'}>
                                     <Heart size={17} strokeWidth={currentEpLiked ? 2.5 : 1.5} fill={currentEpLiked ? 'currentColor' : 'none'} />
-                                    <span>Like</span>
+                                    <span>BEĞENDİM</span>
                                 </button>
                                 <button className={`wip-action-btn ${currentEpWatchlist ? 'wip-act-on wip-act-wl' : ''}`}
                                     onClick={() => currentEpId && episodeWatchlistToggle(currentEpId)}
                                     title={currentEpWatchlist ? 'Watchlist\'te' : 'Watchlist\'e ekle'}>
                                     <Bookmark size={17} strokeWidth={currentEpWatchlist ? 2.5 : 1.5} fill={currentEpWatchlist ? 'currentColor' : 'none'} />
-                                    <span>Watchlist</span>
+                                    <span>İZLEYECEĞİM</span>
                                 </button>
                                 <button className={`wip-action-btn ${reviewPanelAcik ? 'wip-act-on' : ''}`}
                                     onClick={() => setReviewPanelAcik(p => !p)}>

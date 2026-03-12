@@ -11,7 +11,9 @@ body {
 
 h1,
 .dv2-title,
-.modal-metin h2 {
+.modal-metin h2,
+.top50-title {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
   font-size: clamp(1.5rem, 3vw + 1rem, 2.5rem) !important;
 }
 

@@ -25,42 +25,56 @@ const ITEM_W = 160; // item width (150px) + gap (10px)
 function Row({ title, icon, series, onPosterClick }) {
     const scrollRef = useRef(null);
 
-    // Prepend last item as a "ghost" so it peeks behind the left arrow on load.
-    // series[0] stays fully visible as the first real item.
+    // displayItems copies the series block 15 times:
+    // This allows infinite scrolling left or right since we reset to center on edges
+    const numCopies = 15;
+    const realIndexStart = Math.floor(numCopies / 2); // 7 
+    
     const displayItems = series.length > 0
-        ? [series[series.length - 1], ...series]
+        ? Array(numCopies).fill(series).flat()
         : series;
 
     useEffect(() => {
         const el = scrollRef.current;
         if (!el || series.length === 0) return;
         requestAnimationFrame(() => {
-            // Skip past the ghost so series[0] is the first visible item,
-            // ghost peeks behind the left arrow.
-            el.scrollLeft = ITEM_W;
+            // Start at the middle block 
+            const blockWidth = series.length * ITEM_W;
+            el.scrollLeft = realIndexStart * blockWidth;
         });
-    }, [series]);
+    }, [series, realIndexStart]);
 
     const scroll = (direction) => {
         const el = scrollRef.current;
         if (!el) return;
-        const amount = el.clientWidth * 0.75;
-        if (direction === 'right') {
-            if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 10) {
-                // At end — loop back to series[0] (past ghost)
-                el.scrollTo({ left: ITEM_W, behavior: 'smooth' });
-            } else {
-                el.scrollBy({ left: amount, behavior: 'smooth' });
+        
+        const blockWidth = series.length * ITEM_W;
+        const jumpAmount = el.clientWidth * 0.75;
+        
+        // Target scroll position
+        let newScrollLeft = direction === 'right' 
+            ? el.scrollLeft + jumpAmount 
+            : el.scrollLeft - jumpAmount;
+
+        // Smoothly scroll to the new location
+        el.scrollTo({ left: newScrollLeft, behavior: 'smooth' });
+
+        // Wait for smooth scroll, then silently snap to center zone if near edges
+        setTimeout(() => {
+            if (!scrollRef.current) return;
+            const currentEl = scrollRef.current;
+            const centerLeft = realIndexStart * blockWidth;
+            const safeMin = centerLeft - blockWidth;
+            const safeMax = centerLeft + blockWidth * 2;
+            
+            if (currentEl.scrollLeft < safeMin || currentEl.scrollLeft > safeMax) {
+                const relativeOffset = currentEl.scrollLeft % blockWidth;
+                currentEl.style.scrollBehavior = 'auto'; // Disable animation
+                currentEl.scrollLeft = centerLeft + relativeOffset;
+                // Re-enable native scroll mapping behavior if any
+                setTimeout(() => { currentEl.style.scrollBehavior = 'smooth'; }, 50); 
             }
-        } else {
-            const newLeft = el.scrollLeft - amount;
-            if (newLeft <= ITEM_W) {
-                // Would land on/before ghost — loop to real end instead
-                el.scrollTo({ left: el.scrollWidth - el.clientWidth, behavior: 'smooth' });
-            } else {
-                el.scrollBy({ left: -amount, behavior: 'smooth' });
-            }
-        }
+        }, 450);
     };
 
     if (!series || series.length === 0) return null;
@@ -163,7 +177,7 @@ function Home({ tumDiziler }) {
         if (heroList.length <= 1) return;
         const timer = setInterval(heroNext, 20000);
         return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [heroList.length, heroIndex]);
 
     // Pointer swipe handlers

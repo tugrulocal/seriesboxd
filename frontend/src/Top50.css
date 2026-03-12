@@ -398,12 +398,17 @@
         flex-direction: row;
         width: auto;
         margin-bottom: 12px;
-        gap: 10px;
+        gap: 15px;
+        /* Artırıldı (postere olan uzaklık) */
+        padding-right: 15px;
+        /* Ekstra uzaklık eklendi */
     }
 
     .top50-poster-wrapper {
-        display: none;
-        /* Hide poster on mobile for list view, or adjust layout */
+        display: block;
+        width: 65px;
+        height: 98px;
+        margin-right: 15px;
     }
 
     .top50-actions {
@@ -415,5 +420,10 @@
         margin-top: 16px;
         width: 100%;
         justify-content: flex-start;
+    }
+
+    .top50-title {
+        font-size: 1.15rem !important;
+        /* Title font size decreased for mobile */
     }
 }
