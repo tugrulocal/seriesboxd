@@ -212,6 +212,18 @@
     gap: 14px;
 }
 
+/* Sentinel div that triggers infinite scroll loading */
+.dizilerim-sentinel {
+    grid-column: 1 / -1;
+    height: 1px;
+}
+
+/* ---- Skeleton shimmer ---- */
+@keyframes skeleton-shimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+}
+
 .dizilerim-poster-card {
     position: relative;
     border-radius: 4px;
@@ -221,6 +233,16 @@
     transition: border-color 0.2s, transform 0.2s;
     text-decoration: none;
     cursor: pointer;
+    /* Skeleton shimmer — visible behind the image until it loads */
+    background: linear-gradient(90deg, #1e293b 25%, #2d3e52 50%, #1e293b 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Stop the shimmer once at least one image inside the card has loaded */
+.dizilerim-poster-card:has(img.poster-loaded) {
+    animation: none;
+    background: #0f172a;
 }
 
 .dizilerim-poster-card:hover {
@@ -229,11 +251,25 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+/* picture element must fill the card just like a plain img did */
+.dizilerim-poster-card picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
 .dizilerim-poster-card img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    /* Fade in on load — PosterImage adds .poster-loaded via onLoad */
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.dizilerim-poster-card img.poster-loaded {
+    opacity: 1;
 }
 
 /* --- GREEN RATING OVERLAY --- */

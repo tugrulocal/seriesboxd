@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ChevronDown, ArrowLeft } from 'lucide-react';
+import PosterImage from './PosterImage';
 import './Dizilerim.css';
 import API_BASE from './config';
 
@@ -19,6 +20,11 @@ function Dizilerim() {
     const [genre, setGenre] = useState('');
     const [service, setService] = useState('');
     const [sort, setSort] = useState('recent');
+
+    // Infinite scroll — show posters in batches of 20
+    const BATCH = 20;
+    const [visibleCount, setVisibleCount] = useState(BATCH);
+    const sentinelRef = useRef(null);
 
     // Dropdown open states
     const [openDropdown, setOpenDropdown] = useState(null);
@@ -71,6 +77,28 @@ function Dizilerim() {
             .catch(() => setSeries([]))
             .finally(() => setLoading(false));
     }, [kullanici, decade, genre, service, sort]);
+
+    // Reset visible count whenever the series dataset changes (filter/sort change)
+    useEffect(() => {
+        setVisibleCount(BATCH);
+    }, [series]);
+
+    // IntersectionObserver — load next batch when sentinel enters the viewport
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel || visibleCount >= series.length) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setVisibleCount(prev => Math.min(prev + BATCH, series.length));
+                }
+            },
+            { rootMargin: '300px' }
+        );
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [series.length, visibleCount]);
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -240,28 +268,36 @@ function Dizilerim() {
                 )}
             </div>
 
-            {/* Poster Grid */}
+            {/* Poster Grid — rendered in batches of 20 via infinite scroll */}
             {loading ? (
                 <div className="dizilerim-loading">Yükleniyor...</div>
             ) : series.length > 0 ? (
-                <div className="dizilerim-grid">
-                    {series.map(s => (
-                        <Link to={`/dizi/${s.series_id}`} key={s.series_id} className="dizilerim-poster-card">
-                            <img
-                                src={s.poster_path ? `https://image.tmdb.org/t/p/w300${s.poster_path}` : ''}
-                                alt={s.name}
-                                loading="lazy"
-                            />
-                            <div className="dizilerim-poster-overlay">
-                                {s.user_score ? (
-                                    <span className="dizilerim-user-score">★ {s.user_score}</span>
-                                ) : (
-                                    <span className="dizilerim-no-score">—</span>
-                                )}
-                            </div>
-                        </Link>
-                    ))}
-                </div>
+                <>
+                    <div className="dizilerim-grid">
+                        {series.slice(0, visibleCount).map((s, index) => (
+                            <Link to={`/dizi/${s.series_id}`} key={s.series_id} className="dizilerim-poster-card">
+                                {/* First 6 posters are above-the-fold: load eagerly for LCP */}
+                                <PosterImage
+                                    path={s.poster_path}
+                                    size="w185"
+                                    alt={s.name}
+                                    eager={index < 6}
+                                />
+                                <div className="dizilerim-poster-overlay">
+                                    {s.user_score ? (
+                                        <span className="dizilerim-user-score">★ {s.user_score}</span>
+                                    ) : (
+                                        <span className="dizilerim-no-score">—</span>
+                                    )}
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                    {/* Sentinel element observed by IntersectionObserver to load the next batch */}
+                    {visibleCount < series.length && (
+                        <div ref={sentinelRef} className="dizilerim-sentinel" aria-hidden="true" />
+                    )}
+                </>
             ) : (
                 <div className="dizilerim-empty">
                     <p>Henüz izlenen dizi yok.</p>
