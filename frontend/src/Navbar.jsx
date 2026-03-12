@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useAuth } from './AuthContext';
 
@@ -29,16 +30,23 @@ function Navbar({ onSonuclar, onAnaSayfaGit }) {
   // Kullanıcı baş harfi (avatar yoksa)
   const basharf = kullanici?.username?.[0]?.toUpperCase() ?? '?';
 
+  const [mobileMenuAcik, setMobileMenuAcik] = useState(false);
+
   return (
     <nav className="navbar">
       <div className="logo">
-        <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); }}>seriesboxd</Link>
+        <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); setMobileMenuAcik(false); }}>seriesboxd</Link>
       </div>
 
-      <div className="menu-linkler">
-        <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); }}>Ana Sayfa</Link>
-        <Link to="/top50">Top 50</Link>
-        <SearchBar onSonuclar={onSonuclar} />
+      {/* Hamburger Button (Mobile only) */}
+      <button className="hamburger-btn" onClick={() => setMobileMenuAcik(!mobileMenuAcik)}>
+        {mobileMenuAcik ? <X size={28} color="#f8fafc" /> : <Menu size={28} color="#f8fafc" />}
+      </button>
+
+      <div className={`menu-linkler ${mobileMenuAcik ? 'mobile-open' : ''}`}>
+        <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); setMobileMenuAcik(false); }}>Ana Sayfa</Link>
+        <Link to="/top50" onClick={() => setMobileMenuAcik(false)}>Top 50</Link>
+        <SearchBar onSonuclar={(s) => { if (onSonuclar) onSonuclar(s); setMobileMenuAcik(false); }} />
 
         {kullanici ? (
           /* Giriş yapıldıysa avatar + dropdown */
@@ -69,14 +77,14 @@ function Navbar({ onSonuclar, onAnaSayfaGit }) {
                   </div>
                 </div>
                 <div className="dropdown-ayirici" />
-                <Link to="/profil" className="dropdown-item" onClick={() => setMenuAcik(false)}>
+                <Link to="/profil" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
                   👤 Profilim
                 </Link>
-                <Link to="/listelerim" className="dropdown-item" onClick={() => setMenuAcik(false)}>
+                <Link to="/listelerim" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
                   📋 Listelerim
                 </Link>
                 <div className="dropdown-ayirici" />
-                <button className="dropdown-item cikis" onClick={handleCikis}>
+                <button className="dropdown-item cikis" onClick={() => { handleCikis(); setMobileMenuAcik(false); }}>
                   🚪 Çıkış Yap
                 </button>
               </div>
@@ -84,7 +92,7 @@ function Navbar({ onSonuclar, onAnaSayfaGit }) {
           </div>
         ) : (
           /* Giriş yapılmadıysa Giriş Yap butonu */
-          <Link to="/login" className="login-btn">Giriş Yap</Link>
+          <Link to="/login" className="login-btn" onClick={() => setMobileMenuAcik(false)}>Giriş Yap</Link>
         )}
       </div>
     </nav>
