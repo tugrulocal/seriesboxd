@@ -25,9 +25,9 @@ const ITEM_W = 160; // item width (150px) + gap (10px)
 function Row({ title, icon, series, onPosterClick }) {
     const scrollRef = useRef(null);
 
-    // displayItems copies the series block 15 times:
+    // displayItems copies the series block 5 times:
     // This allows infinite scrolling left or right since we reset to center on edges
-    const numCopies = 15;
+    const numCopies = 5;
     const realIndexStart = Math.floor(numCopies / 2); // 7 
     
     const displayItems = series.length > 0
@@ -90,9 +90,10 @@ function Row({ title, icon, series, onPosterClick }) {
                     {displayItems.map((s, i) => (
                         <div key={`${title}-${i}`} className="row-item" onClick={() => onPosterClick(s)}>
                             <img
-                                src={s.poster_path ? `https://image.tmdb.org/t/p/w300${s.poster_path}` : 'https://via.placeholder.com/300x450?text=No+Poster'}
+                                src={s.poster_path ? `https://image.tmdb.org/t/p/w185${s.poster_path}` : 'https://via.placeholder.com/185x278?text=No+Poster'}
                                 alt={s.name}
                                 loading="lazy"
+                                decoding="async"
                             />
                             <div className="row-item-overlay">
                                 <span className="row-item-name">{s.name}</span>

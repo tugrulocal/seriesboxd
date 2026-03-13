@@ -221,10 +221,12 @@ function ListeDetay({ isWatchlist }) {
                                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                 >
-                                    <img 
-                                        src={`https://image.tmdb.org/t/p/w300${item.poster_path}`} 
-                                        alt={item.name} 
+                                    <img
+                                        src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
+                                        alt={item.name}
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        loading="lazy"
+                                        decoding="async"
                                     />
                                     <div style={{
                                         position: 'absolute', bottom: 0, left: 0, right: 0, 

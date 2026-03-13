@@ -269,7 +269,7 @@ function DiziDetay() {
 
         <div className="dv2-hero-inner">
           {/* Sol: Poster */}
-          <img src={`https://image.tmdb.org/t/p/w500${dizi.poster_path}`} alt={dizi.name} className="dv2-hero-poster" />
+          <img src={`https://image.tmdb.org/t/p/w342${dizi.poster_path}`} alt={dizi.name} className="dv2-hero-poster" decoding="async" fetchpriority="high" />
 
           {/* Orta: Bilgiler */}
           <div className="dv2-hero-info">
@@ -287,7 +287,7 @@ function DiziDetay() {
               {watchProviders.map(p => (
                 p.logo_path && (
                   <a key={p.provider_id} href={p.url || '#'} target="_blank" rel="noopener noreferrer" className="dv2-provider-logo-link" title={p.provider_name}>
-                    <img src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} alt={p.provider_name} className="dv2-provider-logo" />
+                    <img src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} alt={p.provider_name} className="dv2-provider-logo" loading="lazy" decoding="async" />
                   </a>
                 )
               ))}
@@ -376,7 +376,7 @@ function DiziDetay() {
                 return (
                   <div key={sezon.season_id}>
                     <div className="sezon-satir" onClick={() => sezonAccordionToggle(sezon.season_id)}>
-                      <img src={sezon.poster_path ? `https://image.tmdb.org/t/p/w200${sezon.poster_path}` : `https://image.tmdb.org/t/p/w200${dizi.poster_path}`} alt={sezon.name} className="sezon-poster-kucuk" />
+                      <img src={sezon.poster_path ? `https://image.tmdb.org/t/p/w185${sezon.poster_path}` : `https://image.tmdb.org/t/p/w185${dizi.poster_path}`} alt={sezon.name} className="sezon-poster-kucuk" loading="lazy" decoding="async" />
                       <div className="sezon-bilgi">
                         <div className="sezon-baslik">{sezon.name}</div>
                         <div className="sezon-detay">
@@ -439,7 +439,7 @@ function DiziDetay() {
             <div className="cast-grid">
               {oyuncular.length > 0 ? oyuncular.map((oyuncu, i) => (
                 <div key={i} className="cast-kart">
-                  {oyuncu.profile_path ? <img src={`https://image.tmdb.org/t/p/w200${oyuncu.profile_path}`} alt={oyuncu.name} className="cast-foto" /> : <div className="cast-foto-yok">👤</div>}
+                  {oyuncu.profile_path ? <img src={`https://image.tmdb.org/t/p/w185${oyuncu.profile_path}`} alt={oyuncu.name} className="cast-foto" loading="lazy" decoding="async" /> : <div className="cast-foto-yok">👤</div>}
                   <div className="cast-bilgi"><span className="cast-isim">{oyuncu.name}</span><span className="cast-rol">{oyuncu.character}</span></div>
                 </div>
               )) : <p style={{ color: '#64748b' }}>Oyuncu bilgisi bulunamadı.</p>}
@@ -454,7 +454,7 @@ function DiziDetay() {
                   <div className="crew-grid">
                     {kisiler.map((kisi, i) => (
                       <div key={i} className="crew-kart">
-                        {kisi.profile_path ? <img src={`https://image.tmdb.org/t/p/w200${kisi.profile_path}`} alt={kisi.name} className="cast-foto" /> : <div className="cast-foto-yok">👤</div>}
+                        {kisi.profile_path ? <img src={`https://image.tmdb.org/t/p/w185${kisi.profile_path}`} alt={kisi.name} className="cast-foto" loading="lazy" decoding="async" /> : <div className="cast-foto-yok">👤</div>}
                         <div className="cast-bilgi"><span className="cast-isim">{kisi.name}</span><span className="cast-rol">{kisi.job}</span></div>
                       </div>
                     ))}
