@@ -68,7 +68,7 @@ function Listelerim() {
                             <div className="tab-poster-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
                                 {watchlist.slice(0, 8).map(w => (
                                     <Link to={`/dizi/${w.series_id}`} key={w.series_id} className="tab-poster-card">
-                                        <img src={`https://image.tmdb.org/t/p/w185${w.poster_path}`} alt={w.name} loading="lazy" decoding="async" />
+                                        <img src={`https://image.tmdb.org/t/p/w300${w.poster_path}`} alt={w.name} />
                                         <div className="tab-poster-overlay">
                                             <span className="tab-poster-name">{w.name}</span>
                                         </div>
@@ -92,7 +92,7 @@ function Listelerim() {
                                         <div className="tab-list-posters">
                                             {lst.items && lst.items.length > 0 ? (
                                                 lst.items.slice(0, 5).map(item => (
-                                                    <img key={item.series_id} src={`https://image.tmdb.org/t/p/w200${item.poster_path}`} alt={item.name} className="tab-list-poster" />
+                                                    <img key={item.series_id} src={`https://image.tmdb.org/t/p/w154${item.poster_path}`} alt={item.name} className="tab-list-poster" loading="lazy" decoding="async" />
                                                 ))
                                             ) : (
                                                 <div className="tab-list-empty-poster">
