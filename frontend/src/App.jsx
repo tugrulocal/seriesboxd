@@ -100,10 +100,11 @@ function AppIcerik() {
                     <div key={dizi.series_id} className="dizi-kart" onClick={() => setSeciliDizi(dizi)}>
                       {dizi.poster_path && (
                         <img
-                          src={`https://image.tmdb.org/t/p/w500${dizi.poster_path}`}
+                          src={`https://image.tmdb.org/t/p/w342${dizi.poster_path}`}
                           alt={dizi.name}
                           className="dizi-poster"
                           loading="lazy"
+                          decoding="async"
                         />
                       )}
                       <div className="dizi-bilgi">
@@ -131,9 +132,10 @@ function AppIcerik() {
                 >
                   <button className="kapat-butonu" onClick={() => modalKapatVeGit()}>✕</button>
                   <img
-                    src={`https://image.tmdb.org/t/p/w500${seciliDizi.poster_path}`}
+                    src={`https://image.tmdb.org/t/p/w342${seciliDizi.poster_path}`}
                     alt={seciliDizi.name}
                     className="modal-poster"
+                    decoding="async"
                   />
                   <div className="modal-metin">
                     <h2>{seciliDizi.name}</h2>

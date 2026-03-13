@@ -92,7 +92,7 @@ function Listelerim() {
                                         <div className="tab-list-posters">
                                             {lst.items && lst.items.length > 0 ? (
                                                 lst.items.slice(0, 5).map(item => (
-                                                    <img key={item.series_id} src={`https://image.tmdb.org/t/p/w200${item.poster_path}`} alt={item.name} className="tab-list-poster" />
+                                                    <img key={item.series_id} src={`https://image.tmdb.org/t/p/w154${item.poster_path}`} alt={item.name} className="tab-list-poster" loading="lazy" decoding="async" />
                                                 ))
                                             ) : (
                                                 <div className="tab-list-empty-poster">
