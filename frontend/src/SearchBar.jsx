@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DracarysEffect from './DracarysEffect';
+import HeisenbergEffect from './HeisenbergEffect';
+import MatrixEffect from './MatrixEffect';
 import API_BASE from './config';
 
 const SIRALAMA_SECENEKLERI = [
@@ -10,7 +12,7 @@ const SIRALAMA_SECENEKLERI = [
     { deger: 'name_desc', etiket: '🔤 İsim (Z→A)' },
 ];
 
-function SearchBar({ onSonuclar, onOpenChange }) {
+function SearchBar({ onSonuclar, onOpenChange, onHeisenberg }) {
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -34,9 +36,13 @@ function SearchBar({ onSonuclar, onOpenChange }) {
     const [oneriler, setOneriler] = useState([]);
     const [oneriAcik, setOneriAcik] = useState(false);
     const [dracarysActive, setDracarysActive] = useState(false);
+    const [heisenbergActive, setHeisenbergActive] = useState(false);
+    const [matrixActive, setMatrixActive] = useState(false);
 
     const containerRef = useRef(null);
     const dracarysTriggered = useRef(false);
+    const heisenbergTriggered = useRef(false);
+    const matrixTriggered = useRef(false);
     const inputRef = useRef(null);
     const debounceRef = useRef(null);
     const oneriDebounceRef = useRef(null);
@@ -46,6 +52,25 @@ function SearchBar({ onSonuclar, onOpenChange }) {
         if (aramaMetni.toLowerCase() === 'dracarys' && !dracarysTriggered.current) {
             dracarysTriggered.current = true;
             setDracarysActive(true);
+        }
+    }, [aramaMetni]);
+
+    // Heisenberg / Baby Blue Easter Egg
+    useEffect(() => {
+        const q = aramaMetni.toLowerCase().trim();
+        if ((q === 'heisenberg' || q === 'baby blue') && !heisenbergTriggered.current) {
+            heisenbergTriggered.current = true;
+            setHeisenbergActive(true);
+            if (onHeisenberg) onHeisenberg(true);
+        }
+    }, [aramaMetni, onHeisenberg]);
+
+    // Matrix Easter Egg
+    useEffect(() => {
+        const q = aramaMetni.toLowerCase().trim();
+        if ((q === 'matrix' || q === 'wake up neo') && !matrixTriggered.current) {
+            matrixTriggered.current = true;
+            setMatrixActive(true);
         }
     }, [aramaMetni]);
 
@@ -204,6 +229,15 @@ function SearchBar({ onSonuclar, onOpenChange }) {
                             borderWidth: '2px',
                             boxShadow: '0 0 30px #ff4500, 0 0 60px rgba(255,69,0,0.4), inset 0 0 12px rgba(255,60,0,0.15)',
                             animation: 'dracarysInputPulse 0.7s ease-in-out infinite',
+                        } : heisenbergActive ? {
+                            borderColor: '#38bdf8',
+                            borderWidth: '2px',
+                            boxShadow: '0 0 25px rgba(56,189,248,0.5), 0 0 50px rgba(59,130,246,0.3), inset 0 0 10px rgba(56,189,248,0.1)',
+                        } : matrixActive ? {
+                            borderColor: '#22c55e',
+                            borderWidth: '2px',
+                            boxShadow: '0 0 25px rgba(34,197,94,0.5), 0 0 50px rgba(34,197,94,0.3), inset 0 0 10px rgba(34,197,94,0.1)',
+                            color: '#22c55e',
                         } : undefined}
                         value={aramaMetni}
                         onChange={e => setAramaMetni(e.target.value)}
@@ -353,6 +387,21 @@ function SearchBar({ onSonuclar, onOpenChange }) {
                 <DracarysEffect onDone={() => {
                     setDracarysActive(false);
                     dracarysTriggered.current = false;
+                }} />
+            )}
+
+            {heisenbergActive && (
+                <HeisenbergEffect onDone={() => {
+                    setHeisenbergActive(false);
+                    heisenbergTriggered.current = false;
+                    if (onHeisenberg) onHeisenberg(false);
+                }} />
+            )}
+
+            {matrixActive && (
+                <MatrixEffect onDone={() => {
+                    setMatrixActive(false);
+                    matrixTriggered.current = false;
                 }} />
             )}
         </>

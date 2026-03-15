@@ -32,17 +32,27 @@ function Navbar({ onSonuclar, onAnaSayfaGit }) {
 
   const [mobileMenuAcik, setMobileMenuAcik] = useState(false);
   const [mobileSearchAcik, setMobileSearchAcik] = useState(false);
+  const [heisenbergLogo, setHeisenbergLogo] = useState(false);
 
   return (
     <nav className="navbar">
       <div className={`logo ${mobileSearchAcik ? 'gizli-mobil-logo' : ''}`}>
-        <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); setMobileMenuAcik(false); }}>seriesboxd</Link>
+        <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); setMobileMenuAcik(false); }}>
+          {heisenbergLogo ? (
+            <>
+              <span className="logo-element" data-number="16" data-mass="32.06"><span className="logo-element-letter">S</span></span>
+              eries
+              <span className="logo-element" data-number="5" data-mass="10.81"><span className="logo-element-letter">B</span></span>
+              oxd
+            </>
+          ) : 'seriesboxd'}
+        </Link>
       </div>
 
       {/* Mobile Top Actions: Search + Hamburger */}
       <div className={`mobile-top-actions ${mobileSearchAcik ? 'search-active' : ''}`}>
         <div className="mobile-nav-search">
-          <SearchBar onOpenChange={setMobileSearchAcik} onSonuclar={(data, isActive) => { if (onSonuclar) onSonuclar(data, isActive); setMobileMenuAcik(false); }} />
+          <SearchBar onOpenChange={setMobileSearchAcik} onHeisenberg={setHeisenbergLogo} onSonuclar={(data, isActive) => { if (onSonuclar) onSonuclar(data, isActive); setMobileMenuAcik(false); }} />
         </div>
         <button className="hamburger-btn" onClick={() => setMobileMenuAcik(!mobileMenuAcik)}>
           {mobileMenuAcik ? <X size={28} color="#f8fafc" /> : <Menu size={28} color="#f8fafc" />}
@@ -52,7 +62,7 @@ function Navbar({ onSonuclar, onAnaSayfaGit }) {
       <div className={`menu-linkler ${mobileMenuAcik ? 'mobile-open' : ''}`}>
         <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); setMobileMenuAcik(false); }}>Ana Sayfa</Link>
         <Link to="/top50" onClick={() => setMobileMenuAcik(false)}>Top 50</Link>
-        <SearchBar onSonuclar={(data, isActive) => { if (onSonuclar) onSonuclar(data, isActive); setMobileMenuAcik(false); }} />
+        <SearchBar onHeisenberg={setHeisenbergLogo} onSonuclar={(data, isActive) => { if (onSonuclar) onSonuclar(data, isActive); setMobileMenuAcik(false); }} />
 
         {kullanici ? (
           /* Giriş yapıldıysa avatar + dropdown */

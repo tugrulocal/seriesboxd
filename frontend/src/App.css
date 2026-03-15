@@ -72,6 +72,82 @@ body {
   filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.6));
 }
 
+/* ── Periodic Table Element Boxes for S and B ── */
+.logo-element {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 1.5em;
+  height: 1.5em;
+  border: 1.5px solid rgba(56, 189, 248, 0.6);
+  border-radius: 3px;
+  margin: 0 -1px;
+  vertical-align: baseline;
+  background: rgba(56, 189, 248, 0.08);
+  transition: all 0.3s ease;
+}
+
+.logo-element::before {
+  content: attr(data-number);
+  position: absolute;
+  top: 1px;
+  left: 3px;
+  font-size: 0.28em;
+  font-weight: 500;
+  opacity: 0.7;
+  line-height: 1;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-element::after {
+  content: attr(data-mass);
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.22em;
+  font-weight: 400;
+  opacity: 0.5;
+  line-height: 1;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-element-letter {
+  font-size: 0.85em;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo a:hover .logo-element {
+  border-color: rgba(56, 189, 248, 0.9);
+  background: rgba(56, 189, 248, 0.15);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3), inset 0 0 6px rgba(56, 189, 248, 0.1);
+}
+
+@media (max-width: 480px) {
+  .logo-element {
+    width: 1.3em;
+    height: 1.3em;
+  }
+  .logo-element::before {
+    font-size: 0.24em;
+  }
+  .logo-element::after {
+    font-size: 0.18em;
+  }
+}
+
 .menu-linkler {
   display: flex;
   gap: 25px;
@@ -877,7 +953,7 @@ h1 {
 /* 1. DÜZELTME: Eski h1 kuralının burayı bozmasını KESİNLİKLE engelliyoruz */
 h1.detay-baslik {
   font-size: 2.2rem;
-  font-family: 'Merriweather', 'Georgia', serif;
+  font-family: 'Gabarito', sans-serif;
   /* Letterboxd asilliği */
   color: #f8fafc !important;
   /* Mavi iptal, beyaz oldu */
@@ -1025,6 +1101,7 @@ h1.detay-baslik {
   color: #94a3b8;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: normal;
+  text-shadow: 0px 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .detay-yonetmen {
@@ -1041,6 +1118,7 @@ h1.detay-baslik {
   line-height: 1.6;
   color: #94a3b8;
   margin-bottom: 30px;
+  text-shadow: 0px 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 /* Sekmeler (Cast, Crew vs) */
@@ -4036,18 +4114,25 @@ button.sifre-unut-link:hover {
      ensuring the overlay renders above the iframe video layer */
 }
 
-/* Subtitle text box */
+/* Subtitle text box — Netflix style */
 .subtitle-text {
   display: inline-block;
-  background: rgba(0, 0, 0, 0.70);
+  background: none;
   color: #ffffff;
+  font-family: 'Poppins', 'Inter', sans-serif;
   font-size: 1.15rem;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.5;
   padding: 4px 14px 5px;
-  border-radius: 4px;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9), -1px -1px 3px rgba(0, 0, 0, 0.9);
-  letter-spacing: 0.01em;
+  border-radius: 0;
+  text-shadow:
+    0 0 4px rgba(0, 0, 0, 0.95),
+    0 0 8px rgba(0, 0, 0, 0.9),
+    1px 1px 2px rgba(0, 0, 0, 1),
+    -1px -1px 2px rgba(0, 0, 0, 1),
+    2px 2px 6px rgba(0, 0, 0, 0.8),
+    0 3px 12px rgba(0, 0, 0, 0.7);
+  letter-spacing: 0.02em;
   max-width: 100%;
   word-break: break-word;
 }
@@ -4698,8 +4783,8 @@ button.sifre-unut-link:hover {
 
 
 
-  width: 44px;
-  height: 44px;
+  width: 70px;
+  height: 70px;
 
   background: rgba(0, 0, 0, 0.78);
   backdrop-filter: blur(6px);
@@ -4741,15 +4826,15 @@ button.sifre-unut-link:hover {
   }
 
   .fs-corner-icon-badge {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 5px;
     border-width: 1px;
   }
 
   .fs-corner-icon-badge svg {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
   }
 
   .sub-icon-overlay {
@@ -4776,7 +4861,7 @@ button.sifre-unut-link:hover {
   }
 
   .manual-sub-controls {
-    bottom: 50px;
+    bottom: 100px;
     padding: 6px 10px;
   }
 
@@ -4795,8 +4880,8 @@ button.sifre-unut-link:hover {
   }
 
   .fs-corner-icon-badge {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 5px;
   }
 
@@ -4868,8 +4953,8 @@ button.sifre-unut-link:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 61px;
+  height: 61px;
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
   border: 1.5px solid rgba(255, 255, 255, 0.22);
@@ -6244,7 +6329,7 @@ button.sifre-unut-link:hover {
 /* --- MANUAL SUBTITLE CONTROLS --- */
 .manual-sub-controls {
   position: absolute;
-  bottom: 80px;
+  bottom: 140px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(15, 23, 42, 0.85);
@@ -6264,7 +6349,7 @@ button.sifre-unut-link:hover {
 }
 
 .manual-sub-badge {
-  color: #f59e0b;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.70rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -6303,6 +6388,41 @@ button.sifre-unut-link:hover {
   font-variant-numeric: tabular-nums;
   font-family: 'Inter', monospace;
   margin-bottom: 2px;
+}
+
+.manual-sub-time-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.manual-sub-time-input {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #fff;
+  font-family: 'Inter', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 4px 10px;
+  width: 80px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.manual-sub-time-input:focus {
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+.sub-timer-btn {
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: #38bdf8 !important;
+  font-weight: 600 !important;
+  margin-top: 2px;
 }
 
 /* === MOBILE OPTIMIZATION === */

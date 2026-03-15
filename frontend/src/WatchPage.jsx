@@ -732,7 +732,6 @@ function WatchPage() {
                                         src={seciliVideoUrl}
                                         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                                         allowFullScreen
-                                        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                                         referrerPolicy="no-referrer"
                                         frameBorder="0"
                                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
@@ -759,16 +758,36 @@ function WatchPage() {
                                 {/* MANUAL SUBTITLE CONTROLS - if iframe doesn't send time events */}
                                 {activeSub && !hasPostMessageRef.current && showManualSyncPanel && (
                                     <div className="manual-sub-controls" onClick={e => e.stopPropagation()}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: '4px' }}>
-                                            <div className="manual-sub-badge">⚠️ Otomatik senkronizasyon algılanmadı</div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: '2px' }}>
+                                            <div className="manual-sub-badge">Altyazı Zamanlayıcı</div>
                                             <button
                                                 style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '0 4px', fontSize: '1rem' }}
                                                 onClick={() => setShowManualSyncPanel(false)}
                                                 title="Gizle"
                                             >✕</button>
                                         </div>
-                                        <div className="manual-sub-time">
-                                            {Math.floor(elapsedSeconds / 60)}:{String(Math.floor(elapsedSeconds % 60)).padStart(2, '0')}
+                                        <div className="manual-sub-time-row">
+                                            <input
+                                                type="text"
+                                                className="manual-sub-time-input"
+                                                value={`${Math.floor(elapsedSeconds / 60)}:${String(Math.floor(elapsedSeconds % 60)).padStart(2, '0')}`}
+                                                onChange={e => {
+                                                    const parts = e.target.value.split(':');
+                                                    if (parts.length === 2) {
+                                                        const m = parseInt(parts[0]) || 0;
+                                                        const s = parseInt(parts[1]) || 0;
+                                                        const total = m * 60 + s;
+                                                        setElapsedSeconds(total);
+                                                        elapsedAtPauseRef.current = total;
+                                                        if (timerRunning) {
+                                                            timerStartRef.current = Date.now() - total * 1000;
+                                                        }
+                                                    }
+                                                }}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') e.target.blur();
+                                                }}
+                                            />
                                         </div>
                                         <div className="manual-sub-buttons">
                                             <button onClick={() => setTimerRunning(!timerRunning)}>
@@ -806,7 +825,7 @@ function WatchPage() {
                                             onClick={() => setSubMenuOpen(o => !o)}
                                             title="Altyazı Ayarları"
                                         >
-                                            <Captions size={20} />
+                                            <Captions size={28} />
                                         </button>
                                         {subMenuOpen && (
                                             <div className="sub-icon-dropdown">
@@ -876,6 +895,15 @@ function WatchPage() {
                                                         <button className="sub-sync-step" onClick={() => setSyncOffset(o => +(o + 1).toFixed(1))}>+1s</button>
                                                     </div>
                                                 )}
+                                                {/* Timer reopen — only for players without postMessage */}
+                                                {activeSub && !hasPostMessageRef.current && !showManualSyncPanel && (
+                                                    <button
+                                                        className="sub-menu-item sub-timer-btn"
+                                                        onClick={() => { setShowManualSyncPanel(true); setSubMenuOpen(false); }}
+                                                    >
+                                                        ⏱ Zamanlayıcı
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -889,7 +917,7 @@ function WatchPage() {
                                         title={isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran'}
                                     >
                                         <span className="fs-corner-icon-badge">
-                                            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                                            {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
                                         </span>
                                     </button>
                                 )}
