@@ -576,8 +576,19 @@ function WatchPage() {
         return () => window.removeEventListener('message', onMessage);
     }, []);
 
+    // Block popup/redirect ads from embedded players
     useEffect(() => {
-        if (!sezonDropdownAcik) return;
+        const originalOpen = window.open;
+        window.open = function (url) {
+            console.warn('[SeriesBoxd] Popup engellendi:', url);
+            return null;
+        };
+        return () => {
+            window.open = originalOpen;
+        };
+    }, [seciliVideoUrl]);
+
+    useEffect(() => {
         const handleClickOutside = (e) => {
             const insideBtn = sezonBtnRef.current?.contains(e.target);
             const insideMenu = dropdownRef.current?.contains(e.target);
@@ -719,7 +730,10 @@ function WatchPage() {
                                     <iframe
                                         key={seciliVideoUrl}
                                         src={seciliVideoUrl}
-                                        allow="autoplay"
+                                        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                                        allowFullScreen
+                                        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                                        referrerPolicy="no-referrer"
                                         frameBorder="0"
                                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
                                     />
@@ -753,15 +767,28 @@ function WatchPage() {
                                                 title="Gizle"
                                             >✕</button>
                                         </div>
+                                        <div className="manual-sub-time">
+                                            {Math.floor(elapsedSeconds / 60)}:{String(Math.floor(elapsedSeconds % 60)).padStart(2, '0')}
+                                        </div>
                                         <div className="manual-sub-buttons">
                                             <button onClick={() => setTimerRunning(!timerRunning)}>
-                                                {timerRunning ? '⏸ Altyazıyı Durdur' : '▶️ Altyazıyı Başlat'}
+                                                {timerRunning ? '⏸ Durdur' : '▶️ Başlat'}
                                             </button>
                                             <button onClick={() => {
                                                 setElapsedSeconds(e => Math.max(0, e - 5));
                                                 elapsedAtPauseRef.current = Math.max(0, elapsedSeconds - 5);
                                                 if (timerRunning) timerStartRef.current += 5000;
                                             }}>-5sn</button>
+                                            <button onClick={() => {
+                                                setElapsedSeconds(e => Math.max(0, e - 1));
+                                                elapsedAtPauseRef.current = Math.max(0, elapsedSeconds - 1);
+                                                if (timerRunning) timerStartRef.current += 1000;
+                                            }}>-1sn</button>
+                                            <button onClick={() => {
+                                                setElapsedSeconds(e => e + 1);
+                                                elapsedAtPauseRef.current = elapsedSeconds + 1;
+                                                if (timerRunning) timerStartRef.current -= 1000;
+                                            }}>+1sn</button>
                                             <button onClick={() => {
                                                 setElapsedSeconds(e => e + 5);
                                                 elapsedAtPauseRef.current = elapsedSeconds + 5;
@@ -779,7 +806,7 @@ function WatchPage() {
                                             onClick={() => setSubMenuOpen(o => !o)}
                                             title="Altyazı Ayarları"
                                         >
-                                            <Captions size={28} />
+                                            <Captions size={20} />
                                         </button>
                                         {subMenuOpen && (
                                             <div className="sub-icon-dropdown">
@@ -862,7 +889,7 @@ function WatchPage() {
                                         title={isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran'}
                                     >
                                         <span className="fs-corner-icon-badge">
-                                            {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+                                            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                                         </span>
                                     </button>
                                 )}

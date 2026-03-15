@@ -7,7 +7,7 @@
   background-color: #0f172a;
   /* Koyu, modern bir arka plan */
   color: #f1f5f9;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
 }
 
 html,
@@ -1023,7 +1023,7 @@ h1.detay-baslik {
 .detay-yil {
   font-size: 1.2rem;
   color: #94a3b8;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-weight: normal;
 }
 
@@ -4698,8 +4698,8 @@ button.sifre-unut-link:hover {
 
 
 
-  width: 70px;
-  height: 70px;
+  width: 44px;
+  height: 44px;
 
   background: rgba(0, 0, 0, 0.78);
   backdrop-filter: blur(6px);
@@ -4719,11 +4719,106 @@ button.sifre-unut-link:hover {
   pointer-events: auto;
 }
 
-/* Touch devices (iOS/Android): hover doesn't exist, always show the button */
+/* Touch devices (iOS/Android): hover doesn't exist, always show the buttons */
 @media (hover: none) {
   .cinematic-player-wrapper .fs-corner-btn {
     opacity: 1;
     pointer-events: auto;
+  }
+
+  .cinematic-player-wrapper .sub-icon-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Mobile: shrink FS and subtitle overlay buttons on small screens */
+@media (max-width: 480px) {
+  .fs-corner-btn {
+    padding: 4px;
+    bottom: 0px;
+    right: 4px;
+  }
+
+  .fs-corner-icon-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 5px;
+    border-width: 1px;
+  }
+
+  .fs-corner-icon-badge svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .sub-icon-overlay {
+    bottom: 6px;
+    right: auto;
+    left: 6px;
+  }
+
+  .sub-icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    border-width: 1px;
+  }
+
+  .sub-icon-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .native-fs-blocker {
+    width: 40px;
+    height: 40px;
+  }
+
+  .manual-sub-controls {
+    bottom: 50px;
+    padding: 6px 10px;
+  }
+
+  .manual-sub-buttons button {
+    padding: 3px 6px;
+    font-size: 0.65rem;
+  }
+}
+
+/* Tablet: medium button sizes */
+@media (max-width: 768px) and (min-width: 481px) {
+  .fs-corner-btn {
+    padding: 5px;
+    bottom: 0px;
+    right: 8px;
+  }
+
+  .fs-corner-icon-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 5px;
+  }
+
+  .fs-corner-icon-badge svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .sub-icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 5px;
+  }
+
+  .sub-icon-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .native-fs-blocker {
+    width: 50px;
+    height: 50px;
   }
 }
 
@@ -4773,8 +4868,8 @@ button.sifre-unut-link:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 61px;
-  height: 61px;
+  width: 42px;
+  height: 42px;
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
   border: 1.5px solid rgba(255, 255, 255, 0.22);
@@ -5457,7 +5552,7 @@ button.sifre-unut-link:hover {
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.75);
   font-size: 0.8rem;
-  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 300;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -5510,7 +5605,7 @@ button.sifre-unut-link:hover {
   border-radius: 6px;
   color: rgba(255, 255, 255, 0.55);
   font-size: 0.7rem;
-  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 300;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -6200,6 +6295,14 @@ button.sifre-unut-link:hover {
 
 .manual-sub-buttons button:active {
   transform: translateY(1px);
+}
+
+.manual-sub-time {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  font-family: 'Inter', monospace;
+  margin-bottom: 2px;
 }
 
 /* === MOBILE OPTIMIZATION === */
