@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import API_BASE from './config';
 
 /**
  * Parses a WebVTT string into an array of { start, end, text } cues (in seconds).
@@ -64,7 +65,8 @@ export default function SubtitleOverlay({ subtitleUrl, elapsedSeconds = 0, syncO
         }
 
         setStatus('loading');
-        fetch(subtitleUrl)
+        const fetchUrl = subtitleUrl.startsWith('http') ? subtitleUrl : `${API_BASE}${subtitleUrl}`;
+        fetch(fetchUrl)
             .then(r => {
                 if (!r.ok) throw new Error(`HTTP ${r.status}`);
                 return r.text();

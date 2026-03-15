@@ -2017,7 +2017,7 @@ def search_subtitles(imdb_id: str, season: int, episode: int):
             lang_code = item.get("lang")
             sub_lang = "tr" if lang_code == "tur" else "en"
             download_link = item.get("url")
-            proxy_url = f"http://127.0.0.1:8000/api/subtitles/proxy?url={urllib.parse.quote(download_link, safe='')}"
+            proxy_url = f"/api/subtitles/proxy?url={urllib.parse.quote(download_link, safe='')}"
             
             subtitles.append({
                 "lang": sub_lang,
