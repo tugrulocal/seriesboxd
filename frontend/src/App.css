@@ -4009,17 +4009,31 @@ button.sifre-unut-link:hover {
   display: block;
 }
 
+/* iOS / fallback pseudo-fullscreen: cover the entire viewport with fixed positioning */
+.subtitle-overlay-wrapper.pseudo-fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  aspect-ratio: unset !important;
+  z-index: 9998 !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+}
+
 /* The invisible ghost layer that renders subtitle text */
 .subtitle-text-layer {
   position: absolute;
   bottom: 8%;
   left: 50%;
   transform: translateX(-50%);
+  -webkit-transform: translateX(-50%) translateZ(0);
   width: 90%;
   text-align: center;
   pointer-events: none;
   z-index: 10;
-  /* Fullscreen: layer stays on top of iframe */
+  /* translateZ(0) forces a new GPU compositing layer on iOS Safari,
+     ensuring the overlay renders above the iframe video layer */
 }
 
 /* Subtitle text box */
@@ -4045,6 +4059,12 @@ button.sifre-unut-link:hover {
 }
 
 .subtitle-overlay-wrapper:-webkit-full-screen .subtitle-text {
+  font-size: 1.6rem;
+  padding: 6px 20px 8px;
+}
+
+/* Pseudo-fullscreen (iOS fallback): match native fullscreen text size */
+.subtitle-overlay-wrapper.pseudo-fullscreen .subtitle-text {
   font-size: 1.6rem;
   padding: 6px 20px 8px;
 }
@@ -4695,6 +4715,20 @@ button.sifre-unut-link:hover {
 
 /* Normal mode: show on player hover */
 .cinematic-player-wrapper:hover .fs-corner-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Touch devices (iOS/Android): hover doesn't exist, always show the button */
+@media (hover: none) {
+  .cinematic-player-wrapper .fs-corner-btn {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Pseudo-fullscreen always shows the exit button */
+.subtitle-overlay-wrapper.pseudo-fullscreen .fs-corner-btn {
   opacity: 1;
   pointer-events: auto;
 }

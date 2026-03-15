@@ -90,6 +90,7 @@ function WatchPage() {
     const [timerRunning, setTimerRunning] = useState(false);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [isPseudoFS, setIsPseudoFS] = useState(false);
 
     // Subtitle menu state
     const [subMenuOpen, setSubMenuOpen] = useState(false);
@@ -388,10 +389,31 @@ function WatchPage() {
 
     const toggleFullscreen = () => {
         if (!wrapperRef.current) return;
-        if (!document.fullscreenElement) {
-            wrapperRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => { });
+        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+
+        if (isFullscreen) {
+            // Exit fullscreen
+            if (isPseudoFS) {
+                setIsPseudoFS(false);
+                setIsFullscreen(false);
+            } else {
+                const exit = document.exitFullscreen?.() ?? document.webkitExitFullscreen?.();
+                exit?.then?.(() => setIsFullscreen(false))?.catch?.(() => { setIsFullscreen(false); });
+            }
         } else {
-            document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => { });
+            // Enter fullscreen — iOS only supports pseudo-fullscreen on div elements
+            if (isIOS) {
+                setIsPseudoFS(true);
+                setIsFullscreen(true);
+            } else {
+                const req = wrapperRef.current.requestFullscreen?.() ?? wrapperRef.current.webkitRequestFullscreen?.();
+                if (req) {
+                    req.then?.(() => setIsFullscreen(true))?.catch?.(() => { setIsPseudoFS(true); setIsFullscreen(true); });
+                } else {
+                    setIsPseudoFS(true);
+                    setIsFullscreen(true);
+                }
+            }
         }
     };
 
@@ -409,10 +431,12 @@ function WatchPage() {
         };
         // mousemove fires outside the iframe; blur fires when user clicks into iframe
         document.addEventListener('mousemove', show);
+        document.addEventListener('touchstart', show, { passive: true });
         window.addEventListener('blur', show);
         window.addEventListener('click', show);
         return () => {
             document.removeEventListener('mousemove', show);
+            document.removeEventListener('touchstart', show);
             window.removeEventListener('blur', show);
             window.removeEventListener('click', show);
             if (fsIdleTimer.current) clearTimeout(fsIdleTimer.current);
@@ -436,11 +460,28 @@ function WatchPage() {
 
     useEffect(() => {
         const onFsChange = () => {
-            if (!document.fullscreenElement) setIsFullscreen(false);
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                setIsFullscreen(false);
+                setIsPseudoFS(false);
+            }
         };
         document.addEventListener('fullscreenchange', onFsChange);
-        return () => document.removeEventListener('fullscreenchange', onFsChange);
+        document.addEventListener('webkitfullscreenchange', onFsChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', onFsChange);
+            document.removeEventListener('webkitfullscreenchange', onFsChange);
+        };
     }, []);
+
+    // Lock body scroll when in pseudo-fullscreen (iOS fixed-position player)
+    useEffect(() => {
+        if (isPseudoFS) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [isPseudoFS]);
 
     // Intercept F key → use our custom fullscreen instead of iframe's native one
     useEffect(() => {
@@ -656,7 +697,7 @@ function WatchPage() {
                             )}
 
                             <div
-                                className={`subtitle-overlay-wrapper${isFullscreen && fsControlsVisible ? ' fs-ctrl-visible' : ''}`}
+                                className={`subtitle-overlay-wrapper${isPseudoFS ? ' pseudo-fullscreen' : ''}${isFullscreen && fsControlsVisible ? ' fs-ctrl-visible' : ''}`}
                                 ref={wrapperRef}
                                 tabIndex={-1}
                                 onKeyDown={e => { if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFullscreen(); } }}
