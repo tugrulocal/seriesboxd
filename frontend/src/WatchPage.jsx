@@ -109,6 +109,7 @@ function WatchPage() {
     const timerStartRef = useRef(null);
     const elapsedAtPauseRef = useRef(0);
     const hasPostMessageRef = useRef(false);
+    const isTogglingFS = useRef(false);
 
     // 1. Initial Data Load
     useEffect(() => {
@@ -388,7 +389,9 @@ function WatchPage() {
     };
 
     const toggleFullscreen = () => {
-        if (!wrapperRef.current) return;
+        if (!wrapperRef.current || isTogglingFS.current) return;
+        isTogglingFS.current = true;
+
         const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
 
         if (isFullscreen) {
@@ -396,22 +399,35 @@ function WatchPage() {
             if (isPseudoFS) {
                 setIsPseudoFS(false);
                 setIsFullscreen(false);
+                isTogglingFS.current = false;
             } else {
+                setIsFullscreen(false); // Set immediately to prevent double-toggle
                 const exit = document.exitFullscreen?.() ?? document.webkitExitFullscreen?.();
-                exit?.then?.(() => setIsFullscreen(false))?.catch?.(() => { setIsFullscreen(false); });
+                if (exit?.then) {
+                    exit.then(() => { isTogglingFS.current = false; })
+                        .catch(() => { isTogglingFS.current = false; });
+                } else {
+                    isTogglingFS.current = false;
+                }
             }
         } else {
             // Enter fullscreen — iOS only supports pseudo-fullscreen on div elements
             if (isIOS) {
                 setIsPseudoFS(true);
                 setIsFullscreen(true);
+                isTogglingFS.current = false;
             } else {
+                setIsFullscreen(true); // Set immediately to prevent double-toggle
                 const req = wrapperRef.current.requestFullscreen?.() ?? wrapperRef.current.webkitRequestFullscreen?.();
-                if (req) {
-                    req.then?.(() => setIsFullscreen(true))?.catch?.(() => { setIsPseudoFS(true); setIsFullscreen(true); });
+                if (req?.then) {
+                    req.then(() => { isTogglingFS.current = false; })
+                        .catch(() => {
+                            setIsPseudoFS(true);
+                            isTogglingFS.current = false;
+                        });
                 } else {
                     setIsPseudoFS(true);
-                    setIsFullscreen(true);
+                    isTogglingFS.current = false;
                 }
             }
         }
@@ -448,10 +464,10 @@ function WatchPage() {
         if (timerRunning) {
             timerStartRef.current = Date.now() - elapsedAtPauseRef.current * 1000;
             const interval = setInterval(() => {
-                if (hasPostMessageRef.current) return;
+                // Always update timer for smooth subtitle sync, even when postMessage is available
                 const e = (Date.now() - timerStartRef.current) / 1000;
                 setElapsedSeconds(e);
-            }, 200);
+            }, 50); // Increased frequency from 200ms to 50ms for better subtitle sync
             return () => clearInterval(interval);
         } else {
             elapsedAtPauseRef.current = elapsedSeconds;
@@ -491,6 +507,11 @@ function WatchPage() {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 toggleFullscreen();
+            }
+            if (e.key.toLowerCase() === 't' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                setSubMenuOpen(prev => !prev);
             }
         };
         // Add to document
