@@ -296,6 +296,7 @@ h1 {
 /* Katman İçindeki Yazı Ayarları */
 .dizi-bilgi h2 {
   font-size: 1rem;
+  font-family: 'Gabarito', sans-serif;
   margin: 0 0 5px 0;
   color: #f8fafc;
   white-space: normal;
@@ -588,10 +589,12 @@ h1 {
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  font-family: 'Gabarito', sans-serif;
 }
 
 .dv2-title {
   font-size: 2.4rem;
+  font-family: 'Gabarito', sans-serif;
   font-weight: 800;
   color: white;
   margin: 0;
@@ -607,6 +610,7 @@ h1 {
   font-size: 1.3rem;
   color: #94a3b8;
   font-weight: 400;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
 }
 
 .dv2-meta {
@@ -854,7 +858,7 @@ h1 {
   backdrop-filter: blur(12px) saturate(160%);
   -webkit-backdrop-filter: blur(12px) saturate(160%);
   font-size: 1rem;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Gabarito', sans-serif !important;
   font-weight: normal;
   letter-spacing: 1px;
   padding: 12px;
@@ -953,7 +957,7 @@ h1 {
 /* 1. DÜZELTME: Eski h1 kuralının burayı bozmasını KESİNLİKLE engelliyoruz */
 h1.detay-baslik {
   font-size: 2.2rem;
-  font-family: 'Gabarito', sans-serif;
+  font-family: 'Gabarito', sans-serif !important;
   /* Letterboxd asilliği */
   color: #f8fafc !important;
   /* Mavi iptal, beyaz oldu */
