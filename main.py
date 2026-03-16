@@ -45,16 +45,16 @@ def hash_password(password: str) -> str:
 def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
-def create_token(user_id: int, username: str) -> str:
+def create_token(user_id: int, username: str, email: str = "") -> str:
     expire = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
-    return jwt.encode({"sub": str(user_id), "username": username, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode({"sub": str(user_id), "username": username, "email": email, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
 
 def get_current_user(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
     # 1) Önce Authorization header'dan dene
     if credentials and credentials.credentials:
         try:
             payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-            return {"user_id": int(payload["sub"]), "username": payload["username"]}
+            return {"user_id": int(payload["sub"]), "username": payload["username"], "email": payload.get("email", "")}
         except JWTError:
             pass
     # 2) HttpOnly cookie'den dene
@@ -62,7 +62,7 @@ def get_current_user(request: Request, credentials: HTTPAuthorizationCredentials
     if token:
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            return {"user_id": int(payload["sub"]), "username": payload["username"]}
+            return {"user_id": int(payload["sub"]), "username": payload["username"], "email": payload.get("email", "")}
         except JWTError:
             pass
     return None
@@ -369,6 +369,9 @@ except Exception as _db_init_err:
     import traceback
     print(f"[UYARI] DB başlatma hatası (uygulama çalışmaya devam ediyor): {_db_init_err}")
     traceback.print_exc()
+
+from admin_routes import router as admin_router
+app.include_router(admin_router)
 
 @app.get("/")
 def ana_sayfa():
@@ -881,7 +884,7 @@ def register(data: RegisterModel):
         else:
             # E-posta doğrulama kapalı → direkt giriş yap
             conn.commit()
-            token = create_token(user["user_id"], user["username"])
+            token = create_token(user["user_id"], user["username"], user["email"])
             return {
                 "token": token,
                 "user": {"user_id": user["user_id"], "username": user["username"], "email": user["email"]}
@@ -920,7 +923,7 @@ def verify_email(data: VerifyEmailModel, response: Response):
             raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
         conn.commit()
 
-        token = create_token(user["user_id"], user["username"])
+        token = create_token(user["user_id"], user["username"], user["email"])
         response.set_cookie(
             key=COOKIE_NAME, value=token,
             httponly=True, samesite="lax", secure=IS_PRODUCTION,
@@ -968,7 +971,7 @@ def login(data: LoginModel, response: Response):
         if EMAIL_ENABLED and not user.get("is_verified", False):
             raise HTTPException(status_code=403, detail="E-posta adresiniz henüz doğrulanmamış. Lütfen e-postanızı kontrol edin.")
 
-        token = create_token(user["user_id"], user["username"])
+        token = create_token(user["user_id"], user["username"], user["email"])
         response.set_cookie(
             key=COOKIE_NAME, value=token,
             httponly=True, samesite="lax", secure=IS_PRODUCTION,
@@ -1037,7 +1040,7 @@ def google_auth(data: GoogleAuthModel, response: Response):
             user = cur.fetchone()
             conn.commit()
             
-        token = create_token(user["user_id"], user["username"])
+        token = create_token(user["user_id"], user["username"], user["email"])
         response.set_cookie(
             key=COOKIE_NAME, value=token,
             httponly=True, samesite="lax", secure=IS_PRODUCTION,

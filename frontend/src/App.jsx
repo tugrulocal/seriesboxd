@@ -10,6 +10,7 @@ import Profil from './Profil'
 import Listelerim from './Listelerim'
 import ListeDetay from './ListeDetay'
 import Dizilerim from './Dizilerim'
+import AdminDashboard from './AdminDashboard'
 import Footer from './Footer'
 import { AuthProvider } from './AuthContext'
 import './App.css'
@@ -167,6 +168,7 @@ function AppIcerik() {
         <Route path="/liste/:list_id" element={<ListeDetay isWatchlist={false} />} />
         <Route path="/watchlist" element={<ListeDetay isWatchlist={true} />} />
         <Route path="/dizilerim" element={<Dizilerim />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
       </Routes>
       <Footer />
     </div>

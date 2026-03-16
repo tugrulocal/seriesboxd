@@ -36,8 +36,10 @@ export function AuthProvider({ children }) {
         setKullanici(null);
     };
 
+    const isAdmin = kullanici?.email?.toLowerCase() === 'seriesboxd@gmail.com';
+
     return (
-        <AuthContext.Provider value={{ kullanici, yukleniyor, girisYap, cikisYap }}>
+        <AuthContext.Provider value={{ kullanici, yukleniyor, girisYap, cikisYap, isAdmin }}>
             {children}
         </AuthContext.Provider>
     );

@@ -99,6 +99,11 @@ function Navbar({ onSonuclar, onAnaSayfaGit }) {
                 <Link to="/listelerim" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
                   📋 Listelerim
                 </Link>
+                {kullanici?.email?.toLowerCase() === 'seriesboxd@gmail.com' && (
+                  <Link to="/admin-dashboard" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
+                    Admin Panel
+                  </Link>
+                )}
                 <div className="dropdown-ayirici" />
                 <button className="dropdown-item cikis" onClick={() => { handleCikis(); setMobileMenuAcik(false); }}>
                   🚪 Çıkış Yap
