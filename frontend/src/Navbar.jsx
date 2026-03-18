@@ -62,6 +62,7 @@ function Navbar({ onSonuclar, onAnaSayfaGit }) {
       <div className={`menu-linkler ${mobileMenuAcik ? 'mobile-open' : ''}`}>
         <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); setMobileMenuAcik(false); }}>Ana Sayfa</Link>
         <Link to="/top50" onClick={() => setMobileMenuAcik(false)}>Top 50</Link>
+        <Link to="/discovery" onClick={() => setMobileMenuAcik(false)} className="discovery-link">Keşfet</Link>
         <SearchBar onHeisenberg={setHeisenbergLogo} onSonuclar={(data, isActive) => { if (onSonuclar) onSonuclar(data, isActive); setMobileMenuAcik(false); }} />
 
         {kullanici ? (

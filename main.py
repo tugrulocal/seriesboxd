@@ -359,6 +359,17 @@ def ensure_users_table():
             UNIQUE(user_id, series_id)
         );
     """)
+    # Discovery Mode swipe verileri tablosu
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_discovery_swipes (
+            id          SERIAL PRIMARY KEY,
+            user_id     INTEGER NOT NULL,
+            series_id   INTEGER NOT NULL,
+            direction   VARCHAR(10) NOT NULL,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, series_id)
+        );
+    """)
     conn.commit()
     cur.close()
     conn.close()
@@ -2112,3 +2123,161 @@ async def proxy_subtitle(url: str):
     except Exception as e:
         print(f"Subtitle proxy error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
+# ===== DISCOVERY MODE ENDPOINTS =====
+
+class DiscoverySwipeRequest(BaseModel):
+    series_id: int
+    direction: str  # 'right' (watchlist), 'left' (permanent pass), 'next' (temporary skip)
+    is_permanent: bool = True  # False for 'next' button, True for swipe left
+
+@app.get("/api/discovery/next")
+def get_discovery_cards(user = Depends(get_current_user)):
+    """
+    Kullanıcının daha önce görmediği 20 rastgele dizi döndürür.
+    - 'left' (pas) ve 'right' (watchlist) ile işaretlenen diziler hariç tutulur
+    - 'next' ile geçilen diziler tekrar gösterilebilir
+    Giriş yapmamış kullanıcılar için tüm dizilerden rastgele 20 tane döner.
+    """
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        if user:
+            # Giriş yapmış kullanıcı - kalıcı kaydırmaları hariç tut (left ve right)
+            cur.execute("""
+                SELECT s.series_id, s.name, s.poster_path, s.rating, s.genres, s.overview, s.first_air_date
+                FROM series s
+                WHERE s.poster_path IS NOT NULL
+                AND s.series_id NOT IN (
+                    SELECT series_id FROM user_discovery_swipes
+                    WHERE user_id = %s AND direction IN ('left', 'right')
+                )
+                ORDER BY RANDOM()
+                LIMIT 20
+            """, (user["user_id"],))
+        else:
+            # Giriş yapmamış kullanıcı - rastgele 20 dizi
+            cur.execute("""
+                SELECT series_id, name, poster_path, rating, genres, overview, first_air_date
+                FROM series
+                WHERE poster_path IS NOT NULL
+                ORDER BY RANDOM()
+                LIMIT 20
+            """)
+
+        series = cur.fetchall()
+        return {"series": series, "remaining": len(series)}
+    finally:
+        cur.close()
+        conn.close()
+
+@app.post("/api/discovery/swipe")
+def save_discovery_swipe(req: DiscoverySwipeRequest, user = Depends(get_current_user)):
+    """
+    Kullanıcının swipe tercihini kaydeder.
+    - direction: 'right' -> watchlist'e ekle (kalıcı)
+    - direction: 'left' -> pas geç (kalıcı, tekrar önerilmez)
+    - direction: 'next' -> geçici skip (tekrar önerilebilir)
+    """
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız")
+
+    if req.direction not in ['left', 'right', 'next']:
+        raise HTTPException(status_code=400, detail="Geçersiz yön. 'left', 'right' veya 'next' olmalı")
+
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        # 'next' direction için: mevcut kaydı sil (tekrar görülebilsin)
+        if req.direction == 'next':
+            cur.execute("""
+                DELETE FROM user_discovery_swipes
+                WHERE user_id = %s AND series_id = %s
+            """, (user["user_id"], req.series_id))
+        else:
+            # left veya right için: kaydet veya güncelle
+            cur.execute("""
+                INSERT INTO user_discovery_swipes (user_id, series_id, direction)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (user_id, series_id) DO UPDATE SET direction = %s, created_at = CURRENT_TIMESTAMP
+            """, (user["user_id"], req.series_id, req.direction, req.direction))
+
+        # Sağa kaydırma = watchlist'e ekle
+        if req.direction == 'right':
+            cur.execute("""
+                INSERT INTO user_series_activity (user_id, series_id, activity_type)
+                VALUES (%s, %s, 'watchlist')
+                ON CONFLICT (user_id, series_id, activity_type) DO NOTHING
+            """, (user["user_id"], req.series_id))
+
+        conn.commit()
+        return {"success": True, "direction": req.direction, "added_to_watchlist": req.direction == 'right'}
+    finally:
+        cur.close()
+        conn.close()
+
+@app.get("/api/discovery/stats")
+def get_discovery_stats(user = Depends(get_current_user)):
+    """
+    Kullanıcının discovery istatistiklerini döndürür.
+    """
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız")
+
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    try:
+        # Toplam swipe sayısı
+        cur.execute("""
+            SELECT
+                COUNT(*) as total_swipes,
+                COUNT(*) FILTER (WHERE direction = 'right') as liked,
+                COUNT(*) FILTER (WHERE direction = 'left') as passed
+            FROM user_discovery_swipes
+            WHERE user_id = %s
+        """, (user["user_id"],))
+        stats = cur.fetchone()
+
+        # Kalan dizi sayısı
+        cur.execute("""
+            SELECT COUNT(*) as remaining
+            FROM series s
+            WHERE s.poster_path IS NOT NULL
+            AND s.series_id NOT IN (
+                SELECT series_id FROM user_discovery_swipes WHERE user_id = %s
+            )
+        """, (user["user_id"],))
+        remaining = cur.fetchone()["remaining"]
+
+        return {
+            "total_swipes": stats["total_swipes"],
+            "liked": stats["liked"],
+            "passed": stats["passed"],
+            "remaining_series": remaining
+        }
+    finally:
+        cur.close()
+        conn.close()
+
+@app.delete("/api/discovery/reset")
+def reset_discovery_history(user = Depends(get_current_user)):
+    """
+    Kullanıcının discovery geçmişini sıfırlar (watchlist etkilenmez).
+    """
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız")
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("DELETE FROM user_discovery_swipes WHERE user_id = %s", (user["user_id"],))
+        deleted = cur.rowcount
+        conn.commit()
+        return {"success": True, "deleted_swipes": deleted}
+    finally:
+        cur.close()
+        conn.close()

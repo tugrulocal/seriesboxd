@@ -215,6 +215,45 @@ body {
   box-shadow: 0 0 24px rgba(56, 189, 248, 0.5), 0 6px 18px rgba(0, 0, 0, 0.3);
 }
 
+/* Discovery Link - Special Gradient Style */
+.discovery-link {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(129, 140, 248, 0.15));
+  padding: 6px 14px !important;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8 !important;
+  font-weight: 600 !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease !important;
+}
+
+.discovery-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.discovery-link:hover::before {
+  left: 100%;
+}
+
+.discovery-link:hover {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(129, 140, 248, 0.25));
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+  color: #f8fafc !important;
+}
+
+.discovery-link::after {
+  display: none !important;
+}
+
 h1 {
   font-size: 2rem;
   margin-bottom: 45px;
@@ -522,6 +561,75 @@ h1 {
 
 .arkaplan-gizle {
   animation: arkaplanKapanis 0.3s ease-in forwards;
+}
+
+/* Modal Mobile Responsive */
+@media (max-width: 640px) {
+  .modal-icerik {
+    flex-direction: column;
+    width: 95%;
+    max-width: none;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 16px;
+  }
+
+  .modal-poster {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .modal-metin {
+    padding: 20px;
+  }
+
+  .modal-metin h2 {
+    font-size: 1.5rem;
+  }
+
+  .modal-metin p {
+    max-height: 200px;
+    font-size: 0.95rem;
+  }
+
+  .kapat-butonu {
+    top: 10px;
+    right: 10px;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .puan-ve-buton {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .detay-butonu {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .modal-poster {
+    height: 220px;
+  }
+
+  .modal-metin {
+    padding: 16px;
+  }
+
+  .modal-metin h2 {
+    font-size: 1.3rem;
+  }
 }
 
 /* =========================================
