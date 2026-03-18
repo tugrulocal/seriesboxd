@@ -4,29 +4,32 @@
 
 .discovery-container {
     min-height: calc(100vh - 80px);
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 30%, #1e1b4b 70%, #0f172a 100%);
     position: relative;
     overflow: hidden;
     font-family: 'Gabarito', 'Inter', sans-serif;
 }
 
-/* Animated background gradient */
+/* Animated background gradient - fixed to viewport */
 .discovery-container::before {
     content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: radial-gradient(circle at 30% 30%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
                 radial-gradient(circle at 70% 70%, rgba(129, 140, 248, 0.08) 0%, transparent 50%);
     animation: backgroundPulse 8s ease-in-out infinite;
     pointer-events: none;
+    z-index: 0;
 }
 
 @keyframes backgroundPulse {
@@ -114,8 +117,8 @@
 .card-stack-container {
     position: relative;
     width: 100%;
-    max-width: min(380px, calc(100vw - 32px));
-    height: 520px;
+    max-width: 300px;
+    height: 450px; /* 300px * 1.5 = 450px for 2:3 ratio */
     perspective: 1000px;
     z-index: 10;
 }
@@ -123,16 +126,16 @@
 /* Tablet - Medium cards */
 @media (min-width: 768px) {
     .card-stack-container {
-        max-width: 420px;
-        height: 580px;
+        max-width: 340px;
+        height: 510px; /* 340px * 1.5 = 510px for 2:3 ratio */
     }
 }
 
 /* Desktop - Large cards with full layout */
 @media (min-width: 1024px) {
     .card-stack-container {
-        max-width: 500px;
-        height: 700px;
+        max-width: 380px;
+        height: 570px; /* 380px * 1.5 = 570px for 2:3 ratio */
     }
 }
 
@@ -456,7 +459,7 @@
 .card-side-actions {
     position: absolute;
     right: 12px;
-    bottom: 100px;
+    bottom: 18px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -464,8 +467,8 @@
 }
 
 .card-action-btn {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;    
     border-radius: 50%;
     border: none;
     cursor: pointer;
@@ -797,15 +800,15 @@
 /* Tablet adjustments */
 @media (max-width: 768px) and (min-width: 481px) {
     .card-stack-container {
-        max-width: 360px;
-        height: 500px;
+        max-width: 300px;
+        height: 450px; /* 300px * 1.5 = 450px for 2:3 ratio */
     }
 }
 
 /* Mobile phones */
 @media (max-width: 480px) {
     .discovery-container {
-        padding: 15px 10px;
+        padding: 10px 0;
         min-height: calc(100vh - 70px);
     }
 
@@ -815,12 +818,12 @@
 
     .discovery-subtitle {
         font-size: 0.85rem;
+        padding: 0 15px;
     }
 
     .card-stack-container {
-        max-width: calc(100vw - 20px);
-        height: calc(100vw * 1.4);
-        max-height: 520px;
+        max-width: min(280px, calc(100vw - 40px));
+        height: 420px; /* 280px * 1.5 = 420px for 2:3 ratio */
     }
 
     .card-title {
@@ -862,9 +865,8 @@
 
 @media (max-width: 360px) {
     .card-stack-container {
-        max-width: calc(100vw - 16px);
-        height: calc(100vw * 1.35);
-        max-height: 420px;
+        max-width: min(260px, calc(100vw - 40px));
+        height: 390px; /* 260px * 1.5 = 390px for 2:3 ratio */
     }
 }
 
