@@ -384,15 +384,31 @@ def ensure_users_table():
     cur.close()
     conn.close()
 
-try:
-    ensure_users_table()
-except Exception as _db_init_err:
-    import traceback
-    print(f"[UYARI] DB başlatma hatası (uygulama çalışmaya devam ediyor): {_db_init_err}")
-    traceback.print_exc()
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
+    # Startup: Worker başladıktan sonra DB'yi hazırla
+    try:
+        ensure_users_table()
+        logger.info("Veritabanı tabloları hazır.")
+    except Exception as _db_init_err:
+        import traceback
+        print(f"[UYARI] DB başlatma hatası (uygulama çalışmaya devam ediyor): {_db_init_err}")
+        traceback.print_exc()
+    yield
+    # Shutdown
+
+# Lifespan'ı app'e ekle
+app.router.lifespan_context = lifespan
 
 from admin_routes import router as admin_router
 app.include_router(admin_router)
+
+@app.get("/health")
+def health_check():
+    """DigitalOcean health check endpoint"""
+    return {"status": "ok"}
 
 @app.get("/")
 def ana_sayfa():
