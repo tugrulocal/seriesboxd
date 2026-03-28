@@ -406,6 +406,7 @@ from admin_routes import router as admin_router
 app.include_router(admin_router)
 
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
     """DigitalOcean health check endpoint"""
     return {"status": "ok"}
