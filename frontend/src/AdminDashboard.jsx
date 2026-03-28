@@ -4,10 +4,17 @@ import { useAuth } from './AuthContext';
 import {
     Search, Plus, Trash2, Edit3, Download, X, Film, Users, Database,
     ChevronLeft, ChevronRight, Loader2, Check, AlertTriangle,
-    ChevronUp, ChevronDown, ChevronsUpDown, SlidersHorizontal
+    ChevronUp, ChevronDown, ChevronsUpDown, SlidersHorizontal, Star
 } from 'lucide-react';
 import API_BASE from './config';
 import './AdminDashboard.css';
+
+// Helper: Detect if path is full URL or TMDB path
+const getImageUrl = (path, size = 'w185') => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return `https://image.tmdb.org/t/p/${size}${path}`;
+};
 
 const EMPTY_FORM = {
     series_id: '', name: '', rating: '', overview: '', poster_path: '',
@@ -77,6 +84,17 @@ function AdminPanel({ headers, cikisYap }) {
     // Misc
     const [toast, setToast] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+    // Hero Banner state
+    const [heroList, setHeroList] = useState([]);
+    const [heroLoading, setHeroLoading] = useState(false);
+    const [heroSearch, setHeroSearch] = useState('');
+    const [heroSearchInput, setHeroSearchInput] = useState('');
+    const [heroSearchResults, setHeroSearchResults] = useState([]);
+    const [heroSearching, setHeroSearching] = useState(false);
+    const [heroIds, setHeroIds] = useState(new Set()); // Track hero series IDs
+    const [heroShuffleEnabled, setHeroShuffleEnabled] = useState(false);
+    const [fixDatesLoading, setFixDatesLoading] = useState(false);
 
     const showToast = useCallback((message, type = 'success') => {
         setToast({ message, type });
@@ -278,6 +296,45 @@ function AdminPanel({ headers, cikisYap }) {
         }
     };
 
+    const handleFixMissingDates = async () => {
+        setFixDatesLoading(true);
+        try {
+            const res = await fetch(`${API_BASE}/admin/fix-missing-dates`, {
+                method: 'POST',
+                headers
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                setAuthError(true);
+                setFixDatesLoading(false);
+                return;
+            }
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'İşlem başarısız');
+            }
+
+            const data = await res.json();
+
+            if (data.fixed_count === 0) {
+                showToast('Eksik tarih bulunamadı.', 'success');
+            } else {
+                showToast(
+                    `${data.fixed_count} dizinin tarihi düzeltildi! (Toplam eksik: ${data.total_missing})`,
+                    'success'
+                );
+            }
+
+            fetchSeries();
+
+        } catch (err) {
+            showToast(err.message || 'Tarih düzeltme hatası', 'error');
+        } finally {
+            setFixDatesLoading(false);
+        }
+    };
+
     // TMDB
     const handleTmdbSearch = async (e) => {
         e.preventDefault();
@@ -321,6 +378,135 @@ function AdminPanel({ headers, cikisYap }) {
         const id = parseInt(tmdbIdInput);
         if (isNaN(id)) { showToast('Geçerli bir TMDB ID girin.', 'error'); return; }
         handleTmdbImport(id);
+    };
+
+    // Hero Banner functions
+    const fetchHeroSeries = useCallback(() => {
+        setHeroLoading(true);
+        Promise.all([
+            fetch(`${API_BASE}/admin/hero-series`, { headers }).then(checkAuth),
+            fetch(`${API_BASE}/admin/settings/hero-shuffle`, { headers }).then(checkAuth)
+        ])
+            .then(([heroData, shuffleData]) => {
+                if (heroData) {
+                    setHeroList(heroData.items || []);
+                    setHeroIds(new Set((heroData.items || []).map(h => h.series_id)));
+                }
+                if (shuffleData) {
+                    setHeroShuffleEnabled(shuffleData.enabled || false);
+                }
+            })
+            .catch(() => {})
+            .finally(() => setHeroLoading(false));
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === 'herobanner' || activeTab === 'series') fetchHeroSeries();
+    }, [activeTab, fetchHeroSeries]);
+
+    const handleHeroSearch = async (e) => {
+        e.preventDefault();
+        if (!heroSearchInput.trim()) return;
+        setHeroSearching(true);
+        try {
+            const params = new URLSearchParams({ q: heroSearchInput, per_page: 10 });
+            const res = await fetch(`${API_BASE}/admin/series?${params}`, { headers });
+            const data = await checkAuth(res);
+            if (data) setHeroSearchResults(data.series || []);
+        } catch {
+            setHeroSearchResults([]);
+        } finally {
+            setHeroSearching(false);
+        }
+    };
+
+    const addToHero = async (seriesId) => {
+        if (heroList.length >= 30) {
+            showToast('Maksimum 30 dizi ekleyebilirsiniz.', 'error');
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE}/admin/hero-series`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ series_id: seriesId, display_order: heroList.length })
+            });
+            if (res.status === 401 || res.status === 403) { setAuthError(true); return; }
+            if (!res.ok) {
+                const e = await res.json();
+                showToast(e.detail || 'Eklenemedi', 'error');
+                return;
+            }
+            showToast('Dizi hero banner\'a eklendi.');
+            fetchHeroSeries();
+            setHeroSearchResults([]);
+            setHeroSearchInput('');
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    const toggleHeroFromTable = async (seriesId) => {
+        if (heroIds.has(seriesId)) {
+            await removeFromHero(seriesId);
+        } else {
+            await addToHero(seriesId);
+        }
+    };
+
+    const removeFromHero = async (seriesId) => {
+        try {
+            const res = await fetch(`${API_BASE}/admin/hero-series/${seriesId}`, {
+                method: 'DELETE',
+                headers
+            });
+            if (res.status === 401 || res.status === 403) { setAuthError(true); return; }
+            if (!res.ok) throw new Error('Kaldırılamadı');
+            showToast('Dizi hero banner\'dan kaldırıldı.');
+            fetchHeroSeries();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    const moveHeroItem = async (index, direction) => {
+        const newList = [...heroList];
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= newList.length) return;
+        [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];
+        setHeroList(newList);
+        const items = newList.map((item, i) => ({ series_id: item.series_id, display_order: i }));
+        try {
+            await fetch(`${API_BASE}/admin/hero-series/reorder`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({ items })
+            });
+        } catch (err) {
+            showToast('Sıralama kaydedilemedi', 'error');
+            fetchHeroSeries();
+        }
+    };
+
+    const toggleHeroShuffle = async () => {
+        const newValue = !heroShuffleEnabled;
+        try {
+            const res = await fetch(`${API_BASE}/admin/settings/hero-shuffle?enabled=${newValue}`, {
+                method: 'PUT',
+                headers
+            });
+            if (res.status === 401 || res.status === 403) { setAuthError(true); return; }
+            if (!res.ok) throw new Error('Ayar güncellenemedi');
+            setHeroShuffleEnabled(newValue);
+            showToast(
+                newValue
+                    ? 'Shuffle aktif: Her sayfa yüklemede 30 diziden rastgele 15 gösterilecek.'
+                    : 'Shuffle devre dışı: Diziler sırayla gösterilecek.',
+                'success'
+            );
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
     };
 
     // User avatar color from username
@@ -383,26 +569,46 @@ function AdminPanel({ headers, cikisYap }) {
                 <button className={activeTab === 'tmdb' ? 'active' : ''} onClick={() => setActiveTab('tmdb')}>
                     <Download size={18} /> TMDB Ekle
                 </button>
+                <button className={activeTab === 'herobanner' ? 'active' : ''} onClick={() => setActiveTab('herobanner')}>
+                    <Star size={18} /> Herobanner
+                </button>
             </div>
 
             {/* ── Dashboard Tab ── */}
             {activeTab === 'dashboard' && (
-                <div className="admin-stats-grid">
-                    <div className="admin-stat-card">
-                        <div className="stat-icon"><Film size={32} /></div>
-                        <div className="stat-info">
-                            <span className="stat-value">{stats.series_count}</span>
-                            <span className="stat-label">Toplam Dizi</span>
+                <>
+                    <div className="admin-stats-grid">
+                        <div className="admin-stat-card">
+                            <div className="stat-icon"><Film size={32} /></div>
+                            <div className="stat-info">
+                                <span className="stat-value">{stats.series_count}</span>
+                                <span className="stat-label">Toplam Dizi</span>
+                            </div>
+                        </div>
+                        <div className="admin-stat-card admin-stat-clickable" onClick={() => setUsersModalOpen(true)} title="Tıkla: Kullanıcı Listesi">
+                            <div className="stat-icon users-icon"><Users size={32} /></div>
+                            <div className="stat-info">
+                                <span className="stat-value">{stats.users_count}</span>
+                                <span className="stat-label">Toplam Kullanıcı <span className="stat-label-hint">↗ Listeyi Gör</span></span>
+                            </div>
                         </div>
                     </div>
-                    <div className="admin-stat-card admin-stat-clickable" onClick={() => setUsersModalOpen(true)} title="Tıkla: Kullanıcı Listesi">
-                        <div className="stat-icon users-icon"><Users size={32} /></div>
-                        <div className="stat-info">
-                            <span className="stat-value">{stats.users_count}</span>
-                            <span className="stat-label">Toplam Kullanıcı <span className="stat-label-hint">↗ Listeyi Gör</span></span>
-                        </div>
+                    <div className="admin-quick-actions">
+                        <h4>Hızlı İşlemler</h4>
+                        <button className="admin-action-btn" onClick={async () => {
+                            try {
+                                const res = await fetch(`${API_BASE}/admin/fix-missing-dates`, { method: 'POST', headers });
+                                if (!res.ok) throw new Error('İşlem başarısız');
+                                const data = await res.json();
+                                showToast(`${data.fixed_count} dizi tarihi düzeltildi (toplam eksik: ${data.total_missing})`);
+                            } catch (err) {
+                                showToast(err.message, 'error');
+                            }
+                        }}>
+                            Eksik Tarihleri Düzelt
+                        </button>
                     </div>
-                </div>
+                </>
             )}
 
             {/* ── Series Tab ── */}
@@ -486,6 +692,25 @@ function AdminPanel({ headers, cikisYap }) {
                             )}
                         </div>
 
+                        <button
+                            className="admin-action-btn"
+                            onClick={handleFixMissingDates}
+                            disabled={fixDatesLoading}
+                            title="Tarih bilgisi olmayan dizilerin tarihini ilk sezon/bölüm yılı ile güncelle"
+                        >
+                            {fixDatesLoading ? (
+                                <>
+                                    <Loader2 size={16} className="spin" />
+                                    Düzeltiliyor...
+                                </>
+                            ) : (
+                                <>
+                                    <Database size={16} />
+                                    Tarihleri Düzelt
+                                </>
+                            )}
+                        </button>
+
                         <button className="admin-add-btn" onClick={openAddForm}>
                             <Plus size={18} /> Yeni Dizi
                         </button>
@@ -513,17 +738,30 @@ function AdminPanel({ headers, cikisYap }) {
                                 {seriesList.map(s => (
                                     <tr key={s.series_id}>
                                         <td>
-                                            {s.poster_path ? (
-                                                <img src={`https://image.tmdb.org/t/p/w92${s.poster_path}`} alt="" className="admin-poster-thumb" />
-                                            ) : (
-                                                <div className="admin-poster-placeholder"><Film size={20} /></div>
-                                            )}
+                                            <a href={`/dizi/${s.series_id}`} target="_blank" rel="noopener noreferrer" className="admin-poster-link">
+                                                {s.poster_path ? (
+                                            <img src={getImageUrl(s.poster_path, 'w92')} alt="" className="admin-poster-thumb" />
+                                                ) : (
+                                                    <div className="admin-poster-placeholder"><Film size={20} /></div>
+                                                )}
+                                            </a>
                                         </td>
-                                        <td className="admin-series-name">{s.name}</td>
+                                        <td className="admin-series-name">
+                                            <a href={`/dizi/${s.series_id}`} target="_blank" rel="noopener noreferrer" className="admin-name-link">
+                                                {s.name}
+                                            </a>
+                                        </td>
                                         <td><span className="admin-rating">{s.rating ? Number(s.rating).toFixed(1) : '-'}</span></td>
                                         <td className="admin-genres">{s.genres || '-'}</td>
                                         <td className="admin-date">{s.first_air_date ? s.first_air_date.toString().substring(0, 4) : '-'}</td>
                                         <td className="admin-actions">
+                                            <button
+                                                className={`admin-hero-toggle-btn ${heroIds.has(s.series_id) ? 'active' : ''}`}
+                                                onClick={() => toggleHeroFromTable(s.series_id)}
+                                                title={heroIds.has(s.series_id) ? 'Hero Banner\'dan Kaldır' : 'Hero Banner\'a Ekle'}
+                                            >
+                                                <Star size={16} fill={heroIds.has(s.series_id) ? '#fbbf24' : 'none'} />
+                                            </button>
                                             <button className="admin-edit-btn" onClick={() => openEditForm(s)} title="Düzenle"><Edit3 size={16} /></button>
                                             <button className="admin-delete-btn" onClick={() => setDeleteConfirm(s.series_id)} title="Sil"><Trash2 size={16} /></button>
                                         </td>
@@ -580,7 +818,7 @@ function AdminPanel({ headers, cikisYap }) {
                                 {tmdbResults.map(item => (
                                     <div key={item.id} className="admin-tmdb-card">
                                         {item.poster_path ? (
-                                            <img src={`https://image.tmdb.org/t/p/w185${item.poster_path}`} alt={item.name} className="admin-tmdb-poster" />
+                                            <img src={getImageUrl(item.poster_path, 'w185')} alt={item.name} className="admin-tmdb-poster" />
                                         ) : (
                                             <div className="admin-tmdb-poster-placeholder"><Film size={32} /></div>
                                         )}
@@ -601,6 +839,138 @@ function AdminPanel({ headers, cikisYap }) {
                             </div>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* ── Herobanner Tab ── */}
+            {activeTab === 'herobanner' && (
+                <div className="admin-hero-section">
+                    <div className="admin-hero-header">
+                        <div>
+                            <h3>Hero Banner Dizileri ({heroList.length}/30)</h3>
+                            <p>Ana sayfada gösterilecek dizileri buradan yönetin. Maksimum 30 dizi ekleyebilirsiniz.</p>
+                            {heroShuffleEnabled && (
+                                <p style={{ color: '#38bdf8', fontWeight: '500', marginTop: '8px' }}>
+                                    🔀 Shuffle aktif - Her sayfa yüklemede {Math.min(heroList.length, 15)} dizi rastgele gösterilecek
+                                </p>
+                            )}
+                        </div>
+                        <button
+                            className={`admin-action-btn ${heroShuffleEnabled ? 'active' : ''}`}
+                            onClick={toggleHeroShuffle}
+                            title={heroShuffleEnabled ? 'Shuffle\'ı devre dışı bırak' : 'Shuffle\'ı aktif et'}
+                        >
+                            <Database size={16} />
+                            {heroShuffleEnabled ? 'Shuffle Aktif' : 'Shuffle Devre Dışı'}
+                        </button>
+                    </div>
+
+                    <div className="admin-hero-add">
+                        <form onSubmit={handleHeroSearch} className="admin-search-form">
+                            <Search size={18} />
+                            <input
+                                type="text"
+                                placeholder="Dizi ara ve ekle..."
+                                value={heroSearchInput}
+                                onChange={e => setHeroSearchInput(e.target.value)}
+                            />
+                            <button type="submit" disabled={heroSearching}>
+                                {heroSearching ? <Loader2 size={16} className="spin" /> : 'Ara'}
+                            </button>
+                        </form>
+
+                        {heroSearchResults.length > 0 && (
+                            <div className="admin-hero-search-results">
+                                {heroSearchResults.map(s => (
+                                    <div key={s.series_id} className="admin-hero-search-item">
+                                        {s.poster_path ? (
+                                            <img src={getImageUrl(s.poster_path, 'w92')} alt={s.name} />
+                                        ) : (
+                                            <div className="admin-hero-no-poster"><Film size={20} /></div>
+                                        )}
+                                        <div className="admin-hero-search-info">
+                                            <span className="admin-hero-search-name">{s.name}</span>
+                                            <span className="admin-hero-search-rating">
+                                                <Star size={12} fill="#f59e0b" color="#f59e0b" /> {s.rating ? Number(s.rating).toFixed(1) : '-'}
+                                            </span>
+                                        </div>
+                                        <button
+                                            className="admin-hero-add-btn"
+                                            onClick={() => addToHero(s.series_id)}
+                                            disabled={heroList.some(h => h.series_id === s.series_id)}
+                                        >
+                                            {heroList.some(h => h.series_id === s.series_id) ? <Check size={16} /> : <Plus size={16} />}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="admin-hero-list">
+                        <h4>Mevcut Hero Dizileri ({heroList.length})</h4>
+                        {heroLoading ? (
+                            <div className="admin-hero-loading"><Loader2 size={28} className="spin" /></div>
+                        ) : heroList.length === 0 ? (
+                            <div className="admin-hero-empty">
+                                <p>Henüz hero banner'a dizi eklenmemiş. Yukarıdan arama yaparak dizi ekleyin.</p>
+                            </div>
+                        ) : (
+                            <div className="admin-hero-cards">
+                                {heroList.map((item, index) => (
+                                    <div key={item.series_id} className="admin-hero-card">
+                                        <span className="admin-hero-order">{index + 1}</span>
+                                        {item.backdrop_path ? (
+                                            <img
+                                                src={getImageUrl(item.backdrop_path, 'w300')}
+                                                alt={item.name}
+                                                className="admin-hero-backdrop"
+                                            />
+                                        ) : item.poster_path ? (
+                                            <img
+                                                src={getImageUrl(item.poster_path, 'w185')}
+                                                alt={item.name}
+                                                className="admin-hero-backdrop"
+                                            />
+                                        ) : (
+                                            <div className="admin-hero-no-backdrop"><Film size={32} /></div>
+                                        )}
+                                        <div className="admin-hero-card-info">
+                                            <span className="admin-hero-card-name">{item.name}</span>
+                                            <span className="admin-hero-card-rating">
+                                                <Star size={12} fill="#f59e0b" color="#f59e0b" /> {item.rating ? Number(item.rating).toFixed(1) : '-'}
+                                            </span>
+                                        </div>
+                                        <div className="admin-hero-card-actions">
+                                            <button
+                                                className="admin-hero-move-btn"
+                                                onClick={() => moveHeroItem(index, 'up')}
+                                                disabled={index === 0}
+                                                title="Yukarı"
+                                            >
+                                                <ChevronUp size={16} />
+                                            </button>
+                                            <button
+                                                className="admin-hero-move-btn"
+                                                onClick={() => moveHeroItem(index, 'down')}
+                                                disabled={index === heroList.length - 1}
+                                                title="Aşağı"
+                                            >
+                                                <ChevronDown size={16} />
+                                            </button>
+                                            <button
+                                                className="admin-hero-remove-btn"
+                                                onClick={() => removeFromHero(item.series_id)}
+                                                title="Kaldır"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -649,12 +1019,21 @@ function AdminPanel({ headers, cikisYap }) {
                                     <input type="text" value={formData.networks} onChange={e => handleFormChange('networks', e.target.value)} placeholder="HBO, Netflix" />
                                 </div>
                                 <div className="admin-form-group full">
-                                    <label>Poster Path</label>
-                                    <input type="text" value={formData.poster_path} onChange={e => handleFormChange('poster_path', e.target.value)} placeholder="/yXsGFpR8h.jpg" />
+                                    <label>Poster Path (TMDB yolu veya tam URL)</label>
+                                    <input type="text" value={formData.poster_path} onChange={e => handleFormChange('poster_path', e.target.value)} placeholder="/abc123.jpg veya https://i.imgur.com/abc.jpg" />
                                 </div>
                                 {formData.poster_path && (
                                     <div className="admin-form-group full admin-poster-preview-wrapper">
-                                        <img src={`https://image.tmdb.org/t/p/w185${formData.poster_path}`} alt="Poster" className="admin-poster-preview" />
+                                        <img src={getImageUrl(formData.poster_path, 'w185')} alt="Poster" className="admin-poster-preview" />
+                                    </div>
+                                )}
+                                <div className="admin-form-group full">
+                                    <label>Backdrop Path (Yatay kapak - TMDB yolu veya tam URL)</label>
+                                    <input type="text" value={formData.backdrop_path} onChange={e => handleFormChange('backdrop_path', e.target.value)} placeholder="/xyz789.jpg veya https://i.imgur.com/xyz.jpg" />
+                                </div>
+                                {formData.backdrop_path && (
+                                    <div className="admin-form-group full admin-backdrop-preview-wrapper">
+                                        <img src={getImageUrl(formData.backdrop_path, 'w300')} alt="Backdrop" className="admin-backdrop-preview" />
                                     </div>
                                 )}
                                 <div className="admin-form-group full">

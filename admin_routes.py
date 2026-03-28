@@ -4,7 +4,7 @@ from typing import Optional
 
 import psycopg2
 import requests as http_requests
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -457,6 +457,230 @@ def admin_tmdb_import(tmdb_id: int, user=Depends(admin_required)):
         return {"status": "ok", "series": series_row}
     except HTTPException:
         raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+
+# --------------- Hero Banner ---------------
+
+class HeroSeriesModel(BaseModel):
+    series_id: int
+    display_order: Optional[int] = 0
+
+
+class HeroReorderModel(BaseModel):
+    items: list
+
+
+@router.get("/hero-series")
+def admin_list_hero_series(user=Depends(admin_required)):
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        cur.execute("""
+            SELECT hs.id, hs.series_id, hs.display_order, hs.created_at,
+                   s.name, s.poster_path, s.backdrop_path, s.rating
+            FROM hero_series hs
+            JOIN series s ON hs.series_id = s.series_id
+            ORDER BY hs.display_order ASC, hs.created_at DESC
+        """)
+        items = cur.fetchall()
+        return {"items": items}
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.post("/hero-series")
+def admin_add_hero_series(data: HeroSeriesModel, user=Depends(admin_required)):
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        # Check max limit (30)
+        cur.execute("SELECT COUNT(*) as count FROM hero_series")
+        count = cur.fetchone()["count"]
+        if count >= 30:
+            raise HTTPException(status_code=400, detail="Maksimum 30 dizi eklenebilir.")
+
+        cur.execute("SELECT series_id FROM series WHERE series_id = %s", (data.series_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Dizi bulunamadı.")
+        cur.execute("SELECT id FROM hero_series WHERE series_id = %s", (data.series_id,))
+        if cur.fetchone():
+            raise HTTPException(status_code=400, detail="Bu dizi zaten hero banner'da.")
+        cur.execute(
+            "INSERT INTO hero_series (series_id, display_order) VALUES (%s, %s) RETURNING id",
+            (data.series_id, data.display_order)
+        )
+        new_id = cur.fetchone()["id"]
+        conn.commit()
+        return {"status": "ok", "id": new_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.delete("/hero-series/{series_id}")
+def admin_delete_hero_series(series_id: int, user=Depends(admin_required)):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM hero_series WHERE series_id = %s", (series_id,))
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Hero banner'da bu dizi yok.")
+        conn.commit()
+        return {"status": "ok"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.put("/hero-series/reorder")
+def admin_reorder_hero_series(data: HeroReorderModel, user=Depends(admin_required)):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        for item in data.items:
+            cur.execute(
+                "UPDATE hero_series SET display_order = %s WHERE series_id = %s",
+                (item.get("display_order", 0), item.get("series_id"))
+            )
+        conn.commit()
+        return {"status": "ok"}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.post("/fix-missing-dates")
+def admin_fix_missing_dates(user=Depends(admin_required)):
+    """Fix series with missing first_air_date by getting date from first season/episode."""
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        # Find series with no first_air_date
+        cur.execute("""
+            SELECT series_id, name FROM series
+            WHERE first_air_date IS NULL OR first_air_date = ''
+        """)
+        missing = cur.fetchall()
+        fixed_count = 0
+
+        for series in missing:
+            sid = series["series_id"]
+            # Try to get first season's air_date
+            cur.execute("""
+                SELECT air_date FROM seasons
+                WHERE series_id = %s AND air_date IS NOT NULL
+                ORDER BY season_number ASC LIMIT 1
+            """, (sid,))
+            season_row = cur.fetchone()
+
+            if season_row and season_row["air_date"]:
+                cur.execute(
+                    "UPDATE series SET first_air_date = %s WHERE series_id = %s",
+                    (season_row["air_date"], sid)
+                )
+                fixed_count += 1
+                continue
+
+            # Try to get first episode's air_date
+            cur.execute("""
+                SELECT e.air_date FROM episodes e
+                JOIN seasons s ON e.season_id = s.season_id
+                WHERE s.series_id = %s AND e.air_date IS NOT NULL
+                ORDER BY s.season_number ASC, e.episode_number ASC LIMIT 1
+            """, (sid,))
+            ep_row = cur.fetchone()
+
+            if ep_row and ep_row["air_date"]:
+                cur.execute(
+                    "UPDATE series SET first_air_date = %s WHERE series_id = %s",
+                    (ep_row["air_date"], sid)
+                )
+                fixed_count += 1
+
+        conn.commit()
+        return {"status": "ok", "fixed_count": fixed_count, "total_missing": len(missing)}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# Settings Endpoints
+# ────────────────────────────────────────────────────────────────────────────
+
+@router.get("/settings/hero-shuffle")
+def get_hero_shuffle_setting(user=Depends(admin_required)):
+    """Get hero banner shuffle setting."""
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        # Ensure settings table exists
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                key VARCHAR(100) PRIMARY KEY,
+                value TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+
+        cur.execute("SELECT value FROM settings WHERE key = 'hero_shuffle_enabled'")
+        row = cur.fetchone()
+        enabled = row["value"] == "true" if row else False
+        return {"enabled": enabled}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.put("/settings/hero-shuffle")
+def update_hero_shuffle_setting(enabled: bool = Query(...), user=Depends(admin_required)):
+    """Update hero banner shuffle setting."""
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        # Ensure settings table exists
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                key VARCHAR(100) PRIMARY KEY,
+                value TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        value = "true" if enabled else "false"
+        cur.execute("""
+            INSERT INTO settings (key, value, updated_at)
+            VALUES ('hero_shuffle_enabled', %s, NOW())
+            ON CONFLICT (key) DO UPDATE SET value = %s, updated_at = NOW()
+        """, (value, value))
+        conn.commit()
+        return {"status": "ok", "enabled": enabled}
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))

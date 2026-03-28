@@ -103,6 +103,8 @@ function AppIcerik() {
                       {dizi.poster_path && (
                         <img
                           src={`https://image.tmdb.org/t/p/w342${dizi.poster_path}`}
+                          srcSet={`https://image.tmdb.org/t/p/w185${dizi.poster_path} 185w, https://image.tmdb.org/t/p/w342${dizi.poster_path} 342w, https://image.tmdb.org/t/p/w500${dizi.poster_path} 500w`}
+                          sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
                           alt={dizi.name}
                           className="dizi-poster"
                           loading="lazy"
@@ -135,6 +137,8 @@ function AppIcerik() {
                   <button className="kapat-butonu" onClick={() => modalKapatVeGit()}>✕</button>
                   <img
                     src={`https://image.tmdb.org/t/p/w342${seciliDizi.poster_path}`}
+                    srcSet={`https://image.tmdb.org/t/p/w185${seciliDizi.poster_path} 185w, https://image.tmdb.org/t/p/w342${seciliDizi.poster_path} 342w, https://image.tmdb.org/t/p/w500${seciliDizi.poster_path} 500w`}
+                    sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
                     alt={seciliDizi.name}
                     className="modal-poster"
                     decoding="async"

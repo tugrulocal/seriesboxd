@@ -1973,6 +1973,15 @@ h1.detay-baslik {
   color: white;
 }
 
+.bolum-izle-btn.bolum-play {
+  background: linear-gradient(135deg, #ff030392, #651503);
+  color: rgba(255, 255, 255, 0.988);
+}
+
+.bolum-izle-btn.bolum-play:hover {
+  background: linear-gradient(135deg, #ff0808, #820606);
+}
+
 /* Bölüm puanlama */
 .bolum-puanlama-container {
   position: relative;

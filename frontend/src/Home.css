@@ -264,6 +264,21 @@
     background: rgba(255, 255, 255, 0.6);
 }
 
+@media (max-width: 768px) {
+    .hero-dots {
+        gap: 6px;
+    }
+
+    .hero-dot {
+        width: 8px;
+        height: 8px;
+    }
+
+    .hero-dot.active {
+        transform: scale(1.2);
+    }
+}
+
 /* --- YATAY SATIRLAR (ROWS) --- */
 .home-rows-container {
     padding: 30px 3%;

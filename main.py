@@ -370,6 +370,16 @@ def ensure_users_table():
             UNIQUE(user_id, series_id)
         );
     """)
+    # Hero Banner dizileri tablosu
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS hero_series (
+            id            SERIAL PRIMARY KEY,
+            series_id     INTEGER NOT NULL,
+            display_order INTEGER DEFAULT 0,
+            created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(series_id)
+        );
+    """)
     conn.commit()
     cur.close()
     conn.close()
@@ -406,6 +416,38 @@ def top_50_getir():
     diziler = cur.fetchall()
     cur.close()
     conn.close()
+    return diziler
+
+@app.get("/hero-series")
+def hero_series_getir():
+    """Hero banner'da gösterilecek dizileri döndür (admin tarafından seçilmiş)."""
+    import random
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    # Check shuffle setting (with fallback if settings table doesn't exist)
+    shuffle_enabled = False
+    try:
+        cur.execute("SELECT value FROM settings WHERE key = 'hero_shuffle_enabled'")
+        shuffle_row = cur.fetchone()
+        shuffle_enabled = shuffle_row and shuffle_row["value"] == "true"
+    except:
+        pass  # Settings table might not exist yet
+
+    # Get all hero series
+    cur.execute("""
+        SELECT s.* FROM hero_series hs
+        JOIN series s ON hs.series_id = s.series_id
+        ORDER BY hs.display_order ASC, hs.created_at DESC
+    """)
+    diziler = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    # If shuffle is enabled and we have more than 15, randomly select 15
+    if shuffle_enabled and len(diziler) > 15:
+        diziler = random.sample(diziler, 15)
+
     return diziler
 
 @app.get("/turler")

@@ -5,6 +5,13 @@ import Navbar from './Navbar';
 import './App.css';
 import API_BASE from './config';
 
+// Helper: Detect if path is full URL or TMDB path
+const getImageUrl = (path, size = 'w185') => {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+};
+
 function DiziDetay() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -247,7 +254,7 @@ function DiziDetay() {
   if (yukleniyor) return null;
   if (!dizi) return <div style={{ color: 'red', textAlign: 'center', marginTop: '80px' }}>Dizi bulunamadı!</div>;
 
-  const arkaplanResmi = dizi.backdrop_path ? `https://image.tmdb.org/t/p/original${dizi.backdrop_path}` : `https://image.tmdb.org/t/p/original${dizi.poster_path}`;
+  const arkaplanResmi = dizi.backdrop_path ? getImageUrl(dizi.backdrop_path, 'original') : getImageUrl(dizi.poster_path, 'original');
   const yil = dizi.first_air_date ? dizi.first_air_date.substring(0, 4) : '';
   const gosterimTarihi = dizi.first_air_date || (sezonlar.length > 0 ? sezonlar[0].air_date : 'Bilinmiyor');
   const durum = dizi.status === 'Ended' ? 'Sona Erdi' : (dizi.status === 'Returning Series' ? 'Devam Ediyor' : dizi.status);
@@ -269,7 +276,7 @@ function DiziDetay() {
 
         <div className="dv2-hero-inner">
           {/* Sol: Poster */}
-          <img src={`https://image.tmdb.org/t/p/w342${dizi.poster_path}`} alt={dizi.name} className="dv2-hero-poster" decoding="async" fetchpriority="high" />
+          <img src={getImageUrl(dizi.poster_path, 'w342')} alt={dizi.name} className="dv2-hero-poster" decoding="async" fetchPriority="high" />
 
           {/* Orta: Bilgiler */}
           <div className="dv2-hero-info">
@@ -278,7 +285,6 @@ function DiziDetay() {
               <span className="dv2-rating"><Star size={15} fill="#f59e0b" color="#f59e0b" /> {Number(dizi.rating).toFixed(1)}</span>
               <span className="dv2-votes">({(dizi.vote_count || 0).toLocaleString('tr-TR')} oy)</span>
               <span className="dv2-durum">{durum}</span>
-              <span className="dv2-tarih">{tarihFormatla(gosterimTarihi)}</span>
             </div>
             <div className="dv2-genres">
               {genres.map(g => (
@@ -406,6 +412,9 @@ function DiziDetay() {
                               </div>
                             </div>
                             <div className="bolum-aksiyonlar">
+                              <button className="bolum-izle-btn bolum-play" onClick={() => stremioModalAc(bolum)} title="İzle">
+                                <PlayCircle size={16} />
+                              </button>
                               <div className="bolum-puanlama-container">
                                 <button className="bolum-puan-toggle" onClick={() => setAcikPuanlama(acikPuanlama === bolum.episode_id ? null : bolum.episode_id)}>
                                   {bolumPuanlari[bolum.episode_id] ? `★ ${bolumPuanlari[bolum.episode_id]}` : '☆'}

@@ -198,7 +198,9 @@ function Top50() {
                 {/* Poster */}
                 <div className="top50-poster-wrapper">
                   <img
-                    src={`https://image.tmdb.org/t/p/w200${dizi.poster_path}`}
+                    src={`https://image.tmdb.org/t/p/w342${dizi.poster_path}`}
+                    srcSet={`https://image.tmdb.org/t/p/w185${dizi.poster_path} 185w, https://image.tmdb.org/t/p/w342${dizi.poster_path} 342w, https://image.tmdb.org/t/p/w500${dizi.poster_path} 500w`}
+                    sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
                     alt={dizi.name}
                     className="top50-poster"
                     loading="lazy"

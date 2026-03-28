@@ -334,6 +334,8 @@ function DiscoveryMode() {
                     >
                         <img
                             src={`https://image.tmdb.org/t/p/w500${card.poster_path}`}
+                            srcSet={`https://image.tmdb.org/t/p/w342${card.poster_path} 342w, https://image.tmdb.org/t/p/w500${card.poster_path} 500w, https://image.tmdb.org/t/p/w780${card.poster_path} 780w`}
+                            sizes="(max-width: 640px) 342px, (max-width: 1024px) 500px, 780px"
                             alt={card.name}
                             loading="lazy"
                             className="card-poster"
@@ -408,6 +410,8 @@ function DiscoveryMode() {
                         <button className="kapat-butonu" onClick={() => closeModal()}>✕</button>
                         <img
                             src={`https://image.tmdb.org/t/p/w342${seciliDizi.poster_path}`}
+                            srcSet={`https://image.tmdb.org/t/p/w185${seciliDizi.poster_path} 185w, https://image.tmdb.org/t/p/w342${seciliDizi.poster_path} 342w, https://image.tmdb.org/t/p/w500${seciliDizi.poster_path} 500w`}
+                            sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
                             alt={seciliDizi.name}
                             className="modal-poster"
                             decoding="async"
@@ -492,6 +496,8 @@ function SwipeCard({ card, onSwipe, direction, onInfoClick, onWatchedClick, onLi
             <div className="card-image-container">
                 <img
                     src={`https://image.tmdb.org/t/p/w500${card.poster_path}`}
+                    srcSet={`https://image.tmdb.org/t/p/w342${card.poster_path} 342w, https://image.tmdb.org/t/p/w500${card.poster_path} 500w, https://image.tmdb.org/t/p/w780${card.poster_path} 780w`}
+                    sizes="(max-width: 640px) 342px, (max-width: 1024px) 500px, 780px"
                     alt={card.name}
                     loading="lazy"
                     className="card-poster"

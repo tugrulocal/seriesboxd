@@ -9,6 +9,13 @@ import {
 import './Home.css';
 import API_BASE from './config';
 
+// Helper: Detect if path is full URL or TMDB path
+const getImageUrl = (path, size = 'w185') => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return `https://image.tmdb.org/t/p/${size}${path}`;
+};
+
 /* ========== Genres to exclude from HeroBanner ========== */
 const EXCLUDED_GENRES = [
     'belgesel', 'documentary', 'talk show', 'reality', 'biyografi', 'biography', 'game show'
@@ -90,7 +97,9 @@ function Row({ title, icon, series, onPosterClick }) {
                     {displayItems.map((s, i) => (
                         <div key={`${title}-${i}`} className="row-item" onClick={() => onPosterClick(s)}>
                             <img
-                                src={s.poster_path ? `https://image.tmdb.org/t/p/w185${s.poster_path}` : 'https://via.placeholder.com/185x278?text=No+Poster'}
+                                src={s.poster_path ? getImageUrl(s.poster_path, 'w342') : 'https://via.placeholder.com/342x513?text=No+Poster'}
+                                srcSet={s.poster_path ? `${getImageUrl(s.poster_path, 'w185')} 185w, ${getImageUrl(s.poster_path, 'w342')} 342w, ${getImageUrl(s.poster_path, 'w500')} 500w` : undefined}
+                                sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
                                 alt={s.name}
                                 loading="lazy"
                                 decoding="async"
@@ -118,6 +127,7 @@ function Home({ tumDiziler }) {
     // Hero Carousel state
     const [heroList, setHeroList] = useState([]);
     const [heroIndex, setHeroIndex] = useState(0);
+    const [heroLoading, setHeroLoading] = useState(true);
     const [diziIzlendi, setDiziIzlendi] = useState(false);
     const [diziLiked, setDiziLiked] = useState(false);
     const [diziWatchlist, setDiziWatchlist] = useState(false);
@@ -125,15 +135,43 @@ function Home({ tumDiziler }) {
     // Pointer swipe tracking ref
     const swipeStartX = useRef(null);
 
-    // Build hero list: top 100, exclude unwanted genres, shuffle
+    // Fetch guard to prevent multiple fetches
+    const fetchTriggered = useRef(false);
+
+    // Build hero list: fetch from admin API, fallback to random selection
     useEffect(() => {
-        if (tumDiziler.length > 0 && heroList.length === 0) {
-            const filtered = tumDiziler
-                .slice(0, 100)
-                .filter(d => d.backdrop_path && !isExcluded(d.genres || ''));
-            const shuffled = [...filtered].sort(() => Math.random() - 0.5);
-            setHeroList(shuffled.slice(0, 15));
-        }
+        // Zaten dolu veya fetch başladıysa çık
+        if (heroList.length > 0) return;
+        if (fetchTriggered.current) return;
+
+        // tumDiziler hazır değilse bekle (fallback için gerekli)
+        if (tumDiziler.length === 0) return;
+
+        fetchTriggered.current = true;
+
+        fetch(`${API_BASE}/hero-series`)
+            .then(res => res.ok ? res.json() : [])
+            .then(data => {
+                if (Array.isArray(data) && data.length > 0) {
+                    setHeroList(data);
+                } else {
+                    // Fallback: random selection from top 100
+                    const filtered = tumDiziler
+                        .slice(0, 100)
+                        .filter(d => d.backdrop_path && !isExcluded(d.genres || ''));
+                    const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+                    setHeroList(shuffled.slice(0, 15));
+                }
+            })
+            .catch(() => {
+                // On error, use fallback
+                const filtered = tumDiziler
+                    .slice(0, 100)
+                    .filter(d => d.backdrop_path && !isExcluded(d.genres || ''));
+                const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+                setHeroList(shuffled.slice(0, 15));
+            })
+            .finally(() => setHeroLoading(false));
     }, [tumDiziler, heroList.length]);
 
     const featured = heroList[heroIndex] || null;
@@ -245,7 +283,8 @@ function Home({ tumDiziler }) {
 
     return (
         <div className="home-container">
-            {/* HERO BANNER */}
+            {/* HERO BANNER - Only show when loaded */}
+            {!heroLoading && featured && (
             <div
                 className="home-hero"
                 onPointerDown={handlePointerDown}
@@ -256,7 +295,7 @@ function Home({ tumDiziler }) {
                 <div
                     key={heroIndex}
                     className="hero-backdrop"
-                    style={{ backgroundImage: `url(https://image.tmdb.org/t/p/original${featured.backdrop_path || featured.poster_path})` }}
+                    style={{ backgroundImage: `url(${getImageUrl(featured.backdrop_path || featured.poster_path, 'original')})` }}
                 />
 
                 <div className="hero-gradient-left" />
@@ -268,7 +307,11 @@ function Home({ tumDiziler }) {
                         <button className="hero-nav hero-nav-right" onClick={heroNext}><ChevronRight size={36} /></button>
                         <div className="hero-dots">
                             {heroList.map((_, i) => (
-                                <span key={i} className={`hero-dot ${i === heroIndex ? 'active' : ''}`} onClick={() => setHeroIndex(i)} />
+                                <span
+                                    key={i}
+                                    className={`hero-dot ${i === heroIndex ? 'active' : ''}`}
+                                    onClick={() => setHeroIndex(i)}
+                                />
                             ))}
                         </div>
                     </>
@@ -316,6 +359,7 @@ function Home({ tumDiziler }) {
                     </div>
                 </div>
             </div>
+            )}
 
             {/* YATAY KATEGORİ SATIRLARI */}
             <div className="home-rows-container">
