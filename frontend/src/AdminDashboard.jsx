@@ -974,7 +974,7 @@ function AdminPanel({ headers, cikisYap }) {
                 </div>
             )}
 
-            {/* ── Form Modal ── */}
+            {/* ── Form Modall ── */}
             {showForm && (
                 <div className="admin-modal-overlay" onClick={() => setShowForm(false)}>
                     <div className="admin-modal" onClick={e => e.stopPropagation()}>
