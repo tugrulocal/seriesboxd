@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { Star, Eye, Heart, Bookmark, Award, FilterX, Trophy } from 'lucide-react';
 import './Top50.css';
 import API_BASE from './config';
+import PosterImage from './PosterImage';
 
 function Top50() {
   const [diziler, setDiziler] = useState([]);
@@ -120,19 +121,18 @@ function Top50() {
     <div className="top50-page">
       <div className="top50-header">
         <div className="top50-title-area">
-          <h1>IMDb Top 50 Diziler</h1>
-          <p className="top50-subtitle">Üyelerimizin puanlarına göre tüm zamanların en iyi dizileri.</p>
+          <h1>En Yüksek Puanlı 50 Dizi</h1>
+          <p className="top50-subtitle">IMDb puanlarına göre tüm zamanların en iyi dizileri.</p>
         </div>
-      </div>
-
-      <div className="top50-filter-toggle-container" style={{ textAlign: 'center', marginBottom: '15px' }}>
-        <button
-          className="top50-filter-toggle-btn"
-          onClick={() => setShowFilters(!showFilters)}
-          style={{ background: 'rgba(30, 41, 59, 0.8)', color: '#fff', border: '1px solid #38bdf8', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-        >
-          <span style={{ fontSize: '1.2em', marginRight: '4px' }}>⧩</span> {showFilters ? 'Filtreleri Gizle' : 'Filtrele & Sırala'}
-        </button>
+        <div className="top50-filter-toggle-container">
+          <button
+            className="top50-filter-toggle-btn"
+            onClick={() => setShowFilters(!showFilters)}
+            style={{ background: 'rgba(30, 41, 59, 0.8)', color: '#fff', border: '1px solid #38bdf8', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <span style={{ fontSize: '1.2em', marginRight: '4px' }}>⧩</span> {showFilters ? 'Filtreleri Gizle' : 'Filtrele & Sırala'}
+          </button>
+        </div>
       </div>
 
       {showFilters && (
@@ -192,15 +192,13 @@ function Top50() {
                 {/* Rank */}
                 <div className="top50-rank-container">
                   <span className="top50-rank">{index + 1}</span>
-                  {isRank1 && <Trophy size={18} className="top50-rank-icon" />}
                 </div>
 
                 {/* Poster */}
                 <div className="top50-poster-wrapper">
-                  <img
-                    src={`https://image.tmdb.org/t/p/w342${dizi.poster_path}`}
-                    srcSet={`https://image.tmdb.org/t/p/w185${dizi.poster_path} 185w, https://image.tmdb.org/t/p/w342${dizi.poster_path} 342w, https://image.tmdb.org/t/p/w500${dizi.poster_path} 500w`}
-                    sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
+                  <PosterImage
+                    path={dizi.poster_path}
+                    size="w342"
                     alt={dizi.name}
                     className="top50-poster"
                     loading="lazy"
