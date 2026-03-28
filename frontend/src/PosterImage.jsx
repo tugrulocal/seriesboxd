@@ -59,11 +59,13 @@ export default function PosterImage({
   // Use responsive configuration if enabled
   const config = responsive && RESPONSIVE_CONFIGS[type];
 
+  const isExternalUrl = path.startsWith('http://') || path.startsWith('https://');
+
   let srcSet = null;
   let sizesAttr = null;
-  let finalSrc = `${TMDB_BASE}${size}${path}`;
+  let finalSrc = isExternalUrl ? path : `${TMDB_BASE}${size}${path}`;
 
-  if (config) {
+  if (config && !isExternalUrl) {
     // Build srcSet from configuration
     srcSet = config.sizes.map(s => `${TMDB_BASE}${s}${path} ${s.substring(1)}w`).join(', ');
     sizesAttr = config.sizesAttr;

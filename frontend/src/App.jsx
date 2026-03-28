@@ -16,6 +16,7 @@ import DiscoveryMode from './DiscoveryMode'
 import { AuthProvider } from './AuthContext'
 import './App.css'
 import API_BASE from './config';
+import { getImageUrl } from './utils';
 
 function AppIcerik() {
   const [kapanisAnimasyonu, setKapanisAnimasyonu] = useState(false);
@@ -102,8 +103,8 @@ function AppIcerik() {
                     <div key={dizi.series_id} className="dizi-kart" onClick={() => setSeciliDizi(dizi)}>
                       {dizi.poster_path && (
                         <img
-                          src={`https://image.tmdb.org/t/p/w342${dizi.poster_path}`}
-                          srcSet={`https://image.tmdb.org/t/p/w185${dizi.poster_path} 185w, https://image.tmdb.org/t/p/w342${dizi.poster_path} 342w, https://image.tmdb.org/t/p/w500${dizi.poster_path} 500w`}
+                          src={getImageUrl(dizi.poster_path, 'w342')}
+                          srcSet={`${getImageUrl(dizi.poster_path, 'w185')} 185w, ${getImageUrl(dizi.poster_path, 'w342')} 342w, ${getImageUrl(dizi.poster_path, 'w500')} 500w`}
                           sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
                           alt={dizi.name}
                           className="dizi-poster"
@@ -136,8 +137,8 @@ function AppIcerik() {
                 >
                   <button className="kapat-butonu" onClick={() => modalKapatVeGit()}>✕</button>
                   <img
-                    src={`https://image.tmdb.org/t/p/w342${seciliDizi.poster_path}`}
-                    srcSet={`https://image.tmdb.org/t/p/w185${seciliDizi.poster_path} 185w, https://image.tmdb.org/t/p/w342${seciliDizi.poster_path} 342w, https://image.tmdb.org/t/p/w500${seciliDizi.poster_path} 500w`}
+                    src={getImageUrl(seciliDizi.poster_path, 'w342')}
+                    srcSet={`${getImageUrl(seciliDizi.poster_path, 'w185')} 185w, ${getImageUrl(seciliDizi.poster_path, 'w342')} 342w, ${getImageUrl(seciliDizi.poster_path, 'w500')} 500w`}
                     sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
                     alt={seciliDizi.name}
                     className="modal-poster"

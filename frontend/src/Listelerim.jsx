@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { List, ArrowLeft, Bookmark, ChevronRight } from 'lucide-react';
 import './Profil.css';
 import API_BASE from './config';
+import { getImageUrl } from './utils';
 
 function Listelerim() {
     const { kullanici, yukleniyor: authLoading } = useAuth();
@@ -68,7 +69,7 @@ function Listelerim() {
                             <div className="tab-poster-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
                                 {watchlist.slice(0, 8).map(w => (
                                     <Link to={`/dizi/${w.series_id}`} key={w.series_id} className="tab-poster-card">
-                                        <img src={`https://image.tmdb.org/t/p/w300${w.poster_path}`} alt={w.name} />
+                                        <img src={getImageUrl(w.poster_path, 'w300')} alt={w.name} />
                                         <div className="tab-poster-overlay">
                                             <span className="tab-poster-name">{w.name}</span>
                                         </div>
@@ -92,7 +93,7 @@ function Listelerim() {
                                         <div className="tab-list-posters">
                                             {lst.items && lst.items.length > 0 ? (
                                                 lst.items.slice(0, 5).map(item => (
-                                                    <img key={item.series_id} src={`https://image.tmdb.org/t/p/w154${item.poster_path}`} alt={item.name} className="tab-list-poster" loading="lazy" decoding="async" />
+                                                    <img key={item.series_id} src={getImageUrl(item.poster_path, 'w154')} alt={item.name} className="tab-list-poster" loading="lazy" decoding="async" />
                                                 ))
                                             ) : (
                                                 <div className="tab-list-empty-poster">

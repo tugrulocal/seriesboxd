@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { Bookmark, Star, Heart, Eye, ChevronDown, ChevronUp, Plus, X, Search, Film, List, MessageSquare } from 'lucide-react';
 import './Profil.css';
 import API_BASE from './config';
+import { getImageUrl } from './utils';
 
 function Profil() {
     const { kullanici, yukleniyor: authLoading } = useAuth();
@@ -227,7 +228,7 @@ function Profil() {
                     <div className="tab-poster-grid">
                         {items.map(s => (
                             <Link to={`/dizi/${s.series_id}`} key={s.series_id} className="tab-poster-card">
-                                <img src={`https://image.tmdb.org/t/p/w185${s.poster_path}`} alt={s.name} loading="lazy" decoding="async" />
+                                <img src={getImageUrl(s.poster_path, 'w185')} alt={s.name} loading="lazy" decoding="async" />
                                 <div className="tab-poster-overlay">
                                     <span className="tab-poster-name">{s.name}</span>
                                     {s.user_score && <span className="tab-poster-score">★ {s.user_score}</span>}
@@ -251,7 +252,7 @@ function Profil() {
                         {items.map(r => (
                             <div key={r.review_id} className="tab-review-card">
                                 <Link to={`/dizi/${r.series_id}`} className="tab-review-poster-link">
-                                    <img src={`https://image.tmdb.org/t/p/w185${r.poster_path}`} alt={r.name} className="tab-review-poster" loading="lazy" decoding="async" />
+                                    <img src={getImageUrl(r.poster_path, 'w185')} alt={r.name} className="tab-review-poster" loading="lazy" decoding="async" />
                                 </Link>
                                 <div className="tab-review-body">
                                     <div className="tab-review-header">
@@ -287,7 +288,7 @@ function Profil() {
                                 <div className="tab-list-posters">
                                     {lst.items && lst.items.length > 0 ? (
                                         lst.items.slice(0, 5).map(item => (
-                                            <img key={item.series_id} src={`https://image.tmdb.org/t/p/w185${item.poster_path}`} alt={item.name} className="tab-list-poster" loading="lazy" decoding="async" />
+                                            <img key={item.series_id} src={getImageUrl(item.poster_path, 'w185')} alt={item.name} className="tab-list-poster" loading="lazy" decoding="async" />
                                         ))
                                     ) : (
                                         <div className="tab-list-empty-poster">
@@ -317,7 +318,7 @@ function Profil() {
                     <div className="tab-poster-grid">
                         {items.map(s => (
                             <Link to={`/dizi/${s.series_id}`} key={s.series_id} className="tab-poster-card">
-                                <img src={`https://image.tmdb.org/t/p/w185${s.poster_path}`} alt={s.name} loading="lazy" decoding="async" />
+                                <img src={getImageUrl(s.poster_path, 'w185')} alt={s.name} loading="lazy" decoding="async" />
                                 <div className="tab-poster-overlay">
                                     <span className="tab-poster-name">{s.name}</span>
                                     {s.user_score && <span className="tab-poster-score">★ {s.user_score}</span>}
@@ -414,7 +415,7 @@ function Profil() {
                                 return fav ? (
                                     <div key={`fav-${i}`} className="fav-slot filled" onClick={() => openFavModal(i)}>
                                         <Link to={`/dizi/${fav.series_id}`} onClick={e => e.stopPropagation()}>
-                                            <img src={`https://image.tmdb.org/t/p/w185${fav.poster_path}`} alt={fav.name} loading="lazy" decoding="async" />
+                                            <img src={getImageUrl(fav.poster_path, 'w185')} alt={fav.name} loading="lazy" decoding="async" />
                                         </Link>
                                         <button className="fav-remove-btn" onClick={(e) => handleFavRemove(i, e)} title="Kaldır">
                                             <X size={14} />
@@ -460,7 +461,7 @@ function Profil() {
                             <div className="sidebar-poster-row">
                                 {watchlistPreview.map(w => (
                                     <Link to={`/dizi/${w.series_id}`} key={w.series_id} className="sidebar-poster-link">
-                                        <img src={`https://image.tmdb.org/t/p/w185${w.poster_path}`} alt={w.name} className="sidebar-poster" loading="lazy" decoding="async" />
+                                        <img src={getImageUrl(w.poster_path, 'w185')} alt={w.name} className="sidebar-poster" loading="lazy" decoding="async" />
                                     </Link>
                                 ))}
                             </div>
@@ -548,7 +549,7 @@ function Profil() {
                             {favSearchResults.map(s => (
                                 <div key={s.series_id} className="fav-modal-result" onClick={() => handleFavSelect(s)}>
                                     <img
-                                        src={s.poster_path ? `https://image.tmdb.org/t/p/w92${s.poster_path}` : 'https://via.placeholder.com/46x69?text=?'}
+                                        src={s.poster_path ? getImageUrl(s.poster_path, 'w92') : 'https://via.placeholder.com/46x69?text=?'}
                                         alt={s.name}
                                         className="fav-modal-poster"
                                         loading="lazy"

@@ -4,6 +4,7 @@ import DracarysEffect from './DracarysEffect';
 import HeisenbergEffect from './HeisenbergEffect';
 import MatrixEffect from './MatrixEffect';
 import API_BASE from './config';
+import { getImageUrl } from './utils';
 
 const SIRALAMA_SECENEKLERI = [
     { deger: 'rating_desc', etiket: '⭐ Azalan Puan ⬇' },
@@ -281,7 +282,7 @@ function SearchBar({ onSonuclar, onOpenChange, onHeisenberg }) {
                                 {dizi.poster_path
                                     ? <img
                                         className="oneri-poster"
-                                        src={`https://image.tmdb.org/t/p/w92${dizi.poster_path}`}
+                                        src={getImageUrl(dizi.poster_path, 'w92')}
                                         alt={dizi.name}
                                         loading="lazy"
                                     />

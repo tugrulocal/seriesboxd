@@ -1,0 +1,27 @@
+﻿.\.venv\Scripts\python.exe : INFO:     Started 
+server process [22708]
+At line:1 char:1
++ .\.venv\Scripts\python.exe -m uvicorn main:ap
+p --host 0.0.0.0 --port  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (I 
+   NFO:     Started server process [22708]:St  
+  ring) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandErr 
+   or
+ 
+INFO:     Waiting for application startup.
+2026-03-28 19:59:36,595 [WARNING] seriesboxd: S
+eriesboxd API ba■lat²l²yor...
+INFO:     Application startup complete.
+ERROR:    [Errno 10048] error while attempting 
+to bind on address ('0.0.0.0', 8080): normal ol
+arak her yuva adresi (ileti■im kural²/a­ adresi
+/ba­lant² noktas²) iin yaln²zca bir kullan²ma 
+izin veriliyor
+INFO:     Waiting for application shutdown.
+2026-03-28 19:59:36,596 [WARNING] seriesboxd: S
+eriesboxd API kapat²l²yor...
+INFO:     Application shutdown complete.
+

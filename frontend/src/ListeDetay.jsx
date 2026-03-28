@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ArrowLeft, Search, Filter } from 'lucide-react';
 import API_BASE from './config';
+import { getImageUrl } from './utils';
 import './Top50.css'; // We can reuse Top50 table/card styles if they exist, or just inline layout
 
 function ListeDetay({ isWatchlist }) {
@@ -222,7 +223,7 @@ function ListeDetay({ isWatchlist }) {
                                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                 >
                                     <img
-                                        src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
+                                        src={getImageUrl(item.poster_path, 'w185')}
                                         alt={item.name}
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                         loading="lazy"
