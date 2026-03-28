@@ -53,7 +53,7 @@ function parseVTT(vttText) {
  *   syncOffset     — ±seconds shift (user controlled)
  *   onReady        — callback(cueCount) when cues are loaded
  */
-export default function SubtitleOverlay({ subtitleUrl, elapsedSeconds = 0, syncOffset = 0, onReady }) {
+export default function SubtitleOverlay({ subtitleUrl, elapsedSeconds = 0, syncOffset = 0, fontSize = 1, bottomOffset = 10, onReady }) {
     const [cues, setCues] = useState([]);
     const [status, setStatus] = useState('idle'); // idle | loading | ready | error
 
@@ -96,10 +96,17 @@ export default function SubtitleOverlay({ subtitleUrl, elapsedSeconds = 0, syncO
         <div
             className="subtitle-text-layer"
             aria-live="polite"
-            style={{ zIndex: 9999, pointerEvents: 'none' }}
+            style={{ 
+                zIndex: 9999, 
+                pointerEvents: 'none',
+                bottom: `${bottomOffset}%`,
+            }}
         >
             {activeCue && (
-                <div className="subtitle-text">
+                <div 
+                    className="subtitle-text"
+                    style={{ fontSize: `${fontSize}em` }}
+                >
                     {activeCue.text.split('\n').map((line, i) => (
                         <span key={i} style={{ display: 'block' }}>{line}</span>
                     ))}

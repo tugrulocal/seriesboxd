@@ -2281,10 +2281,19 @@ def stream_endpoint(series_id: int, season: int, episode: int):
         "source": "player.vidplus.pro",
         "url": f"https://player.vidplus.pro/embed/tv/{series_id}/{season}/{episode}?server=boba",
         "type": "primary",
-        "badge": "HD"
+        "badge": ""
     })
     
-    # ALT 1: SuperEmbed -- 1080p, çok sunucu
+    # ALT 1: VidSrc (vidsrc.me) -- Yedek, 720p ama stabil
+    embeds.append({
+        "name": "VidSrc",
+        "source": "vidsrc.me",
+        "url": f"https://vidsrc.me/embed/tv?tmdb={series_id}&season={season}&episode={episode}",
+        "type": "alternative",
+        "badge": "720p, 1080p"
+    })
+
+    # ALT 2: SuperEmbed -- 1080p, çok sunucu
     if imdb_id:
         embeds.append({
             "name": "SuperEmbed",
@@ -2294,22 +2303,13 @@ def stream_endpoint(series_id: int, season: int, episode: int):
             "badge": "1080p"
         })
 
-    # ALT 2: 2Embed VPLS -- Boba/Wink yüksek kalite kaynaklar
+    # ALT 3: 2Embed VPLS -- Boba/Wink yüksek kalite kaynaklar
     embeds.append({
         "name": "2Embed VPLS",
         "source": "streamsrcs.2embed.cc",
         "url": f"https://streamsrcs.2embed.cc/vpls-tv?tmdb={series_id}&s={season}&e={episode}",
         "type": "alternative",
         "badge": "1080p"
-    })
-    
-    # ALT 3: VidSrc (vidsrc.me) -- Yedek, 720p ama stabil
-    embeds.append({
-        "name": "VidSrc",
-        "source": "vidsrc.me",
-        "url": f"https://vidsrc.me/embed/tv?tmdb={series_id}&season={season}&episode={episode}",
-        "type": "alternative",
-        "badge": "720p"
     })
     
     # ALT 4: HNEmbed -- Alternatif embed

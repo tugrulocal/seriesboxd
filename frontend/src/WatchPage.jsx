@@ -85,6 +85,8 @@ function WatchPage() {
     const [syncOffset, setSyncOffset] = useState(0);
     const [showSourceDropdown, setShowSourceDropdown] = useState(false);
     const [subCueCount, setSubCueCount] = useState(0);
+    const [subFontSize, setSubFontSize] = useState(1);
+    const [subBottomOffset, setSubBottomOffset] = useState(10);
 
     // Timer & Sync State
     const [timerRunning, setTimerRunning] = useState(false);
@@ -393,8 +395,9 @@ function WatchPage() {
         isTogglingFS.current = true;
 
         const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        const isFS = document.fullscreenElement || document.webkitFullscreenElement || isPseudoFS;
 
-        if (isFullscreen) {
+        if (isFS) {
             // Exit fullscreen
             if (isPseudoFS) {
                 setIsPseudoFS(false);
@@ -479,6 +482,8 @@ function WatchPage() {
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                 setIsFullscreen(false);
                 setIsPseudoFS(false);
+            } else {
+                setIsFullscreen(true);
             }
         };
         document.addEventListener('fullscreenchange', onFsChange);
@@ -507,6 +512,7 @@ function WatchPage() {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 toggleFullscreen();
+                if (window.focus) window.focus();
             }
             if (e.key.toLowerCase() === 't' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
                 e.preventDefault();
@@ -584,6 +590,13 @@ function WatchPage() {
                     setTimerRunning(prev => prev ? prev : true);
                 }
 
+                const eventName = (d.event || d.type || '').toLowerCase();
+                if (eventName === 'pause') {
+                    setTimerRunning(false);
+                } else if (eventName === 'play' || eventName === 'playing') {
+                    setTimerRunning(true);
+                }
+
                 // Catch keydown events from within the iframe if the player broadcasts them
                 if (d.event === 'keydown' || d.type === 'keydown') {
                     const key = d.key || d.data?.key || d.detail?.key;
@@ -642,7 +655,7 @@ function WatchPage() {
     const isVidSrc = activeSource?.name?.toLowerCase().includes('vidsrc') || activeSource?.source?.toLowerCase().includes('vidsrc');
     const isSuperembed = activeSource?.name?.toLowerCase().includes('superembed') || activeSource?.source?.toLowerCase().includes('superembed');
     const isHnembed = activeSource?.name?.toLowerCase().includes('hnembed') || activeSource?.source?.toLowerCase().includes('hnembed');
-    const hideOverlays = isVidSrc || isSuperembed || isHnembed;
+    const hideOverlays = isSuperembed || isHnembed;
     const currentEpisodeData = bolumler.find(b => b.episode_number === parseInt(episode) && b.season_id === seciliSezonId);
     const genres = dizi.genres ? dizi.genres.split(',').map(g => g.trim()).filter(Boolean) : [];
     const currentEpId = currentEpisodeData?.episode_id;
@@ -763,6 +776,7 @@ function WatchPage() {
                                     className="fs-mouse-catcher"
                                     style={{ pointerEvents: isFullscreen && !fsControlsVisible ? 'auto' : 'none' }}
                                     onMouseMove={handleFsMouseMove}
+                                    onDoubleClick={e => { e.stopPropagation(); toggleFullscreen(); }}
                                 />
                                 {/* Permanent blocker over the native FS button — always intercepts clicks */}
                                 {!hideOverlays && <div className="native-fs-blocker" onClick={e => { e.stopPropagation(); toggleFullscreen(); }} />}
@@ -772,6 +786,8 @@ function WatchPage() {
                                         subtitleUrl={activeSub.url}
                                         elapsedSeconds={elapsedSeconds}
                                         syncOffset={syncOffset}
+                                        fontSize={subFontSize}
+                                        bottomOffset={subBottomOffset}
                                         onReady={(count) => setSubCueCount(count)}
                                     />
                                 )}
@@ -861,7 +877,7 @@ function WatchPage() {
                                                 {rawSubtitles.some(s => s.lang === 'tr') && (
                                                     <>
                                                         <button
-                                                            className={`sub-menu-item${subLangDropdown === 'tr' ? ' lang-open' : ''}`}
+                                                            className={`sub-menu-item${subLangDropdown === 'tr' ? ' lang-open' : ''}${activeSub?.lang === 'tr' ? ' active-lang' : ''}`}
                                                             onClick={() => setSubLangDropdown(d => d === 'tr' ? null : 'tr')}
                                                         >
                                                             <img src="https://flagcdn.com/16x12/tr.png" width="16" height="12" alt="TR" style={{ marginRight: '5px', borderRadius: '2px', flexShrink: 0 }} />Türkçe <span className="sub-menu-arrow">{subLangDropdown === 'tr' ? '▾' : '›'}</span>
@@ -886,7 +902,7 @@ function WatchPage() {
                                                 {rawSubtitles.some(s => s.lang === 'en') && (
                                                     <>
                                                         <button
-                                                            className={`sub-menu-item${subLangDropdown === 'en' ? ' lang-open' : ''}`}
+                                                            className={`sub-menu-item${subLangDropdown === 'en' ? ' lang-open' : ''}${activeSub?.lang === 'en' ? ' active-lang' : ''}`}
                                                             onClick={() => setSubLangDropdown(d => d === 'en' ? null : 'en')}
                                                         >
                                                             <img src="https://flagcdn.com/16x12/gb.png" width="16" height="12" alt="EN" style={{ marginRight: '5px', borderRadius: '2px', flexShrink: 0 }} />İngilizce <span className="sub-menu-arrow">{subLangDropdown === 'en' ? '▾' : '›'}</span>
@@ -914,6 +930,18 @@ function WatchPage() {
                                                         <button className="sub-sync-step" onClick={() => setSyncOffset(o => +(o - 1).toFixed(1))}>-1s</button>
                                                         <span className="sub-sync-val">{syncOffset >= 0 ? `+${syncOffset}` : syncOffset}s</span>
                                                         <button className="sub-sync-step" onClick={() => setSyncOffset(o => +(o + 1).toFixed(1))}>+1s</button>
+                                                    </div>
+                                                )}
+                                                {activeSub && subCueCount > 0 && (
+                                                    <div className="sub-settings-panel">
+                                                        <div className="sub-setting-row">
+                                                            <span className="sub-setting-label">Boyut:</span>
+                                                            <input type="range" min="0.5" max="2" step="0.1" value={subFontSize} onChange={e => setSubFontSize(parseFloat(e.target.value))} />
+                                                        </div>
+                                                        <div className="sub-setting-row">
+                                                            <span className="sub-setting-label">Konum:</span>
+                                                            <input type="range" min="0" max="40" step="1" value={subBottomOffset} onChange={e => setSubBottomOffset(parseInt(e.target.value))} />
+                                                        </div>
                                                     </div>
                                                 )}
                                                 {/* Timer reopen — only for players without postMessage */}
@@ -1207,9 +1235,15 @@ function WatchPage() {
                             <span className="source-dropdown-name">
                                 {mag.type === 'primary' ? '⭐ ' : ''}{mag.name}
                             </span>
-                            <span className={`source-quality-badge ${mag.badge === '1080p' ? 'badge-hd' : 'badge-sd'}`}>
-                                {mag.badge}
-                            </span>
+                            {mag.badge && mag.badge.split(',').map(b => {
+                                const trimB = b.trim();
+                                const badgeClass = trimB.toLowerCase() === '1080p' ? 'badge-hd' : 'badge-sd';
+                                return (
+                                    <span key={trimB} className={`source-quality-badge ${badgeClass}`}>
+                                        {trimB}
+                                    </span>
+                                );
+                            })}
                         </button>
                     ))}
                 </div>
