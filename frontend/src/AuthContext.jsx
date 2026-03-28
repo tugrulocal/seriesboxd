@@ -38,8 +38,12 @@ export function AuthProvider({ children }) {
 
     const isAdmin = kullanici?.email?.toLowerCase() === 'seriesboxd@gmail.com';
 
+    const guncelleKullanici = (updates) => {
+        setKullanici(prev => prev ? { ...prev, ...updates } : prev);
+    };
+
     return (
-        <AuthContext.Provider value={{ kullanici, yukleniyor, girisYap, cikisYap, isAdmin }}>
+        <AuthContext.Provider value={{ kullanici, yukleniyor, girisYap, cikisYap, isAdmin, guncelleKullanici }}>
             {children}
         </AuthContext.Provider>
     );

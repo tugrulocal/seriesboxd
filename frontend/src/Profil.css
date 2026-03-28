@@ -40,6 +40,41 @@
     object-fit: cover;
 }
 
+.profil-avatar-wrapper {
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.profil-avatar-wrapper:hover {
+    transform: scale(1.05);
+}
+
+.profil-avatar-edit-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 0.25s;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.profil-avatar-wrapper:hover .profil-avatar-edit-overlay {
+    opacity: 1;
+}
+
 .profil-hero-info {
     display: flex;
     flex-direction: column;

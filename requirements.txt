@@ -22,3 +22,6 @@ chardet==5.2.0
 
 # Data validation (FastAPI already pulls this, pinned for stability)
 pydantic==2.10.4
+
+# Cloud storage
+cloudinary==1.44.1

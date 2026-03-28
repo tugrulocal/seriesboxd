@@ -241,7 +241,7 @@ def ensure_users_table():
             username  VARCHAR(50)  UNIQUE NOT NULL,
             email     VARCHAR(255) UNIQUE NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
-            avatar    VARCHAR(255) DEFAULT NULL,
+            avatar    TEXT DEFAULT NULL,
             bio       TEXT DEFAULT NULL,
             is_verified BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -249,6 +249,8 @@ def ensure_users_table():
     """)
     # is_verified kolonu yoksa ekle (mevcut DB'ler için)
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE;")
+    # avatar kolonu TEXT'e yükselt (base64 fallback için)
+    cur.execute("ALTER TABLE users ALTER COLUMN avatar TYPE TEXT;")
     # E-posta doğrulama kodları tablosu
     cur.execute("""
         CREATE TABLE IF NOT EXISTS email_verification_codes (
@@ -1669,6 +1671,281 @@ def get_ratings_distribution(user = Depends(get_current_user)):
         distribution[row["score"]] = row["count"]
         total += row["count"]
     return {"distribution": distribution, "total": total}
+
+# ============================================================
+# --- AVATAR / PROFİL RESMİ ---
+# ============================================================
+
+import cloudinary
+import cloudinary.uploader
+import base64
+
+# Cloudinary config (env'den al)
+CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY", "")
+CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET", "")
+
+if CLOUDINARY_CLOUD_NAME:
+    cloudinary.config(
+        cloud_name=CLOUDINARY_CLOUD_NAME,
+        api_key=CLOUDINARY_API_KEY,
+        api_secret=CLOUDINARY_API_SECRET,
+        secure=True
+    )
+
+class AvatarUploadModel(BaseModel):
+    image_data: str  # base64 encoded image
+
+class AvatarPresetModel(BaseModel):
+    avatar_url: str
+
+@app.post("/profile/avatar/upload")
+def upload_avatar(data: AvatarUploadModel, user=Depends(get_current_user)):
+    """Kullanicinin kirpilmis fotografini yukle."""
+    if not user:
+        raise HTTPException(status_code=401, detail="Giris yapmaniz gerekiyor.")
+    
+    lazy_init_db()  # DB migration'larini uygula (ALTER TABLE avatar TEXT)
+    
+    try:
+        image_data_full = data.image_data  # tam data URL (data:image/webp;base64,...)
+        
+        # raw base64 kismi
+        if "," in image_data_full:
+            raw_b64 = image_data_full.split(",")[1]
+        else:
+            raw_b64 = image_data_full
+        
+        # Boyut kontrolu
+        try:
+            raw_bytes = base64.b64decode(raw_b64)
+            raw_size = len(raw_bytes)
+            print(f"[AVATAR] Gorsel boyutu: {raw_size / 1024:.1f} KB")
+        except Exception as decode_err:
+            print(f"[AVATAR] base64 decode hatasi: {decode_err}")
+            raise HTTPException(status_code=400, detail="Gecersiz gorsel verisi.")
+        
+        if raw_size > 2 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Dosya cok buyuk (max 2MB).")
+        
+        # --- CLOUDINARY MODU ---
+        if CLOUDINARY_CLOUD_NAME:
+            upload_result = cloudinary.uploader.upload(
+                image_data_full,
+                folder="seriesboxd/avatars",
+                public_id=f"user_{user['user_id']}",
+                overwrite=True,
+                transformation=[
+                    {"width": 400, "height": 400, "crop": "fill", "gravity": "face"},
+                    {"quality": "auto:good", "fetch_format": "webp"}
+                ]
+            )
+            avatar_url = upload_result.get("secure_url", "")
+            if not avatar_url:
+                raise HTTPException(status_code=500, detail="Yukleme basarisiz.")
+        else:
+            # --- FALLBACK MODU (gelistirme) ---
+            print(f"[AVATAR] Cloudinary yok — base64 DB'ye yaziliyor ({raw_size / 1024:.1f} KB)")
+            avatar_url = image_data_full
+        
+        # DB'ye kaydet
+        conn = get_db_conn()
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                "UPDATE users SET avatar = %s WHERE user_id = %s",
+                (avatar_url, user["user_id"])
+            )
+            conn.commit()
+            print(f"[AVATAR] Kullanici {user['user_id']} icin avatar kaydedildi.")
+        except Exception as db_err:
+            conn.rollback()
+            print(f"[AVATAR] DB kayit hatasi: {db_err}")
+            raise HTTPException(status_code=500, detail=f"DB hatasi: {str(db_err)[:200]}")
+        finally:
+            cur.close()
+            conn.close()
+        
+        return {"status": "ok", "avatar_url": avatar_url}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"[AVATAR] Beklenmedik hata: {e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Hata: {str(e)[:300]}")
+
+
+@app.post("/profile/avatar/preset")
+def set_preset_avatar(data: AvatarPresetModel, user=Depends(get_current_user)):
+    """Hazır avatar URL'sini DB'ye kaydet."""
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+    
+    # Sadece TMDB görsellerine izin ver (güvenlik)
+    if not data.avatar_url.startswith("https://image.tmdb.org/"):
+        raise HTTPException(status_code=400, detail="Geçersiz avatar URL'si.")
+    
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET avatar = %s WHERE user_id = %s", (data.avatar_url, user["user_id"]))
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return {"status": "ok", "avatar_url": data.avatar_url}
+
+
+@app.delete("/profile/avatar")
+def delete_avatar(user=Depends(get_current_user)):
+    """Avatar'ı kaldır."""
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+    
+    # Cloudinary'den de silmeyi dene
+    if CLOUDINARY_CLOUD_NAME:
+        try:
+            cloudinary.uploader.destroy(f"seriesboxd/avatars/user_{user['user_id']}")
+        except Exception:
+            pass  # Silinmese de devam et
+    
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET avatar = NULL WHERE user_id = %s", (user["user_id"],))
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return {"status": "ok"}
+
+
+TMDB_API_KEY = os.getenv("TMDB_API_KEY", "")
+TMDB_BASE = "https://api.themoviedb.org/3"
+
+@app.get("/profile/avatar-suggestions")
+def get_avatar_suggestions(user=Depends(get_current_user)):
+    """Kullanicinin izledigi dizilere gore TMDB'den karakter avatarlari oner.
+    Her zaman populer dizilerin karakterlerini gosterir; ek olarak
+    kullanicinin izledigi dizilerin karakterleri de eklenir.
+    """
+    if not user:
+        raise HTTPException(status_code=401, detail="Giris yapmaniz gerekiyor.")
+
+    if not TMDB_API_KEY:
+        return {"categories": []}
+
+    # --- Her zaman gosterilecek populer diziler ---
+    POPULAR_SERIES = [
+        (1396,  "Breaking Bad"),
+        (1399,  "Game of Thrones"),
+        (66732, "Stranger Things"),
+        (1402,  "The Walking Dead"),
+        (60574, "Peaky Blinders"),
+        (71446, "Money Heist"),
+        (63351, "Narcos"),
+        (70523, "Dark"),
+        (71912, "The Witcher"),
+        (1418,  "The Big Bang Theory"),
+        (1396,  "Breaking Bad"),   # duplicate guard asagida
+    ]
+    # Unique, sirali
+    seen = set()
+    popular_list = []
+    for tid, tname in POPULAR_SERIES:
+        if tid not in seen:
+            seen.add(tid)
+            popular_list.append({"tmdb_id": tid, "name": tname})
+
+    # --- Kullanicinin izledigi dizileri al (tabloda hangi kolonda saklandigina bakarak) ---
+    user_watched = []
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        # series tablosunda TMDB id'yi bul — once 'series_id' dene (bizim DB'de TMDB id olarak kullaniliyor mu?)
+        # Gercek kolon adin bulmak icin information_schema'ya bak
+        cur.execute("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'series'
+              AND column_name IN ('tmdb_id','series_id','imdb_id','external_id')
+            ORDER BY column_name
+        """)
+        col_rows = cur.fetchall()
+        tmdb_col = None
+        for cr in col_rows:
+            if cr["column_name"] in ("tmdb_id", "series_id"):
+                tmdb_col = cr["column_name"]
+                break
+
+        if tmdb_col:
+            cur.execute(f"""
+                SELECT DISTINCT s.{tmdb_col} as tmdb_id, s.name
+                FROM user_series_activity usa
+                JOIN series s ON s.series_id = usa.series_id
+                WHERE usa.user_id = %s AND usa.activity_type IN ('watched', 'liked')
+                  AND s.{tmdb_col} IS NOT NULL
+                ORDER BY s.name
+                LIMIT 15
+            """, (user["user_id"],))
+            rows = cur.fetchall()
+            for r in rows:
+                tid = r.get("tmdb_id")
+                if tid and int(tid) not in {s["tmdb_id"] for s in popular_list}:
+                    user_watched.append({"tmdb_id": int(tid), "name": r["name"]})
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"[AVATAR-SUGGESTIONS] Izlenen dizi sorgusu hatasi: {e}")
+
+    # Kullanicinin izledikleri one, populerler arkaya
+    series_to_fetch = user_watched[:8] + popular_list
+    # Tekrari kaldir (order koruyarak)
+    final_list = []
+    seen_ids = set()
+    for s in series_to_fetch:
+        if s["tmdb_id"] not in seen_ids:
+            seen_ids.add(s["tmdb_id"])
+            final_list.append(s)
+
+    # --- TMDB'den cast verisi cek ---
+    categories = []
+    for series_info in final_list[:14]:
+        try:
+            resp = http_requests.get(
+                f"{TMDB_BASE}/tv/{series_info['tmdb_id']}/credits",
+                params={"api_key": TMDB_API_KEY, "language": "tr-TR"},
+                timeout=5
+            )
+            if resp.status_code != 200:
+                print(f"[AVATAR-SUGGESTIONS] TMDB {series_info['tmdb_id']}: HTTP {resp.status_code}")
+                continue
+            cast = resp.json().get("cast", [])
+
+            avatars = []
+            for member in cast[:16]:
+                if member.get("profile_path"):
+                    avatars.append({
+                        "name": member.get("name", ""),
+                        "character": member.get("character", ""),
+                        "image": f"https://image.tmdb.org/t/p/w185{member['profile_path']}"
+                    })
+
+            if avatars:
+                label = series_info["name"]
+                if series_info in user_watched[:8]:
+                    label = f"★ {label}"   # Izledigim dizileri isaretli goster
+                categories.append({
+                    "series_name": label,
+                    "tmdb_id": series_info["tmdb_id"],
+                    "avatars": avatars
+                })
+        except Exception as e:
+            print(f"[AVATAR-SUGGESTIONS] {series_info['name']} fetch hatasi: {e}")
+            continue
+
+    return {"categories": categories}
+
 
 # ============================================================
 # --- BÖLÜM PUANLAMA ---

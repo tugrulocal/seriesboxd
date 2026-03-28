@@ -1,13 +1,14 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import { Bookmark, Star, Heart, Eye, ChevronDown, ChevronUp, Plus, X, Search, Film, List, MessageSquare } from 'lucide-react';
+import { Bookmark, Star, Heart, Eye, ChevronDown, ChevronUp, Plus, X, Search, Film, List, MessageSquare, Camera } from 'lucide-react';
 import './Profil.css';
 import API_BASE from './config';
 import { getImageUrl } from './utils';
+import AvatarEditor from './AvatarEditor';
 
 function Profil() {
-    const { kullanici, yukleniyor: authLoading } = useAuth();
+    const { kullanici, yukleniyor: authLoading, guncelleKullanici } = useAuth();
     const navigate = useNavigate();
 
     const [stats, setStats] = useState(null);
@@ -36,6 +37,9 @@ function Profil() {
     const [favSearchResults, setFavSearchResults] = useState([]);
     const [favSearching, setFavSearching] = useState(false);
     const favSearchTimeout = useRef(null);
+
+    // Avatar editor
+    const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
 
     const token = localStorage.getItem('sb_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
@@ -352,11 +356,17 @@ function Profil() {
             {/* HERO */}
             <div className="profil-hero">
                 <div className="profil-hero-left">
-                    {kullanici.avatar ? (
-                        <img src={kullanici.avatar} alt="Avatar" className="profil-avatar-large" />
-                    ) : (
-                        <div className="profil-avatar-large">{basharf}</div>
-                    )}
+                    <div className="profil-avatar-wrapper" onClick={() => setAvatarEditorOpen(true)}>
+                        {kullanici.avatar ? (
+                            <img src={kullanici.avatar} alt="Avatar" className="profil-avatar-large" />
+                        ) : (
+                            <div className="profil-avatar-large">{basharf}</div>
+                        )}
+                        <div className="profil-avatar-edit-overlay">
+                            <Camera size={20} />
+                            <span>Düzenle</span>
+                        </div>
+                    </div>
                     <div className="profil-hero-info">
                         <h1 className="profil-username">{kullanici.username}</h1>
                         <div className="profil-join-date">
@@ -565,6 +575,14 @@ function Profil() {
                     </div>
                 </div>
             )}
+
+            {/* AVATAR EDITOR MODAL */}
+            <AvatarEditor
+                isOpen={avatarEditorOpen}
+                onClose={() => setAvatarEditorOpen(false)}
+                currentAvatar={kullanici.avatar}
+                onAvatarChange={(newUrl) => guncelleKullanici({ avatar: newUrl })}
+            />
         </div>
     );
 }
