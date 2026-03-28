@@ -123,6 +123,8 @@ IS_PRODUCTION = ENVIRONMENT == "production"
 
 # Loglama: production'da sadece WARNING+, dev'de her şey
 import logging
+from contextlib import asynccontextmanager
+
 log_level = logging.WARNING if IS_PRODUCTION else logging.DEBUG
 logging.basicConfig(
     level=log_level,
@@ -130,11 +132,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger("seriesboxd")
 
-# 1. Uygulamayı sadece BİR kez oluşturuyoruz
+# Lifespan context manager - app oluşturulmadan ÖNCE tanımlanmalı
+@asynccontextmanager
+async def lifespan(app):
+    # Startup
+    logger.warning("Seriesboxd API başlatılıyor...")
+    yield
+    # Shutdown
+    logger.warning("Seriesboxd API kapatılıyor...")
+
+# 1. Uygulamayı lifespan ile oluştur
 app = FastAPI(
     title="Seriesboxd API",
     docs_url=None if IS_PRODUCTION else "/docs",   # prod'da /docs kapalı
     redoc_url=None if IS_PRODUCTION else "/redoc",
+    lifespan=lifespan,
 )
 
 # 2. CORS — production'da env'den al, dev'de localhost'a aç
@@ -384,26 +396,22 @@ def ensure_users_table():
     cur.close()
     conn.close()
 
-from contextlib import asynccontextmanager
-
-@asynccontextmanager
-async def lifespan(app):
-    # Startup: Worker başladıktan sonra DB'yi hazırla
-    try:
-        ensure_users_table()
-        logger.info("Veritabanı tabloları hazır.")
-    except Exception as _db_init_err:
-        import traceback
-        print(f"[UYARI] DB başlatma hatası (uygulama çalışmaya devam ediyor): {_db_init_err}")
-        traceback.print_exc()
-    yield
-    # Shutdown
-
-# Lifespan'ı app'e ekle
-app.router.lifespan_context = lifespan
-
 from admin_routes import router as admin_router
 app.include_router(admin_router)
+
+# Veritabanı tablolarını hazırla (app başladıktan sonra ilk istekte)
+_db_initialized = False
+
+def lazy_init_db():
+    global _db_initialized
+    if _db_initialized:
+        return
+    try:
+        ensure_users_table()
+        _db_initialized = True
+        logger.warning("Veritabanı tabloları hazır.")
+    except Exception as e:
+        logger.error(f"DB başlatma hatası: {e}")
 
 @app.get("/health")
 @app.get("/api/health")
@@ -417,6 +425,7 @@ def ana_sayfa():
 
 @app.get("/diziler")
 def tum_dizileri_getir():
+    lazy_init_db()
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("SELECT * FROM series;")
