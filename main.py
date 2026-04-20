@@ -120,6 +120,7 @@ def send_verification_email(to_email: str, code: str, purpose: str = "verify"):
 # --- ORTAM AYARLARI ---
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 IS_PRODUCTION = ENVIRONMENT == "production"
+USE_REMOTE_DB_IN_DEV = os.getenv("USE_REMOTE_DB_IN_DEV", "false").lower() in {"1", "true", "yes", "on"}
 
 # Loglama: production'da sadece WARNING+, dev'de her şey
 import logging
@@ -217,11 +218,23 @@ def get_db_conn():
     # 2. REMOTE_DATABASE_URL → bizim manuel eklediğimiz prod URL
     # 3. Yerel DB          → local geliştirme ortamı
     db_url = os.getenv("DATABASE_URL") or os.getenv("REMOTE_DATABASE_URL")
-    if db_url:
+    should_try_remote = bool(db_url) and (IS_PRODUCTION or USE_REMOTE_DB_IN_DEV)
+
+    if should_try_remote:
         # sslmode URL'de yoksa ekle (DigitalOcean zorunlu kılar)
         if "sslmode" not in db_url:
             db_url += ("&" if "?" in db_url else "?") + "sslmode=require"
-        return psycopg2.connect(db_url)
+        try:
+            return psycopg2.connect(db_url, connect_timeout=3)
+        except Exception as e:
+            # Local geliştirmede uzak DB erişilemiyorsa yerel DB'ye düş.
+            if IS_PRODUCTION:
+                raise
+            logger.warning(f"Uzak DB baglantisi basarisiz, local fallback kullaniliyor: {type(e).__name__}")
+    elif db_url and not IS_PRODUCTION:
+        # Development'ta default davranış: local DB ile düşük gecikme.
+        logger.debug("Development modunda local DB kullaniliyor (USE_REMOTE_DB_IN_DEV=false).")
+
     # Yerel geliştirme ortamı
     return psycopg2.connect(
         dbname=os.getenv("DB_NAME", "seriesboxd"),
@@ -2275,22 +2288,22 @@ def stream_endpoint(series_id: int, season: int, episode: int):
     # Torrent altyapısı devre dışı bırakıldı (Plan B - IFrame Embeds)
     embeds = []
     
-    # PRIMARY PLAYER: VidPlus.pro (2Embed VPLS backend - temiz player, reklamsız)
-    embeds.append({
-        "name": "SeriesBoxd Player",
-        "source": "player.vidplus.pro",
-        "url": f"https://player.vidplus.pro/embed/tv/{series_id}/{season}/{episode}?server=boba",
-        "type": "primary",
-        "badge": ""
-    })
-    
-    # ALT 1: VidSrc (vidsrc.me) -- Yedek, 720p ama stabil
+    # PRIMARY PLAYER: VidSrc (vidsrc.me) -- stabil ve varsayilan kaynak
     embeds.append({
         "name": "VidSrc",
         "source": "vidsrc.me",
         "url": f"https://vidsrc.me/embed/tv?tmdb={series_id}&season={season}&episode={episode}",
-        "type": "alternative",
+        "type": "primary",
         "badge": "720p, 1080p"
+    })
+
+    # ALT 1: SeriesBoxd Player (VidPlus.pro)
+    embeds.append({
+        "name": "SeriesBoxd Player",
+        "source": "player.vidplus.pro",
+        "url": f"https://player.vidplus.pro/embed/tv/{series_id}/{season}/{episode}?server=boba",
+        "type": "alternative",
+        "badge": ""
     })
 
     # ALT 2: SuperEmbed -- 1080p, çok sunucu

@@ -19,14 +19,23 @@ TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 TMDB_BASE = "https://api.themoviedb.org/3"
 COOKIE_NAME = "sb_access_token"
 security = HTTPBearer(auto_error=False)
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+IS_PRODUCTION = ENVIRONMENT == "production"
+USE_REMOTE_DB_IN_DEV = os.getenv("USE_REMOTE_DB_IN_DEV", "false").lower() in {"1", "true", "yes", "on"}
 
 
 def get_db_conn():
     db_url = os.getenv("DATABASE_URL") or os.getenv("REMOTE_DATABASE_URL")
-    if db_url:
+    should_try_remote = bool(db_url) and (IS_PRODUCTION or USE_REMOTE_DB_IN_DEV)
+
+    if should_try_remote:
         if "sslmode" not in db_url:
             db_url += ("&" if "?" in db_url else "?") + "sslmode=require"
-        return psycopg2.connect(db_url)
+        try:
+            return psycopg2.connect(db_url, connect_timeout=3)
+        except Exception:
+            if IS_PRODUCTION:
+                raise
     return psycopg2.connect(
         dbname=os.getenv("DB_NAME", "seriesboxd"),
         user=os.getenv("DB_USER", "postgres"),

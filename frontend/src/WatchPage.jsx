@@ -223,9 +223,15 @@ function WatchPage() {
                     setBulunanMagnetler(d.results);
                     setMagnetAramaDurumu('found');
                     const primaryIdx = d.results.findIndex(r => r.type === 'primary');
-                    if (primaryIdx >= 0) {
-                        setSeciliMagnetIndex(primaryIdx);
-                        setSeciliVideoUrl(d.results[primaryIdx].url);
+                    const vidsrcIdx = d.results.findIndex(r => {
+                        const name = (r.name || '').toLowerCase();
+                        const source = (r.source || '').toLowerCase();
+                        return name.includes('vidsrc') || source.includes('vidsrc');
+                    });
+                    const defaultIdx = primaryIdx >= 0 ? primaryIdx : (vidsrcIdx >= 0 ? vidsrcIdx : 0);
+                    if (defaultIdx >= 0) {
+                        setSeciliMagnetIndex(defaultIdx);
+                        setSeciliVideoUrl(d.results[defaultIdx].url);
                         setTimerRunning(true);
                     }
 

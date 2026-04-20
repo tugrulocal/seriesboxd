@@ -3,7 +3,8 @@ fastapi==0.115.6
 uvicorn[standard]==0.32.1
 
 # Database
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.9; python_version < "3.10"
+psycopg2-binary==2.9.10; python_version >= "3.10"
 
 # Auth & Security
 python-jose[cryptography]==3.3.0
