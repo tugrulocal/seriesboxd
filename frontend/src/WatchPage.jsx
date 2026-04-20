@@ -5,6 +5,39 @@ import SubtitleOverlay from './SubtitleOverlay';
 import './App.css';
 import API_BASE from './config';
 
+const SOURCE_PREF_KEY = 'sb_watch_source_pref_v1';
+
+function getSourceKey(source) {
+    return ((source?.source || source?.name || '') + '').toLowerCase();
+}
+
+function addMissingQueryParams(url, params) {
+    const parsed = new URL(url);
+    Object.entries(params).forEach(([k, v]) => {
+        if (!parsed.searchParams.has(k)) parsed.searchParams.set(k, String(v));
+    });
+    return parsed.toString();
+}
+
+function buildEmbedUrlWithSubtitlePrefs(source, rawUrl) {
+    if (!rawUrl) return rawUrl;
+    const key = getSourceKey(source);
+    try {
+        if (key.includes('vidsrc')) {
+            return addMissingQueryParams(rawUrl, { ds_lang: 'tr' });
+        }
+        if (key.includes('vidlink')) {
+            return addMissingQueryParams(rawUrl, { multiLang: 1, lang: 'tr' });
+        }
+        if (key.includes('multiembed') || key.includes('superembed')) {
+            return addMissingQueryParams(rawUrl, { lang: 'tr' });
+        }
+        return rawUrl;
+    } catch (_) {
+        return rawUrl;
+    }
+}
+
 function formatTimeAgo(dateString) {
     const date = new Date(dateString);
     const now = new Date();
@@ -222,16 +255,22 @@ function WatchPage() {
                 if (d.results && d.results.length > 0) {
                     setBulunanMagnetler(d.results);
                     setMagnetAramaDurumu('found');
+                    const savedSource = localStorage.getItem(SOURCE_PREF_KEY);
+                    const preferredIdx = savedSource
+                        ? d.results.findIndex(r => getSourceKey(r) === savedSource)
+                        : -1;
                     const primaryIdx = d.results.findIndex(r => r.type === 'primary');
                     const vidsrcIdx = d.results.findIndex(r => {
                         const name = (r.name || '').toLowerCase();
                         const source = (r.source || '').toLowerCase();
                         return name.includes('vidsrc') || source.includes('vidsrc');
                     });
-                    const defaultIdx = primaryIdx >= 0 ? primaryIdx : (vidsrcIdx >= 0 ? vidsrcIdx : 0);
+                    const fallbackIdx = primaryIdx >= 0 ? primaryIdx : (vidsrcIdx >= 0 ? vidsrcIdx : 0);
+                    const defaultIdx = preferredIdx >= 0 ? preferredIdx : fallbackIdx;
                     if (defaultIdx >= 0) {
+                        const picked = d.results[defaultIdx];
                         setSeciliMagnetIndex(defaultIdx);
-                        setSeciliVideoUrl(d.results[defaultIdx].url);
+                        setSeciliVideoUrl(buildEmbedUrlWithSubtitlePrefs(picked, picked.url));
                         setTimerRunning(true);
                     }
 
@@ -254,14 +293,19 @@ function WatchPage() {
     }, [id, season, episode]);
 
     // 3. Player Methods
-    const torrentBaslat = (url, index) => {
+    const torrentBaslat = (url, index, sourceMeta) => {
         setSeciliMagnetIndex(index);
-        setSeciliVideoUrl(url);
+        setSeciliVideoUrl(buildEmbedUrlWithSubtitlePrefs(sourceMeta, url));
         setSyncOffset(0);
         setElapsedSeconds(0);
         elapsedAtPauseRef.current = 0;
         hasPostMessageRef.current = false;
         setTimerRunning(true);
+        if (sourceMeta) {
+            try {
+                localStorage.setItem(SOURCE_PREF_KEY, getSourceKey(sourceMeta));
+            } catch (_) { }
+        }
     };
 
     // Series Activity
@@ -510,56 +554,6 @@ function WatchPage() {
         return () => { document.body.style.overflow = ''; };
     }, [isPseudoFS]);
 
-    // Intercept F key → use our custom fullscreen instead of iframe's native one
-    useEffect(() => {
-        const onKey = (e) => {
-            const tag = e.target?.tagName;
-            if (e.key.toLowerCase() === 'f' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                toggleFullscreen();
-                if (window.focus) window.focus();
-            }
-            if (e.key.toLowerCase() === 't' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                setSubMenuOpen(prev => !prev);
-            }
-        };
-        // Add to document
-        document.addEventListener('keydown', onKey, true);
-        // Add to window to catch some bubbling
-        window.addEventListener('keydown', onKey, true);
-
-        // Auto-focus our wrapper if the user clicks the iframe so we can still get key events
-        // Also track blurs as a hack to detect double-click on the cross-origin iframe
-        let lastBlurTime = 0;
-        const handleBlur = () => {
-            if (document.activeElement?.tagName === 'IFRAME') {
-                const now = Date.now();
-                if (now - lastBlurTime < 400) {
-                    toggleFullscreen();
-                    lastBlurTime = 0;
-                } else {
-                    lastBlurTime = now;
-                }
-            }
-            setTimeout(() => {
-                if (document.activeElement?.tagName === 'IFRAME') {
-                    // Force focus back to window to catch 'f' key
-                    window.focus();
-                }
-            }, 100);
-        };
-        window.addEventListener('blur', handleBlur);
-
-        return () => {
-            document.removeEventListener('keydown', onKey, true);
-            window.removeEventListener('keydown', onKey, true);
-            window.removeEventListener('blur', handleBlur);
-        };
-    }, []);
-
     useEffect(() => {
         const onMessage = (event) => {
             try {
@@ -601,14 +595,6 @@ function WatchPage() {
                     setTimerRunning(false);
                 } else if (eventName === 'play' || eventName === 'playing') {
                     setTimerRunning(true);
-                }
-
-                // Catch keydown events from within the iframe if the player broadcasts them
-                if (d.event === 'keydown' || d.type === 'keydown') {
-                    const key = d.key || d.data?.key || d.detail?.key;
-                    if (key && key.toLowerCase() === 'f') {
-                        toggleFullscreen();
-                    }
                 }
             } catch (_) { }
         };
@@ -756,7 +742,6 @@ function WatchPage() {
                                 className={`subtitle-overlay-wrapper${isPseudoFS ? ' pseudo-fullscreen' : ''}${isFullscreen && fsControlsVisible ? ' fs-ctrl-visible' : ''}`}
                                 ref={wrapperRef}
                                 tabIndex={-1}
-                                onKeyDown={e => { if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFullscreen(); } }}
                                 onClick={() => { setSubMenuOpen(false); setSubLangDropdown(null); }}
                             >
                                 {magnetAramaDurumu === 'searching' && (
@@ -782,15 +767,6 @@ function WatchPage() {
                                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
                                     />
                                 )}
-                                {/* Transparent overlay to catch mouse movements over the iframe in fullscreen */}
-                                <div
-                                    className="fs-mouse-catcher"
-                                    style={{ pointerEvents: isFullscreen && !fsControlsVisible ? 'auto' : 'none' }}
-                                    onMouseMove={handleFsMouseMove}
-                                    onDoubleClick={e => { e.stopPropagation(); toggleFullscreen(); }}
-                                />
-                                {/* Permanent blocker over the native FS button — always intercepts clicks */}
-                                {showFullscreenOverlays && <div className="native-fs-blocker" onClick={e => { e.stopPropagation(); toggleFullscreen(); }} />}
                                 {showSubtitleOverlays && activeSub?.url && (
                                     <SubtitleOverlay
                                         key={activeSub.url}
@@ -1241,7 +1217,7 @@ function WatchPage() {
                         <button
                             key={i}
                             className={`source-dropdown-item ${seciliMagnetIndex === i ? 'active' : ''}`}
-                            onClick={() => { torrentBaslat(mag.url, i); setShowSourceDropdown(false); setSrcDropdownPos(null); }}
+                            onClick={() => { torrentBaslat(mag.url, i, mag); setShowSourceDropdown(false); setSrcDropdownPos(null); }}
                         >
                             <span className="source-dropdown-name">
                                 {mag.type === 'primary' ? '⭐ ' : ''}{mag.name}

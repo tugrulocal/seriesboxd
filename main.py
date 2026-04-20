@@ -2292,18 +2292,18 @@ def stream_endpoint(series_id: int, season: int, episode: int):
     embeds.append({
         "name": "VidSrc",
         "source": "vidsrc.me",
-        "url": f"https://vidsrc.me/embed/tv?tmdb={series_id}&season={season}&episode={episode}",
+        "url": f"https://vidsrc.me/embed/tv?tmdb={series_id}&season={season}&episode={episode}&ds_lang=tr",
         "type": "primary",
         "badge": "720p, 1080p"
     })
 
-    # ALT 1: SeriesBoxd Player (VidPlus.pro)
+    # ALT 1: VidLink -- ikinci kaynak
     embeds.append({
-        "name": "SeriesBoxd Player",
-        "source": "player.vidplus.pro",
-        "url": f"https://player.vidplus.pro/embed/tv/{series_id}/{season}/{episode}?server=boba",
+        "name": "VidLink",
+        "source": "vidlink.pro",
+        "url": f"https://vidlink.pro/tv/{series_id}/{season}/{episode}",
         "type": "alternative",
-        "badge": ""
+        "badge": "1080p"
     })
 
     # ALT 2: SuperEmbed -- 1080p, çok sunucu
@@ -2334,6 +2334,15 @@ def stream_endpoint(series_id: int, season: int, episode: int):
             "type": "alternative",
             "badge": "HD"
         })
+
+    # ALT 5: Vidplus Pro -- en son kaynak
+    embeds.append({
+        "name": "Vidplus Pro",
+        "source": "player.vidplus.pro",
+        "url": f"https://player.vidplus.pro/embed/tv/{series_id}/{season}/{episode}?server=boba",
+        "type": "alternative",
+        "badge": "1080p"
+    })
     
     return {
         "query": query,
