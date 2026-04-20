@@ -554,6 +554,46 @@ function WatchPage() {
         return () => { document.body.style.overflow = ''; };
     }, [isPseudoFS]);
 
+    // Fullscreen fallback controls without blocking native player buttons.
+    // - Keyboard: `F`
+    // - Mouse: double click (including iframe via blur timing fallback)
+    useEffect(() => {
+        const onKeyDown = (e) => {
+            if ((e.key || '').toLowerCase() !== 'f') return;
+            const tag = (e.target?.tagName || '').toUpperCase();
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return;
+            toggleFullscreen();
+        };
+
+        let lastBlurAt = 0;
+        const onWindowBlur = () => {
+            if (document.activeElement?.tagName !== 'IFRAME') return;
+            const now = Date.now();
+            if (now - lastBlurAt < 380) {
+                toggleFullscreen();
+                lastBlurAt = 0;
+            } else {
+                lastBlurAt = now;
+            }
+        };
+
+        const onDocumentDblClick = (e) => {
+            const inWrapper = wrapperRef.current?.contains(e.target);
+            if (inWrapper || document.activeElement?.tagName === 'IFRAME') {
+                toggleFullscreen();
+            }
+        };
+
+        document.addEventListener('keydown', onKeyDown);
+        window.addEventListener('blur', onWindowBlur);
+        document.addEventListener('dblclick', onDocumentDblClick);
+        return () => {
+            document.removeEventListener('keydown', onKeyDown);
+            window.removeEventListener('blur', onWindowBlur);
+            document.removeEventListener('dblclick', onDocumentDblClick);
+        };
+    }, [isFullscreen, isPseudoFS]);
+
     useEffect(() => {
         const onMessage = (event) => {
             try {
@@ -596,23 +636,16 @@ function WatchPage() {
                 } else if (eventName === 'play' || eventName === 'playing') {
                     setTimerRunning(true);
                 }
+
+                // Some embeds broadcast keydown events from inside iframe.
+                if ((d.event === 'keydown' || d.type === 'keydown') && (d.key || d.data?.key || d.detail?.key || '').toLowerCase() === 'f') {
+                    toggleFullscreen();
+                }
             } catch (_) { }
         };
         window.addEventListener('message', onMessage);
         return () => window.removeEventListener('message', onMessage);
-    }, []);
-
-    // Block popup/redirect ads from embedded players
-    useEffect(() => {
-        const originalOpen = window.open;
-        window.open = function (url) {
-            console.warn('[SeriesBoxd] Popup engellendi:', url);
-            return null;
-        };
-        return () => {
-            window.open = originalOpen;
-        };
-    }, [seciliVideoUrl]);
+    }, [isFullscreen, isPseudoFS]);
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -647,6 +680,7 @@ function WatchPage() {
     const isVidSrc = activeSource?.name?.toLowerCase().includes('vidsrc') || activeSource?.source?.toLowerCase().includes('vidsrc');
     const isSuperembed = activeSource?.name?.toLowerCase().includes('superembed') || activeSource?.source?.toLowerCase().includes('superembed');
     const isHnembed = activeSource?.name?.toLowerCase().includes('hnembed') || activeSource?.source?.toLowerCase().includes('hnembed');
+    const needsNativeFsFallback = isVidSrc || isSuperembed;
     const hideOverlays = isSuperembed || isHnembed;
     // Easy toggles: keep overlay code in place but hide it for now.
     const ENABLE_SUBTITLE_OVERLAYS = false;
@@ -742,6 +776,7 @@ function WatchPage() {
                                 className={`subtitle-overlay-wrapper${isPseudoFS ? ' pseudo-fullscreen' : ''}${isFullscreen && fsControlsVisible ? ' fs-ctrl-visible' : ''}`}
                                 ref={wrapperRef}
                                 tabIndex={-1}
+                                onDoubleClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
                                 onClick={() => { setSubMenuOpen(false); setSubLangDropdown(null); }}
                             >
                                 {magnetAramaDurumu === 'searching' && (
@@ -760,11 +795,21 @@ function WatchPage() {
                                     <iframe
                                         key={seciliVideoUrl}
                                         src={seciliVideoUrl}
-                                        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                                        allow="autoplay; encrypted-media; picture-in-picture; fullscreen; fullscreen *"
                                         allowFullScreen
+                                        webkitallowfullscreen="true"
+                                        mozallowfullscreen="true"
                                         referrerPolicy="no-referrer"
                                         frameBorder="0"
                                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                                    />
+                                )}
+                                {needsNativeFsFallback && (
+                                    <div
+                                        className="native-fs-blocker"
+                                        onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+                                        onDoubleClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+                                        title="Tam Ekran"
                                     />
                                 )}
                                 {showSubtitleOverlays && activeSub?.url && (
