@@ -662,6 +662,11 @@ function WatchPage() {
     const isSuperembed = activeSource?.name?.toLowerCase().includes('superembed') || activeSource?.source?.toLowerCase().includes('superembed');
     const isHnembed = activeSource?.name?.toLowerCase().includes('hnembed') || activeSource?.source?.toLowerCase().includes('hnembed');
     const hideOverlays = isSuperembed || isHnembed;
+    // Easy toggles: keep overlay code in place but hide it for now.
+    const ENABLE_SUBTITLE_OVERLAYS = false;
+    const ENABLE_FULLSCREEN_OVERLAYS = false;
+    const showSubtitleOverlays = ENABLE_SUBTITLE_OVERLAYS && !hideOverlays;
+    const showFullscreenOverlays = ENABLE_FULLSCREEN_OVERLAYS && !hideOverlays;
     const currentEpisodeData = bolumler.find(b => b.episode_number === parseInt(episode) && b.season_id === seciliSezonId);
     const genres = dizi.genres ? dizi.genres.split(',').map(g => g.trim()).filter(Boolean) : [];
     const currentEpId = currentEpisodeData?.episode_id;
@@ -785,8 +790,8 @@ function WatchPage() {
                                     onDoubleClick={e => { e.stopPropagation(); toggleFullscreen(); }}
                                 />
                                 {/* Permanent blocker over the native FS button — always intercepts clicks */}
-                                {!hideOverlays && <div className="native-fs-blocker" onClick={e => { e.stopPropagation(); toggleFullscreen(); }} />}
-                                {activeSub?.url && (
+                                {showFullscreenOverlays && <div className="native-fs-blocker" onClick={e => { e.stopPropagation(); toggleFullscreen(); }} />}
+                                {showSubtitleOverlays && activeSub?.url && (
                                     <SubtitleOverlay
                                         key={activeSub.url}
                                         subtitleUrl={activeSub.url}
@@ -799,7 +804,7 @@ function WatchPage() {
                                 )}
 
                                 {/* MANUAL SUBTITLE CONTROLS - if iframe doesn't send time events */}
-                                {activeSub && !hasPostMessageRef.current && showManualSyncPanel && (
+                                {showSubtitleOverlays && activeSub && !hasPostMessageRef.current && showManualSyncPanel && (
                                     <div className="manual-sub-controls" onClick={e => e.stopPropagation()}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: '2px' }}>
                                             <div className="manual-sub-badge">Altyazı Zamanlayıcı</div>
@@ -861,7 +866,7 @@ function WatchPage() {
                                 )}
 
                                 {/* ── SUBTITLE ICON OVERLAY ── */}
-                                {rawSubtitles.length > 0 && (
+                                {showSubtitleOverlays && rawSubtitles.length > 0 && (
                                     <div className="sub-icon-overlay" onClick={e => e.stopPropagation()}>
                                         <button
                                             className={`sub-icon-btn${activeSub ? ' sub-icon-on' : ''}${subMenuOpen ? ' sub-icon-open' : ''}`}
@@ -965,7 +970,7 @@ function WatchPage() {
                                 )}
 
                                 {/* ── FULLSCREEN CORNER BUTTON (covers iframe's native FS btn) ── */}
-                                {!hideOverlays && (
+                                {showFullscreenOverlays && (
                                     <button
                                         className="fs-corner-btn"
                                         onClick={e => { e.stopPropagation(); toggleFullscreen(); }}
