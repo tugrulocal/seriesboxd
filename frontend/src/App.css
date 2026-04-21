@@ -3997,6 +3997,15 @@ button.sifre-unut-link:hover {
   position: relative;
 }
 
+.player-guide-source-row {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .source-dropdown-btn {
   display: inline-flex;
   align-items: center;
@@ -4641,6 +4650,26 @@ button.sifre-unut-link:hover {
   padding: 6px 12px !important;
   font-size: 0.76rem !important;
   color: #cbd5e1 !important;
+}
+
+.player-guide-source-row .adfree-guide-banner {
+  max-width: 100%;
+}
+
+@media (max-width: 820px) {
+  .player-source-bar {
+    align-items: flex-start;
+  }
+
+  .player-guide-source-row {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  .player-guide-source-row .source-dropdown-wrapper {
+    margin-left: auto;
+  }
 }
 
 /* ---- Player Main Area ---- */

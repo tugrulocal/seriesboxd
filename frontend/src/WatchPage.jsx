@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Check, Eye, Heart, Bookmark, MessageSquare, Star, X, Plus, ChevronLeft, ChevronRight, Captions, Lightbulb } from 'lucide-react';
+import AdFreeGuide from './AdFreeGuide';
 import SubtitleOverlay from './SubtitleOverlay';
 import './App.css';
 import API_BASE from './config';
@@ -632,7 +633,9 @@ function WatchPage() {
                                         </div>
                                     </span>
                                 </span>
-                                <div className="source-dropdown-wrapper" style={{ marginLeft: 'auto' }}>
+                                <div className="player-guide-source-row">
+                                    <AdFreeGuide />
+                                    <div className="source-dropdown-wrapper">
                                     <button ref={srcDropdownBtnRef} className="source-dropdown-btn watch-src-btn" onClick={() => {
                                         if (!showSourceDropdown && srcDropdownBtnRef.current) {
                                             const r = srcDropdownBtnRef.current.getBoundingClientRect();
@@ -648,6 +651,7 @@ function WatchPage() {
                                         <span className="source-dropdown-caret">▾</span>
                                     </button>
 
+                                    </div>
                                 </div>
                             </div>
                         )}
