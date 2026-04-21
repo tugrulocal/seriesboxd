@@ -59,7 +59,7 @@ function AdFreeGuide() {
     };
   }, []);
 
-  const bannerLabel = adblockActive ? 'Reklamsız Mod Aktif! ✅' : 'Reklamlardan nasıl kurtulurum? 🛡️';
+  const bannerLabel = adblockActive ? 'Reklamsız Mod Aktif! ✅' : 'Reklamlardan nasıl kurtulurum?';
 
   const SmartLink = ({ href, children, title }) => (
     <a
