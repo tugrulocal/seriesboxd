@@ -1,41 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Maximize2, Minimize2, Check, Eye, Heart, Bookmark, MessageSquare, Star, X, Plus, ChevronLeft, ChevronRight, Captions, Lightbulb } from 'lucide-react';
+import { AlertTriangle, Check, Eye, Heart, Bookmark, MessageSquare, Star, X, Plus, ChevronLeft, ChevronRight, Captions, Lightbulb } from 'lucide-react';
 import SubtitleOverlay from './SubtitleOverlay';
 import './App.css';
 import API_BASE from './config';
 
-const SOURCE_PREF_KEY = 'sb_watch_source_pref_v1';
+const SOURCE_PREF_KEY = 'sb_watch_source_pref_v2';
 
 function getSourceKey(source) {
     return ((source?.source || source?.name || '') + '').toLowerCase();
 }
 
-function addMissingQueryParams(url, params) {
-    const parsed = new URL(url);
-    Object.entries(params).forEach(([k, v]) => {
-        if (!parsed.searchParams.has(k)) parsed.searchParams.set(k, String(v));
-    });
-    return parsed.toString();
+function isSourceMatch(source, keyword) {
+    return getSourceKey(source).includes(keyword);
 }
 
-function buildEmbedUrlWithSubtitlePrefs(source, rawUrl) {
-    if (!rawUrl) return rawUrl;
+function isPreferredSource(source) {
     const key = getSourceKey(source);
-    try {
-        if (key.includes('vidsrc')) {
-            return addMissingQueryParams(rawUrl, { ds_lang: 'tr' });
-        }
-        if (key.includes('vidlink')) {
-            return addMissingQueryParams(rawUrl, { multiLang: 1, lang: 'tr' });
-        }
-        if (key.includes('multiembed') || key.includes('superembed')) {
-            return addMissingQueryParams(rawUrl, { lang: 'tr' });
-        }
-        return rawUrl;
-    } catch (_) {
-        return rawUrl;
+    return key.includes('vidsrc') || key.includes('vidsrcme');
+}
+
+function findPreferredSourceIndex(results) {
+    const preferredOrder = ['vidsrc', 'vidsrcme'];
+    for (const keyword of preferredOrder) {
+        const index = results.findIndex(result => isSourceMatch(result, keyword));
+        if (index >= 0) return index;
     }
+    return results.length > 0 ? 0 : -1;
+}
+
+function sourceNeedsFullscreenFallback(source) {
+    const key = getSourceKey(source);
+    return key.includes('vidsrc') || key.includes('superembed') || key.includes('multiembed') || key.includes('hnembed');
 }
 
 function formatTimeAgo(dateString) {
@@ -124,16 +120,10 @@ function WatchPage() {
     // Timer & Sync State
     const [timerRunning, setTimerRunning] = useState(false);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    const [isPseudoFS, setIsPseudoFS] = useState(false);
 
     // Subtitle menu state
     const [subMenuOpen, setSubMenuOpen] = useState(false);
     const [showManualSyncPanel, setShowManualSyncPanel] = useState(true);
-
-    // Fullscreen idle: show/hide overlay controls when mouse is still
-    const [fsControlsVisible, setFsControlsVisible] = useState(false);
-    const fsIdleTimer = useRef(null);
 
     const wrapperRef = useRef(null);
     const sezonBtnRef = useRef(null);
@@ -144,7 +134,8 @@ function WatchPage() {
     const timerStartRef = useRef(null);
     const elapsedAtPauseRef = useRef(0);
     const hasPostMessageRef = useRef(false);
-    const isTogglingFS = useRef(false);
+    const fsFallbackEnabledRef = useRef(false);
+    const iframeBlurAtRef = useRef(0);
 
     // 1. Initial Data Load
     useEffect(() => {
@@ -256,21 +247,19 @@ function WatchPage() {
                     setBulunanMagnetler(d.results);
                     setMagnetAramaDurumu('found');
                     const savedSource = localStorage.getItem(SOURCE_PREF_KEY);
-                    const preferredIdx = savedSource
+                    const savedSourceIdx = savedSource
                         ? d.results.findIndex(r => getSourceKey(r) === savedSource)
                         : -1;
-                    const primaryIdx = d.results.findIndex(r => r.type === 'primary');
-                    const vidsrcIdx = d.results.findIndex(r => {
-                        const name = (r.name || '').toLowerCase();
-                        const source = (r.source || '').toLowerCase();
-                        return name.includes('vidsrc') || source.includes('vidsrc');
-                    });
-                    const fallbackIdx = primaryIdx >= 0 ? primaryIdx : (vidsrcIdx >= 0 ? vidsrcIdx : 0);
-                    const defaultIdx = preferredIdx >= 0 ? preferredIdx : fallbackIdx;
+                    const defaultIdx = savedSourceIdx >= 0 ? savedSourceIdx : findPreferredSourceIndex(d.results);
                     if (defaultIdx >= 0) {
                         const picked = d.results[defaultIdx];
                         setSeciliMagnetIndex(defaultIdx);
-                        setSeciliVideoUrl(buildEmbedUrlWithSubtitlePrefs(picked, picked.url));
+                        setSeciliVideoUrl(picked.url);
+                        if (!savedSource || getSourceKey(picked) !== savedSource) {
+                            try {
+                                localStorage.setItem(SOURCE_PREF_KEY, getSourceKey(picked));
+                            } catch (_) { }
+                        }
                         setTimerRunning(true);
                     }
 
@@ -295,7 +284,7 @@ function WatchPage() {
     // 3. Player Methods
     const torrentBaslat = (url, index, sourceMeta) => {
         setSeciliMagnetIndex(index);
-        setSeciliVideoUrl(buildEmbedUrlWithSubtitlePrefs(sourceMeta, url));
+        setSeciliVideoUrl(url);
         setSyncOffset(0);
         setElapsedSeconds(0);
         elapsedAtPauseRef.current = 0;
@@ -306,6 +295,19 @@ function WatchPage() {
                 localStorage.setItem(SOURCE_PREF_KEY, getSourceKey(sourceMeta));
             } catch (_) { }
         }
+    };
+
+    const toggleWrapperFullscreen = () => {
+        const el = wrapperRef.current;
+        if (!el) return;
+        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        if (isFs) {
+            document.exitFullscreen?.();
+            document.webkitExitFullscreen?.();
+            return;
+        }
+        el.requestFullscreen?.();
+        el.webkitRequestFullscreen?.();
     };
 
     // Series Activity
@@ -430,88 +432,6 @@ function WatchPage() {
         }
     };
 
-    const handleFsMouseMove = () => {
-        setFsControlsVisible(true);
-        if (fsIdleTimer.current) clearTimeout(fsIdleTimer.current);
-        fsIdleTimer.current = setTimeout(() => setFsControlsVisible(false), 3000);
-        // Refocus the wrapper so document keydown events (F key) keep working
-        if (wrapperRef.current && document.activeElement !== wrapperRef.current) {
-            wrapperRef.current.focus({ preventScroll: true });
-        }
-    };
-
-    const toggleFullscreen = () => {
-        if (!wrapperRef.current || isTogglingFS.current) return;
-        isTogglingFS.current = true;
-
-        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-        const isFS = document.fullscreenElement || document.webkitFullscreenElement || isPseudoFS;
-
-        if (isFS) {
-            // Exit fullscreen
-            if (isPseudoFS) {
-                setIsPseudoFS(false);
-                setIsFullscreen(false);
-                isTogglingFS.current = false;
-            } else {
-                setIsFullscreen(false); // Set immediately to prevent double-toggle
-                const exit = document.exitFullscreen?.() ?? document.webkitExitFullscreen?.();
-                if (exit?.then) {
-                    exit.then(() => { isTogglingFS.current = false; })
-                        .catch(() => { isTogglingFS.current = false; });
-                } else {
-                    isTogglingFS.current = false;
-                }
-            }
-        } else {
-            // Enter fullscreen — iOS only supports pseudo-fullscreen on div elements
-            if (isIOS) {
-                setIsPseudoFS(true);
-                setIsFullscreen(true);
-                isTogglingFS.current = false;
-            } else {
-                setIsFullscreen(true); // Set immediately to prevent double-toggle
-                const req = wrapperRef.current.requestFullscreen?.() ?? wrapperRef.current.webkitRequestFullscreen?.();
-                if (req?.then) {
-                    req.then(() => { isTogglingFS.current = false; })
-                        .catch(() => {
-                            setIsPseudoFS(true);
-                            isTogglingFS.current = false;
-                        });
-                } else {
-                    setIsPseudoFS(true);
-                    isTogglingFS.current = false;
-                }
-            }
-        }
-    };
-
-    // Fullscreen idle: document-level mousemove (fires even over iframe)
-    useEffect(() => {
-        if (!isFullscreen) {
-            setFsControlsVisible(false);
-            if (fsIdleTimer.current) clearTimeout(fsIdleTimer.current);
-            return;
-        }
-        const show = () => {
-            setFsControlsVisible(true);
-            if (fsIdleTimer.current) clearTimeout(fsIdleTimer.current);
-            fsIdleTimer.current = setTimeout(() => setFsControlsVisible(false), 2500);
-        };
-        // mousemove fires outside the iframe; blur fires when user clicks into iframe
-        document.addEventListener('mousemove', show);
-        document.addEventListener('touchstart', show, { passive: true });
-        window.addEventListener('blur', show);
-        window.addEventListener('click', show);
-        return () => {
-            document.removeEventListener('mousemove', show);
-            document.removeEventListener('touchstart', show);
-            window.removeEventListener('blur', show);
-            window.removeEventListener('click', show);
-            if (fsIdleTimer.current) clearTimeout(fsIdleTimer.current);
-        };
-    }, [isFullscreen]);
-
     // 4. Timer Hooks
     useEffect(() => {
         if (timerRunning) {
@@ -528,71 +448,40 @@ function WatchPage() {
     }, [timerRunning]);
 
     useEffect(() => {
-        const onFsChange = () => {
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                setIsFullscreen(false);
-                setIsPseudoFS(false);
-            } else {
-                setIsFullscreen(true);
-            }
-        };
-        document.addEventListener('fullscreenchange', onFsChange);
-        document.addEventListener('webkitfullscreenchange', onFsChange);
-        return () => {
-            document.removeEventListener('fullscreenchange', onFsChange);
-            document.removeEventListener('webkitfullscreenchange', onFsChange);
-        };
-    }, []);
+        const active = bulunanMagnetler[seciliMagnetIndex];
+        fsFallbackEnabledRef.current = sourceNeedsFullscreenFallback(active);
+    }, [bulunanMagnetler, seciliMagnetIndex]);
 
-    // Lock body scroll when in pseudo-fullscreen (iOS fixed-position player)
     useEffect(() => {
-        if (isPseudoFS) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-        return () => { document.body.style.overflow = ''; };
-    }, [isPseudoFS]);
+        const active = bulunanMagnetler[seciliMagnetIndex];
+        if (!sourceNeedsFullscreenFallback(active)) return;
 
-    // Fullscreen fallback controls without blocking native player buttons.
-    // - Keyboard: `F`
-    // - Mouse: double click (including iframe via blur timing fallback)
-    useEffect(() => {
         const onKeyDown = (e) => {
             if ((e.key || '').toLowerCase() !== 'f') return;
             const tag = (e.target?.tagName || '').toUpperCase();
             if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return;
-            toggleFullscreen();
+            e.preventDefault();
+            toggleWrapperFullscreen();
         };
 
-        let lastBlurAt = 0;
         const onWindowBlur = () => {
             if (document.activeElement?.tagName !== 'IFRAME') return;
             const now = Date.now();
-            if (now - lastBlurAt < 380) {
-                toggleFullscreen();
-                lastBlurAt = 0;
+            if (now - iframeBlurAtRef.current < 420) {
+                toggleWrapperFullscreen();
+                iframeBlurAtRef.current = 0;
             } else {
-                lastBlurAt = now;
-            }
-        };
-
-        const onDocumentDblClick = (e) => {
-            const inWrapper = wrapperRef.current?.contains(e.target);
-            if (inWrapper || document.activeElement?.tagName === 'IFRAME') {
-                toggleFullscreen();
+                iframeBlurAtRef.current = now;
             }
         };
 
         document.addEventListener('keydown', onKeyDown);
         window.addEventListener('blur', onWindowBlur);
-        document.addEventListener('dblclick', onDocumentDblClick);
         return () => {
             document.removeEventListener('keydown', onKeyDown);
             window.removeEventListener('blur', onWindowBlur);
-            document.removeEventListener('dblclick', onDocumentDblClick);
         };
-    }, [isFullscreen, isPseudoFS]);
+    }, [bulunanMagnetler, seciliMagnetIndex]);
 
     useEffect(() => {
         const onMessage = (event) => {
@@ -635,17 +524,15 @@ function WatchPage() {
                     setTimerRunning(false);
                 } else if (eventName === 'play' || eventName === 'playing') {
                     setTimerRunning(true);
-                }
-
-                // Some embeds broadcast keydown events from inside iframe.
-                if ((d.event === 'keydown' || d.type === 'keydown') && (d.key || d.data?.key || d.detail?.key || '').toLowerCase() === 'f') {
-                    toggleFullscreen();
+                } else if (eventName === 'keydown' && fsFallbackEnabledRef.current) {
+                    const k = (d.key || d.data?.key || '').toLowerCase();
+                    if (k === 'f') toggleWrapperFullscreen();
                 }
             } catch (_) { }
         };
         window.addEventListener('message', onMessage);
         return () => window.removeEventListener('message', onMessage);
-    }, [isFullscreen, isPseudoFS]);
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -676,17 +563,17 @@ function WatchPage() {
     const posterResmi = dizi.poster_path ? `https://image.tmdb.org/t/p/w500${dizi.poster_path}` : arkaplanResmi;
     const displayBolumler = bolumler.filter(b => b.season_id === seciliSezonId);
     const activeSource = bulunanMagnetler[seciliMagnetIndex];
+    const dropdownSources = bulunanMagnetler
+        .map((mag, originalIndex) => ({ mag, originalIndex }))
+        .filter(item => item.mag && item.mag.name);
     const is2Embed = activeSource?.source === 'streamsrcs.2embed.cc';
     const isVidSrc = activeSource?.name?.toLowerCase().includes('vidsrc') || activeSource?.source?.toLowerCase().includes('vidsrc');
     const isSuperembed = activeSource?.name?.toLowerCase().includes('superembed') || activeSource?.source?.toLowerCase().includes('superembed');
     const isHnembed = activeSource?.name?.toLowerCase().includes('hnembed') || activeSource?.source?.toLowerCase().includes('hnembed');
-    const needsNativeFsFallback = isVidSrc || isSuperembed;
     const hideOverlays = isSuperembed || isHnembed;
     // Easy toggles: keep overlay code in place but hide it for now.
     const ENABLE_SUBTITLE_OVERLAYS = false;
-    const ENABLE_FULLSCREEN_OVERLAYS = false;
     const showSubtitleOverlays = ENABLE_SUBTITLE_OVERLAYS && !hideOverlays;
-    const showFullscreenOverlays = ENABLE_FULLSCREEN_OVERLAYS && !hideOverlays;
     const currentEpisodeData = bolumler.find(b => b.episode_number === parseInt(episode) && b.season_id === seciliSezonId);
     const genres = dizi.genres ? dizi.genres.split(',').map(g => g.trim()).filter(Boolean) : [];
     const currentEpId = currentEpisodeData?.episode_id;
@@ -773,11 +660,13 @@ function WatchPage() {
                             )}
 
                             <div
-                                className={`subtitle-overlay-wrapper${isPseudoFS ? ' pseudo-fullscreen' : ''}${isFullscreen && fsControlsVisible ? ' fs-ctrl-visible' : ''}`}
+                                className="subtitle-overlay-wrapper"
                                 ref={wrapperRef}
                                 tabIndex={-1}
-                                onDoubleClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
                                 onClick={() => { setSubMenuOpen(false); setSubLangDropdown(null); }}
+                                onDoubleClick={() => {
+                                    if (sourceNeedsFullscreenFallback(activeSource)) toggleWrapperFullscreen();
+                                }}
                             >
                                 {magnetAramaDurumu === 'searching' && (
                                     <div className="stremio-loading">
@@ -795,21 +684,12 @@ function WatchPage() {
                                     <iframe
                                         key={seciliVideoUrl}
                                         src={seciliVideoUrl}
-                                        allow="autoplay; encrypted-media; picture-in-picture; fullscreen; fullscreen *"
+                                        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                                         allowFullScreen
-                                        webkitallowfullscreen="true"
-                                        mozallowfullscreen="true"
-                                        referrerPolicy="no-referrer"
+                                        scrolling={isVidSrc ? 'no' : 'auto'}
+                                        referrerPolicy="strict-origin-when-cross-origin"
                                         frameBorder="0"
-                                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                                    />
-                                )}
-                                {needsNativeFsFallback && (
-                                    <div
-                                        className="native-fs-blocker"
-                                        onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-                                        onDoubleClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-                                        title="Tam Ekran"
+                                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none', overflow: 'hidden' }}
                                     />
                                 )}
                                 {showSubtitleOverlays && activeSub?.url && (
@@ -988,19 +868,6 @@ function WatchPage() {
                                             </div>
                                         )}
                                     </div>
-                                )}
-
-                                {/* ── FULLSCREEN CORNER BUTTON (covers iframe's native FS btn) ── */}
-                                {showFullscreenOverlays && (
-                                    <button
-                                        className="fs-corner-btn"
-                                        onClick={e => { e.stopPropagation(); toggleFullscreen(); }}
-                                        title={isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran'}
-                                    >
-                                        <span className="fs-corner-icon-badge">
-                                            {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-                                        </span>
-                                    </button>
                                 )}
                             </div>
                         </div>
@@ -1258,11 +1125,11 @@ function WatchPage() {
                     style={{ position: 'fixed', top: srcDropdownPos.top, left: srcDropdownPos.left, minWidth: srcDropdownPos.minWidth, zIndex: 9999 }}
                     onClick={e => e.stopPropagation()}
                 >
-                    {bulunanMagnetler.map((mag, i) => (
+                    {dropdownSources.map(({ mag, originalIndex }) => (
                         <button
-                            key={i}
-                            className={`source-dropdown-item ${seciliMagnetIndex === i ? 'active' : ''}`}
-                            onClick={() => { torrentBaslat(mag.url, i, mag); setShowSourceDropdown(false); setSrcDropdownPos(null); }}
+                            key={originalIndex}
+                            className={`source-dropdown-item ${seciliMagnetIndex === originalIndex ? 'active' : ''}`}
+                            onClick={() => { torrentBaslat(mag.url, originalIndex, mag); setShowSourceDropdown(false); setSrcDropdownPos(null); }}
                         >
                             <span className="source-dropdown-name">
                                 {mag.type === 'primary' ? '⭐ ' : ''}{mag.name}

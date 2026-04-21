@@ -2288,11 +2288,11 @@ def stream_endpoint(series_id: int, season: int, episode: int):
     # Torrent altyapısı devre dışı bırakıldı (Plan B - IFrame Embeds)
     embeds = []
     
-    # PRIMARY PLAYER: VidSrc (vidsrc.me) -- stabil ve varsayilan kaynak
+    # PRIMARY PLAYER: VidSrc (direct endpoint)
     embeds.append({
         "name": "VidSrc",
-        "source": "vidsrc.me",
-        "url": f"https://vidsrc.me/embed/tv?tmdb={series_id}&season={season}&episode={episode}&ds_lang=tr",
+        "source": "vidsrcme.ru",
+        "url": f"https://vidsrcme.ru/embed/tv?tmdb={series_id}&season={season}&episode={episode}&ds_lang=tr",
         "type": "primary",
         "badge": "720p, 1080p"
     })
@@ -2301,12 +2301,12 @@ def stream_endpoint(series_id: int, season: int, episode: int):
     embeds.append({
         "name": "VidLink",
         "source": "vidlink.pro",
-        "url": f"https://vidlink.pro/tv/{series_id}/{season}/{episode}",
+        "url": f"https://vidlink.pro/tv/{series_id}/{season}/{episode}?lang=tr",
         "type": "alternative",
         "badge": "1080p"
     })
 
-    # ALT 2: SuperEmbed -- 1080p, çok sunucu
+    # ALT 2: SuperEmbed -- MultiEmbed tabanlı kaynak
     if imdb_id:
         embeds.append({
             "name": "SuperEmbed",
@@ -2338,8 +2338,8 @@ def stream_endpoint(series_id: int, season: int, episode: int):
     # ALT 5: Vidplus Pro -- en son kaynak
     embeds.append({
         "name": "Vidplus Pro",
-        "source": "player.vidplus.pro",
-        "url": f"https://player.vidplus.pro/embed/tv/{series_id}/{season}/{episode}?server=boba",
+        "source": "player.vidplus.to",
+        "url": f"https://player.vidplus.to/embed/tv/{series_id}/{season}/{episode}",
         "type": "alternative",
         "badge": "1080p"
     })
