@@ -61,20 +61,26 @@ function AdFreeGuide() {
 
   const bannerLabel = adblockActive ? 'Reklamsız Mod Aktif! ✅' : 'Reklamlardan nasıl kurtulurum? 🛡️';
 
-  const stopLinkEvent = (event) => {
-    event.stopPropagation();
-  };
-
   const SmartLink = ({ href, children, title }) => (
     <a
       className="adfree-guide-link"
       href={href}
-      target="_blank"
-      rel="noreferrer noopener"
       title={title}
-      onPointerDown={stopLinkEvent}
-      onMouseDown={stopLinkEvent}
-      onClick={stopLinkEvent}
+      target="_blank"
+      rel="noopener noreferrer"
+      draggable="false"
+      onPointerDown={(e) => {
+        e.stopPropagation();
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
+      onTouchStart={(e) => {
+        e.stopPropagation();
+      }}
+      onTouchEnd={(e) => {
+        e.stopPropagation();
+      }}
     >
       {children}
     </a>
@@ -175,27 +181,35 @@ function AdFreeGuide() {
   }, [open]);
 
   const modalContent = open ? (
-    <div className="adfree-guide-overlay" role="presentation" onPointerDown={() => setOpen(false)}>
+    <div
+      className="adfree-guide-overlay"
+      role="presentation"
+      onPointerDown={(e) => {
+        if (e.target === e.currentTarget) setOpen(false);
+      }}
+    >
       <div
         className="adfree-guide-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="adfree-guide-title"
-        onPointerDown={(event) => event.stopPropagation()}
-        onMouseDown={(event) => event.stopPropagation()}
-        onClick={(event) => event.stopPropagation()}
         style={panelStyle || undefined}
       >
         <div className="adfree-guide-modal-scroll">
           {adblockActive ? (
-            <div className="adfree-guide-success">
-              <div className="adfree-guide-success-icon">✅</div>
-              <div className="adfree-guide-success-copy">
-                <span className="adfree-guide-badge">
-                  <Sparkles size={14} /> Reklamsız Mod Aktif
-                </span>
-                <h3 id="adfree-guide-title">Reklamsız Mod Aktif! ✅</h3>
-                <p>Tarayıcında çalışan bir engelleyici algıladık. İyi seyirler, reklamlar zaten bloklanıyor.</p>
+            <>
+              <div className="adfree-guide-success">
+                <div className="adfree-guide-success-icon">✅</div>
+                <div className="adfree-guide-success-copy">
+                  <span className="adfree-guide-badge">
+                    <Sparkles size={14} /> Reklamsız Mod Aktif
+                  </span>
+                  <h3 id="adfree-guide-title">Reklamsız Mod Aktif! ✅</h3>
+                  <p>Tarayıcında çalışan bir engelleyici algıladık. İyi seyirler, reklamlar zaten bloklanıyor.</p>
+                </div>
+                <button type="button" className="adfree-guide-close" onClick={() => setOpen(false)} aria-label="Kapat">
+                  <X size={18} />
+                </button>
               </div>
               <div className="adfree-guide-active-helper">
                 <p className="adfree-guide-active-helper-text">Halen reklam görüyorsanız şu yöntemleri deneyin:</p>
@@ -203,7 +217,7 @@ function AdFreeGuide() {
                   {renderDeviceSpecificCard()}
                 </div>
               </div>
-            </div>
+            </>
           ) : (
             <>
             <div className="adfree-guide-modal-header">
@@ -218,7 +232,7 @@ function AdFreeGuide() {
                 </p>
               </div>
 
-              <button type="button" className="adfree-guide-close" onPointerDown={(event) => { event.stopPropagation(); setOpen(false); }} onMouseDown={(event) => event.stopPropagation()} onClick={() => setOpen(false)} aria-label="Kapat">
+              <button type="button" className="adfree-guide-close" onClick={() => setOpen(false)} aria-label="Kapat">
                 <X size={18} />
               </button>
             </div>

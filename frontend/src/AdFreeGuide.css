@@ -302,6 +302,8 @@
   cursor: pointer;
   transition: color 0.2s ease, text-decoration-color 0.2s ease, opacity 0.2s ease;
   touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .adfree-guide-link:focus-visible {
