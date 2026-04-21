@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Check, Eye, Heart, Bookmark, MessageSquare, Star, X, Plus, ChevronLeft, ChevronRight, Captions, Lightbulb } from 'lucide-react';
+import { AlertTriangle, Check, Eye, Heart, Bookmark, MessageSquare, Star, X, Plus, ChevronLeft, ChevronRight, Captions } from 'lucide-react';
 import AdFreeGuide from './AdFreeGuide';
 import SubtitleOverlay from './SubtitleOverlay';
 import './App.css';
@@ -626,12 +626,6 @@ function WatchPage() {
                             <div className="player-source-bar">
                                 <span className="player-ep-badge-bar" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     S{season}·E{episode}{currentEpisodeData?.name ? ` ${currentEpisodeData.name}` : ''}
-                                    <span className="tip-hover-container">
-                                        <Lightbulb size={16} color="#f59e0b" style={{ cursor: 'help' }} className="tip-icon" />
-                                        <div className="tip-hover-card">
-                                            💡 Daha iyi kalite için oynatıcı içindeki ayarlardan <strong>Boba</strong> veya <strong>Wink</strong> sunucusunu seçmeniz önerilir.
-                                        </div>
-                                    </span>
                                 </span>
                                 <div className="player-guide-source-row">
                                     <AdFreeGuide />
