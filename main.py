@@ -533,7 +533,7 @@ def hero_series_getir():
 
         where_clause = "WHERE " + " AND ".join(kosullar)
         cur.execute(
-            f"SELECT * FROM series {where_clause} ORDER BY rating DESC NULLS LAST, vote_count DESC NULLS LAST LIMIT 30",
+            f"SELECT * FROM series {where_clause} ORDER BY RANDOM() LIMIT 30",
             parametreler,
         )
         diziler = cur.fetchall()
