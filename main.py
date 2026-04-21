@@ -20,6 +20,7 @@ import urllib.parse
 import smtplib
 import random
 import string
+import json
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -407,6 +408,14 @@ def ensure_users_table():
             UNIQUE(series_id)
         );
     """)
+    # Uygulama ayarları
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key VARCHAR(100) PRIMARY KEY,
+            value TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
     conn.commit()
     cur.close()
     conn.close()
@@ -462,30 +471,84 @@ def top_50_getir():
 @app.get("/hero-series")
 def hero_series_getir():
     """Hero banner'da gösterilecek dizileri döndür (admin tarafından seçilmiş)."""
-    import random
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # Check shuffle setting (with fallback if settings table doesn't exist)
+    # Settings table may not exist on very old installs.
     shuffle_enabled = False
-    try:
-        cur.execute("SELECT value FROM settings WHERE key = 'hero_shuffle_enabled'")
-        shuffle_row = cur.fetchone()
-        shuffle_enabled = shuffle_row and shuffle_row["value"] == "true"
-    except:
-        pass  # Settings table might not exist yet
+    use_all_series = False
+    min_rating = None
+    max_rating = None
+    min_vote_count = None
+    max_vote_count = None
+    excluded_series_ids = []
 
-    # Get all hero series
-    cur.execute("""
-        SELECT s.* FROM hero_series hs
-        JOIN series s ON hs.series_id = s.series_id
-        ORDER BY hs.display_order ASC, hs.created_at DESC
-    """)
-    diziler = cur.fetchall()
+    def _get_setting_value(setting_key, default=None):
+        cur.execute("SELECT value FROM settings WHERE key = %s", (setting_key,))
+        row = cur.fetchone()
+        if not row:
+            return default
+        return row.get("value", default)
+
+    try:
+        shuffle_enabled = _get_setting_value("hero_shuffle_enabled", "false") == "true"
+        use_all_series = _get_setting_value("hero_use_all_series", "false") == "true"
+
+        min_rating_raw = _get_setting_value("hero_min_rating")
+        max_rating_raw = _get_setting_value("hero_max_rating")
+        min_vote_count_raw = _get_setting_value("hero_min_vote_count")
+        max_vote_count_raw = _get_setting_value("hero_max_vote_count")
+        excluded_raw = _get_setting_value("hero_excluded_series_ids", "[]")
+
+        min_rating = float(min_rating_raw) if min_rating_raw not in (None, "") else None
+        max_rating = float(max_rating_raw) if max_rating_raw not in (None, "") else None
+        min_vote_count = int(min_vote_count_raw) if min_vote_count_raw not in (None, "") else None
+        max_vote_count = int(max_vote_count_raw) if max_vote_count_raw not in (None, "") else None
+
+        parsed = json.loads(excluded_raw) if excluded_raw else []
+        if isinstance(parsed, list):
+            excluded_series_ids = [int(x) for x in parsed if str(x).isdigit()]
+    except Exception:
+        pass
+
+    if use_all_series:
+        kosullar = ["backdrop_path IS NOT NULL", "backdrop_path != ''"]
+        parametreler = []
+
+        if min_rating is not None:
+            kosullar.append("rating >= %s")
+            parametreler.append(min_rating)
+        if max_rating is not None:
+            kosullar.append("rating <= %s")
+            parametreler.append(max_rating)
+        if min_vote_count is not None:
+            kosullar.append("vote_count >= %s")
+            parametreler.append(min_vote_count)
+        if max_vote_count is not None:
+            kosullar.append("vote_count <= %s")
+            parametreler.append(max_vote_count)
+        if excluded_series_ids:
+            kosullar.append("series_id != ALL(%s)")
+            parametreler.append(excluded_series_ids)
+
+        where_clause = "WHERE " + " AND ".join(kosullar)
+        cur.execute(
+            f"SELECT * FROM series {where_clause} ORDER BY rating DESC NULLS LAST, vote_count DESC NULLS LAST LIMIT 30",
+            parametreler,
+        )
+        diziler = cur.fetchall()
+    else:
+        cur.execute("""
+            SELECT s.* FROM hero_series hs
+            JOIN series s ON hs.series_id = s.series_id
+            ORDER BY hs.display_order ASC, hs.created_at DESC
+        """)
+        diziler = cur.fetchall()
+
     cur.close()
     conn.close()
 
-    # If shuffle is enabled and we have more than 15, randomly select 15
+    # If shuffle is enabled and we have more than 15, randomly select 15.
     if shuffle_enabled and len(diziler) > 15:
         diziler = random.sample(diziler, 15)
 

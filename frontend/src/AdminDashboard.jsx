@@ -94,6 +94,16 @@ function AdminPanel({ headers, cikisYap }) {
     const [heroSearching, setHeroSearching] = useState(false);
     const [heroIds, setHeroIds] = useState(new Set()); // Track hero series IDs
     const [heroShuffleEnabled, setHeroShuffleEnabled] = useState(false);
+    const [heroUseAllSeries, setHeroUseAllSeries] = useState(false);
+    const [heroMinRating, setHeroMinRating] = useState('');
+    const [heroMaxRating, setHeroMaxRating] = useState('');
+    const [heroMinVoteCount, setHeroMinVoteCount] = useState('');
+    const [heroMaxVoteCount, setHeroMaxVoteCount] = useState('');
+    const [heroExcludedSeries, setHeroExcludedSeries] = useState([]);
+    const [heroExcludeSearchInput, setHeroExcludeSearchInput] = useState('');
+    const [heroExcludeSearchResults, setHeroExcludeSearchResults] = useState([]);
+    const [heroExcludeSearching, setHeroExcludeSearching] = useState(false);
+    const [heroSavingSettings, setHeroSavingSettings] = useState(false);
     const [fixDatesLoading, setFixDatesLoading] = useState(false);
 
     const showToast = useCallback((message, type = 'success') => {
@@ -385,15 +395,24 @@ function AdminPanel({ headers, cikisYap }) {
         setHeroLoading(true);
         Promise.all([
             fetch(`${API_BASE}/admin/hero-series`, { headers }).then(checkAuth),
-            fetch(`${API_BASE}/admin/settings/hero-shuffle`, { headers }).then(checkAuth)
+            fetch(`${API_BASE}/admin/settings/hero-shuffle`, { headers }).then(checkAuth),
+            fetch(`${API_BASE}/admin/settings/hero-all-series`, { headers }).then(checkAuth)
         ])
-            .then(([heroData, shuffleData]) => {
+            .then(([heroData, shuffleData, allSeriesData]) => {
                 if (heroData) {
                     setHeroList(heroData.items || []);
                     setHeroIds(new Set((heroData.items || []).map(h => h.series_id)));
                 }
                 if (shuffleData) {
                     setHeroShuffleEnabled(shuffleData.enabled || false);
+                }
+                if (allSeriesData) {
+                    setHeroUseAllSeries(allSeriesData.use_all_series || false);
+                    setHeroMinRating(allSeriesData.min_rating ?? '');
+                    setHeroMaxRating(allSeriesData.max_rating ?? '');
+                    setHeroMinVoteCount(allSeriesData.min_vote_count ?? '');
+                    setHeroMaxVoteCount(allSeriesData.max_vote_count ?? '');
+                    setHeroExcludedSeries(allSeriesData.excluded_series || []);
                 }
             })
             .catch(() => {})
@@ -506,6 +525,74 @@ function AdminPanel({ headers, cikisYap }) {
             );
         } catch (err) {
             showToast(err.message, 'error');
+        }
+    };
+
+    const handleHeroExcludeSearch = async (e) => {
+        e.preventDefault();
+        if (!heroExcludeSearchInput.trim()) return;
+        setHeroExcludeSearching(true);
+        try {
+            const params = new URLSearchParams({ q: heroExcludeSearchInput, per_page: 10 });
+            const res = await fetch(`${API_BASE}/admin/series?${params}`, { headers });
+            const data = await checkAuth(res);
+            if (data) setHeroExcludeSearchResults(data.series || []);
+        } catch {
+            setHeroExcludeSearchResults([]);
+        } finally {
+            setHeroExcludeSearching(false);
+        }
+    };
+
+    const addHeroExcludedSeries = (series) => {
+        if (heroExcludedSeries.some(item => item.series_id === series.series_id)) return;
+        setHeroExcludedSeries(prev => [...prev, series]);
+    };
+
+    const removeHeroExcludedSeries = (seriesId) => {
+        setHeroExcludedSeries(prev => prev.filter(item => item.series_id !== seriesId));
+    };
+
+    const saveHeroAllSeriesSettings = async () => {
+        const minRatingValue = heroMinRating === '' ? null : Number(heroMinRating);
+        const maxRatingValue = heroMaxRating === '' ? null : Number(heroMaxRating);
+        const minVoteValue = heroMinVoteCount === '' ? null : Number(heroMinVoteCount);
+        const maxVoteValue = heroMaxVoteCount === '' ? null : Number(heroMaxVoteCount);
+
+        if ((minRatingValue !== null && Number.isNaN(minRatingValue)) || (maxRatingValue !== null && Number.isNaN(maxRatingValue))) {
+            showToast('Puan aralığı için geçerli sayılar girin.', 'error');
+            return;
+        }
+        if ((minVoteValue !== null && Number.isNaN(minVoteValue)) || (maxVoteValue !== null && Number.isNaN(maxVoteValue))) {
+            showToast('Oy sayısı aralığı için geçerli sayılar girin.', 'error');
+            return;
+        }
+
+        setHeroSavingSettings(true);
+        try {
+            const res = await fetch(`${API_BASE}/admin/settings/hero-all-series`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({
+                    use_all_series: heroUseAllSeries,
+                    min_rating: minRatingValue,
+                    max_rating: maxRatingValue,
+                    min_vote_count: minVoteValue,
+                    max_vote_count: maxVoteValue,
+                    excluded_series_ids: heroExcludedSeries.map(s => s.series_id)
+                })
+            });
+            if (res.status === 401 || res.status === 403) { setAuthError(true); return; }
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.detail || 'Ayarlar kaydedilemedi');
+            }
+            showToast(heroUseAllSeries ? 'Tüm diziler modu ayarları kaydedildi.' : 'Manuel hero modu aktif edildi.');
+            fetchHeroSeries();
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            setHeroSavingSettings(false);
         }
     };
 
@@ -865,112 +952,252 @@ function AdminPanel({ headers, cikisYap }) {
                         </button>
                     </div>
 
-                    <div className="admin-hero-add">
-                        <form onSubmit={handleHeroSearch} className="admin-search-form">
-                            <Search size={18} />
+                    <div className="admin-hero-settings-card">
+                        <h4>Hero Kaynak Ayarı</h4>
+                        <p className="admin-hero-settings-help">
+                            Manuel modda sadece aşağıdaki hero listesi kullanılır. Tüm Diziler modunda ise tüm dizilerden filtreye uyanlar seçilir.
+                        </p>
+                        <label className="admin-hero-settings-toggle">
                             <input
-                                type="text"
-                                placeholder="Dizi ara ve ekle..."
-                                value={heroSearchInput}
-                                onChange={e => setHeroSearchInput(e.target.value)}
+                                type="checkbox"
+                                checked={heroUseAllSeries}
+                                onChange={e => setHeroUseAllSeries(e.target.checked)}
                             />
-                            <button type="submit" disabled={heroSearching}>
-                                {heroSearching ? <Loader2 size={16} className="spin" /> : 'Ara'}
-                            </button>
-                        </form>
+                            <span>Tüm Diziler Modunu Kullan</span>
+                        </label>
 
-                        {heroSearchResults.length > 0 && (
-                            <div className="admin-hero-search-results">
-                                {heroSearchResults.map(s => (
-                                    <div key={s.series_id} className="admin-hero-search-item">
-                                        {s.poster_path ? (
-                                            <img src={getImageUrl(s.poster_path, 'w92')} alt={s.name} />
-                                        ) : (
-                                            <div className="admin-hero-no-poster"><Film size={20} /></div>
-                                        )}
-                                        <div className="admin-hero-search-info">
-                                            <span className="admin-hero-search-name">{s.name}</span>
-                                            <span className="admin-hero-search-rating">
-                                                <Star size={12} fill="#f59e0b" color="#f59e0b" /> {s.rating ? Number(s.rating).toFixed(1) : '-'}
-                                            </span>
-                                        </div>
-                                        <button
-                                            className="admin-hero-add-btn"
-                                            onClick={() => addToHero(s.series_id)}
-                                            disabled={heroList.some(h => h.series_id === s.series_id)}
-                                        >
-                                            {heroList.some(h => h.series_id === s.series_id) ? <Check size={16} /> : <Plus size={16} />}
+                        {heroUseAllSeries && (
+                            <>
+                                <div className="admin-hero-filter-grid">
+                                    <div className="admin-form-group">
+                                        <label>Minimum Puan</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="10"
+                                            step="0.1"
+                                            value={heroMinRating}
+                                            onChange={e => setHeroMinRating(e.target.value)}
+                                            placeholder="örn: 7.5"
+                                        />
+                                    </div>
+                                    <div className="admin-form-group">
+                                        <label>Maksimum Puan</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="10"
+                                            step="0.1"
+                                            value={heroMaxRating}
+                                            onChange={e => setHeroMaxRating(e.target.value)}
+                                            placeholder="örn: 10"
+                                        />
+                                    </div>
+                                    <div className="admin-form-group">
+                                        <label>Minimum Oy Sayısı</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            value={heroMinVoteCount}
+                                            onChange={e => setHeroMinVoteCount(e.target.value)}
+                                            placeholder="örn: 500"
+                                        />
+                                    </div>
+                                    <div className="admin-form-group">
+                                        <label>Maksimum Oy Sayısı</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            value={heroMaxVoteCount}
+                                            onChange={e => setHeroMaxVoteCount(e.target.value)}
+                                            placeholder="örn: 100000"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="admin-hero-exclude-box">
+                                    <h5>Görünmesini İstemediğin Diziler</h5>
+                                    <form onSubmit={handleHeroExcludeSearch} className="admin-search-form">
+                                        <Search size={18} />
+                                        <input
+                                            type="text"
+                                            placeholder="Hariç tutmak için dizi ara..."
+                                            value={heroExcludeSearchInput}
+                                            onChange={e => setHeroExcludeSearchInput(e.target.value)}
+                                        />
+                                        <button type="submit" disabled={heroExcludeSearching}>
+                                            {heroExcludeSearching ? <Loader2 size={16} className="spin" /> : 'Ara'}
                                         </button>
+                                    </form>
+
+                                    {heroExcludeSearchResults.length > 0 && (
+                                        <div className="admin-hero-search-results">
+                                            {heroExcludeSearchResults.map(s => (
+                                                <div key={s.series_id} className="admin-hero-search-item">
+                                                    {s.poster_path ? (
+                                                        <img src={getImageUrl(s.poster_path, 'w92')} alt={s.name} />
+                                                    ) : (
+                                                        <div className="admin-hero-no-poster"><Film size={20} /></div>
+                                                    )}
+                                                    <div className="admin-hero-search-info">
+                                                        <span className="admin-hero-search-name">{s.name}</span>
+                                                        <span className="admin-hero-search-rating">
+                                                            <Star size={12} fill="#f59e0b" color="#f59e0b" /> {s.rating ? Number(s.rating).toFixed(1) : '-'}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        className="admin-hero-add-btn"
+                                                        onClick={() => addHeroExcludedSeries(s)}
+                                                        disabled={heroExcludedSeries.some(item => item.series_id === s.series_id)}
+                                                        title="Hariç tut"
+                                                    >
+                                                        {heroExcludedSeries.some(item => item.series_id === s.series_id) ? <Check size={16} /> : <Plus size={16} />}
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="admin-hero-excluded-chips">
+                                        {heroExcludedSeries.length === 0 && (
+                                            <span className="admin-hero-empty-chip">Henüz hariç tutulan dizi yok.</span>
+                                        )}
+                                        {heroExcludedSeries.map(item => (
+                                            <button
+                                                key={item.series_id}
+                                                className="admin-hero-excluded-chip"
+                                                onClick={() => removeHeroExcludedSeries(item.series_id)}
+                                                title="Listeden kaldır"
+                                            >
+                                                {item.name}
+                                                <X size={14} />
+                                            </button>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            </>
                         )}
+
+                        <div className="admin-hero-settings-actions">
+                            <button className="admin-save-btn" onClick={saveHeroAllSeriesSettings} disabled={heroSavingSettings}>
+                                {heroSavingSettings ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
+                                Ayarları Kaydet
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="admin-hero-list">
-                        <h4>Mevcut Hero Dizileri ({heroList.length})</h4>
-                        {heroLoading ? (
-                            <div className="admin-hero-loading"><Loader2 size={28} className="spin" /></div>
-                        ) : heroList.length === 0 ? (
-                            <div className="admin-hero-empty">
-                                <p>Henüz hero banner'a dizi eklenmemiş. Yukarıdan arama yaparak dizi ekleyin.</p>
-                            </div>
-                        ) : (
-                            <div className="admin-hero-cards">
-                                {heroList.map((item, index) => (
-                                    <div key={item.series_id} className="admin-hero-card">
-                                        <span className="admin-hero-order">{index + 1}</span>
-                                        {item.backdrop_path ? (
-                                            <img
-                                                src={getImageUrl(item.backdrop_path, 'w300')}
-                                                alt={item.name}
-                                                className="admin-hero-backdrop"
-                                            />
-                                        ) : item.poster_path ? (
-                                            <img
-                                                src={getImageUrl(item.poster_path, 'w185')}
-                                                alt={item.name}
-                                                className="admin-hero-backdrop"
-                                            />
-                                        ) : (
-                                            <div className="admin-hero-no-backdrop"><Film size={32} /></div>
-                                        )}
-                                        <div className="admin-hero-card-info">
-                                            <span className="admin-hero-card-name">{item.name}</span>
-                                            <span className="admin-hero-card-rating">
-                                                <Star size={12} fill="#f59e0b" color="#f59e0b" /> {item.rating ? Number(item.rating).toFixed(1) : '-'}
-                                            </span>
-                                        </div>
-                                        <div className="admin-hero-card-actions">
-                                            <button
-                                                className="admin-hero-move-btn"
-                                                onClick={() => moveHeroItem(index, 'up')}
-                                                disabled={index === 0}
-                                                title="Yukarı"
-                                            >
-                                                <ChevronUp size={16} />
-                                            </button>
-                                            <button
-                                                className="admin-hero-move-btn"
-                                                onClick={() => moveHeroItem(index, 'down')}
-                                                disabled={index === heroList.length - 1}
-                                                title="Aşağı"
-                                            >
-                                                <ChevronDown size={16} />
-                                            </button>
-                                            <button
-                                                className="admin-hero-remove-btn"
-                                                onClick={() => removeFromHero(item.series_id)}
-                                                title="Kaldır"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
+                    {!heroUseAllSeries && (
+                        <>
+                            <div className="admin-hero-add">
+                                <form onSubmit={handleHeroSearch} className="admin-search-form">
+                                    <Search size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Dizi ara ve ekle..."
+                                        value={heroSearchInput}
+                                        onChange={e => setHeroSearchInput(e.target.value)}
+                                    />
+                                    <button type="submit" disabled={heroSearching}>
+                                        {heroSearching ? <Loader2 size={16} className="spin" /> : 'Ara'}
+                                    </button>
+                                </form>
+
+                                {heroSearchResults.length > 0 && (
+                                    <div className="admin-hero-search-results">
+                                        {heroSearchResults.map(s => (
+                                            <div key={s.series_id} className="admin-hero-search-item">
+                                                {s.poster_path ? (
+                                                    <img src={getImageUrl(s.poster_path, 'w92')} alt={s.name} />
+                                                ) : (
+                                                    <div className="admin-hero-no-poster"><Film size={20} /></div>
+                                                )}
+                                                <div className="admin-hero-search-info">
+                                                    <span className="admin-hero-search-name">{s.name}</span>
+                                                    <span className="admin-hero-search-rating">
+                                                        <Star size={12} fill="#f59e0b" color="#f59e0b" /> {s.rating ? Number(s.rating).toFixed(1) : '-'}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    className="admin-hero-add-btn"
+                                                    onClick={() => addToHero(s.series_id)}
+                                                    disabled={heroList.some(h => h.series_id === s.series_id)}
+                                                >
+                                                    {heroList.some(h => h.series_id === s.series_id) ? <Check size={16} /> : <Plus size={16} />}
+                                                </button>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
+                                )}
                             </div>
-                        )}
-                    </div>
+
+                            <div className="admin-hero-list">
+                                <h4>Mevcut Hero Dizileri ({heroList.length})</h4>
+                                {heroLoading ? (
+                                    <div className="admin-hero-loading"><Loader2 size={28} className="spin" /></div>
+                                ) : heroList.length === 0 ? (
+                                    <div className="admin-hero-empty">
+                                        <p>Henüz hero banner'a dizi eklenmemiş. Yukarıdan arama yaparak dizi ekleyin.</p>
+                                    </div>
+                                ) : (
+                                    <div className="admin-hero-cards">
+                                        {heroList.map((item, index) => (
+                                            <div key={item.series_id} className="admin-hero-card">
+                                                <span className="admin-hero-order">{index + 1}</span>
+                                                {item.backdrop_path ? (
+                                                    <img
+                                                        src={getImageUrl(item.backdrop_path, 'w300')}
+                                                        alt={item.name}
+                                                        className="admin-hero-backdrop"
+                                                    />
+                                                ) : item.poster_path ? (
+                                                    <img
+                                                        src={getImageUrl(item.poster_path, 'w185')}
+                                                        alt={item.name}
+                                                        className="admin-hero-backdrop"
+                                                    />
+                                                ) : (
+                                                    <div className="admin-hero-no-backdrop"><Film size={32} /></div>
+                                                )}
+                                                <div className="admin-hero-card-info">
+                                                    <span className="admin-hero-card-name">{item.name}</span>
+                                                    <span className="admin-hero-card-rating">
+                                                        <Star size={12} fill="#f59e0b" color="#f59e0b" /> {item.rating ? Number(item.rating).toFixed(1) : '-'}
+                                                    </span>
+                                                </div>
+                                                <div className="admin-hero-card-actions">
+                                                    <button
+                                                        className="admin-hero-move-btn"
+                                                        onClick={() => moveHeroItem(index, 'up')}
+                                                        disabled={index === 0}
+                                                        title="Yukarı"
+                                                    >
+                                                        <ChevronUp size={16} />
+                                                    </button>
+                                                    <button
+                                                        className="admin-hero-move-btn"
+                                                        onClick={() => moveHeroItem(index, 'down')}
+                                                        disabled={index === heroList.length - 1}
+                                                        title="Aşağı"
+                                                    >
+                                                        <ChevronDown size={16} />
+                                                    </button>
+                                                    <button
+                                                        className="admin-hero-remove-btn"
+                                                        onClick={() => removeFromHero(item.series_id)}
+                                                        title="Kaldır"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 

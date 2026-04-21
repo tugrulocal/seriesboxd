@@ -1,5 +1,6 @@
 import os
 import time
+import json
 from typing import Optional
 
 import psycopg2
@@ -485,6 +486,55 @@ class HeroReorderModel(BaseModel):
     items: list
 
 
+class HeroAllSeriesSettingsModel(BaseModel):
+    use_all_series: bool = False
+    min_rating: Optional[float] = None
+    max_rating: Optional[float] = None
+    min_vote_count: Optional[int] = None
+    max_vote_count: Optional[int] = None
+    excluded_series_ids: list[int] = []
+
+
+def ensure_settings_table(cur):
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key VARCHAR(100) PRIMARY KEY,
+            value TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+
+def get_setting_value(cur, key: str, default: Optional[str] = None) -> Optional[str]:
+    cur.execute("SELECT value FROM settings WHERE key = %s", (key,))
+    row = cur.fetchone()
+    if not row:
+        return default
+    if isinstance(row, dict):
+        return row.get("value", default)
+    return row[0] if row and len(row) > 0 else default
+
+
+def set_setting_value(cur, key: str, value: str):
+    cur.execute("""
+        INSERT INTO settings (key, value, updated_at)
+        VALUES (%s, %s, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+    """, (key, value))
+
+
+def parse_hero_excluded_ids(raw_value: Optional[str]) -> list[int]:
+    if not raw_value:
+        return []
+    try:
+        parsed = json.loads(raw_value)
+        if isinstance(parsed, list):
+            return [int(x) for x in parsed if str(x).isdigit()]
+    except Exception:
+        pass
+    return []
+
+
 @router.get("/hero-series")
 def admin_list_hero_series(user=Depends(admin_required)):
     conn = get_db_conn()
@@ -646,19 +696,10 @@ def get_hero_shuffle_setting(user=Depends(admin_required)):
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        # Ensure settings table exists
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS settings (
-                key VARCHAR(100) PRIMARY KEY,
-                value TEXT,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
+        ensure_settings_table(cur)
         conn.commit()
 
-        cur.execute("SELECT value FROM settings WHERE key = 'hero_shuffle_enabled'")
-        row = cur.fetchone()
-        enabled = row["value"] == "true" if row else False
+        enabled = get_setting_value(cur, "hero_shuffle_enabled", "false") == "true"
         return {"enabled": enabled}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -673,23 +714,92 @@ def update_hero_shuffle_setting(enabled: bool = Query(...), user=Depends(admin_r
     conn = get_db_conn()
     cur = conn.cursor()
     try:
-        # Ensure settings table exists
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS settings (
-                key VARCHAR(100) PRIMARY KEY,
-                value TEXT,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
+        ensure_settings_table(cur)
         value = "true" if enabled else "false"
-        cur.execute("""
-            INSERT INTO settings (key, value, updated_at)
-            VALUES ('hero_shuffle_enabled', %s, NOW())
-            ON CONFLICT (key) DO UPDATE SET value = %s, updated_at = NOW()
-        """, (value, value))
+        set_setting_value(cur, "hero_shuffle_enabled", value)
         conn.commit()
         return {"status": "ok", "enabled": enabled}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.get("/settings/hero-all-series")
+def get_hero_all_series_settings(user=Depends(admin_required)):
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        ensure_settings_table(cur)
+        conn.commit()
+
+        use_all_series = get_setting_value(cur, "hero_use_all_series", "false") == "true"
+        min_rating_raw = get_setting_value(cur, "hero_min_rating")
+        max_rating_raw = get_setting_value(cur, "hero_max_rating")
+        min_vote_raw = get_setting_value(cur, "hero_min_vote_count")
+        max_vote_raw = get_setting_value(cur, "hero_max_vote_count")
+        excluded_ids = parse_hero_excluded_ids(get_setting_value(cur, "hero_excluded_series_ids", "[]"))
+
+        excluded_series = []
+        if excluded_ids:
+            cur.execute("""
+                SELECT series_id, name, poster_path, backdrop_path, rating, vote_count
+                FROM series
+                WHERE series_id = ANY(%s)
+                ORDER BY name ASC
+            """, (excluded_ids,))
+            excluded_series = cur.fetchall()
+
+        return {
+            "use_all_series": use_all_series,
+            "min_rating": float(min_rating_raw) if min_rating_raw not in (None, "") else None,
+            "max_rating": float(max_rating_raw) if max_rating_raw not in (None, "") else None,
+            "min_vote_count": int(min_vote_raw) if min_vote_raw not in (None, "") else None,
+            "max_vote_count": int(max_vote_raw) if max_vote_raw not in (None, "") else None,
+            "excluded_series_ids": excluded_ids,
+            "excluded_series": excluded_series,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+
+@router.put("/settings/hero-all-series")
+def update_hero_all_series_settings(data: HeroAllSeriesSettingsModel, user=Depends(admin_required)):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        if data.min_rating is not None and data.max_rating is not None and data.min_rating > data.max_rating:
+            raise HTTPException(status_code=400, detail="Minimum puan, maksimum puandan büyük olamaz.")
+        if data.min_vote_count is not None and data.max_vote_count is not None and data.min_vote_count > data.max_vote_count:
+            raise HTTPException(status_code=400, detail="Minimum oy sayısı, maksimum oy sayısından büyük olamaz.")
+
+        cleaned_ids = sorted({int(x) for x in data.excluded_series_ids if int(x) > 0})
+
+        ensure_settings_table(cur)
+        set_setting_value(cur, "hero_use_all_series", "true" if data.use_all_series else "false")
+        set_setting_value(cur, "hero_min_rating", "" if data.min_rating is None else str(data.min_rating))
+        set_setting_value(cur, "hero_max_rating", "" if data.max_rating is None else str(data.max_rating))
+        set_setting_value(cur, "hero_min_vote_count", "" if data.min_vote_count is None else str(data.min_vote_count))
+        set_setting_value(cur, "hero_max_vote_count", "" if data.max_vote_count is None else str(data.max_vote_count))
+        set_setting_value(cur, "hero_excluded_series_ids", json.dumps(cleaned_ids))
+
+        conn.commit()
+        return {
+            "status": "ok",
+            "use_all_series": data.use_all_series,
+            "min_rating": data.min_rating,
+            "max_rating": data.max_rating,
+            "min_vote_count": data.min_vote_count,
+            "max_vote_count": data.max_vote_count,
+            "excluded_series_ids": cleaned_ids,
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
