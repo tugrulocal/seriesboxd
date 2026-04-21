@@ -5,8 +5,8 @@ import './AdFreeGuide.css';
 
 const LINKS = {
   uBlockOriginLite: 'https://chromewebstore.google.com/detail/ublock-origin-lite/ddkjiahejlhfcafbddmgiahcphecmpfh?pli=1',
-  braveios: 'https://apps.apple.com/tr/app/brave-browser-search-engine/id1052879175',
-  braveandroid: 'https://play.google.com/store/apps/details?id=com.brave.browser',
+  braveIos: 'https://apps.apple.com/tr/app/brave-browser-search-engine/id1052879175',
+  braveAndroid: 'https://play.google.com/store/apps/details?id=com.brave.browser',
   adguardIos: 'https://adguard.com/en/adguard-ios/overview.html',
   kiwi: 'https://kiwibrowser.com/',
   orion: 'https://kagi.com/orion/',
@@ -61,6 +61,10 @@ function AdFreeGuide() {
 
   const bannerLabel = adblockActive ? 'Reklamsız Mod Aktif! ✅' : 'Reklamlardan nasıl kurtulurum? 🛡️';
 
+  const stopLinkEvent = (event) => {
+    event.stopPropagation();
+  };
+
   const SmartLink = ({ href, children, title }) => (
     <a
       className="adfree-guide-link"
@@ -68,10 +72,55 @@ function AdFreeGuide() {
       target="_blank"
       rel="noreferrer noopener"
       title={title}
+      onPointerDown={stopLinkEvent}
+      onMouseDown={stopLinkEvent}
+      onClick={stopLinkEvent}
     >
       {children}
     </a>
   );
+
+  const renderDeviceSpecificCard = () => {
+    if (deviceType === 'ios') {
+      return (
+        <article className="adfree-guide-card adfree-guide-card-featured">
+          <div className="adfree-guide-card-head">
+            <Smartphone size={18} />
+            <h4>iPhone (iOS)</h4>
+          </div>
+          <p>
+            iPhone'da en temiz yol <SmartLink href={LINKS.adguardIos} title="AdGuard iOS çözümünü aç">AdGuard</SmartLink> kullanmak veya doğrudan <SmartLink href={LINKS.braveIos} title="Brave iOS uygulamasını aç">Brave Browser</SmartLink> indirmek.
+          </p>
+        </article>
+      );
+    }
+
+    if (deviceType === 'android') {
+      return (
+        <article className="adfree-guide-card adfree-guide-card-featured">
+          <div className="adfree-guide-card-head">
+            <Smartphone size={18} />
+            <h4>Android</h4>
+          </div>
+          <p>
+            Android'de <SmartLink href={LINKS.braveAndroid} title="Brave Android uygulamasını aç">Brave Browser</SmartLink> veya uBlock destekli tarayıcıları tercih et. <SmartLink href={LINKS.kiwi} title="Kiwi Browser sitesini aç">Kivi</SmartLink> ve <SmartLink href={LINKS.orion} title="Orion Browser sitesini aç">Orion</SmartLink> ile daha temiz sonuç alırsın.
+          </p>
+        </article>
+      );
+    }
+
+    return (
+      <article className="adfree-guide-card adfree-guide-card-featured">
+        <div className="adfree-guide-card-head">
+          <Monitor size={18} />
+          <h4>PC / Mac</h4>
+        </div>
+        <p>
+          Masaüstünde <SmartLink href={LINKS.uBlockOriginLite} title="uBlock Origin Lite indirme sayfasını aç">uBlock Origin Lite</SmartLink> kullan. Reklamları hızlıca filtreleyip daha temiz bir izleme deneyimi sağlar.
+        </p>
+      </article>
+    );
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -126,12 +175,14 @@ function AdFreeGuide() {
   }, [open]);
 
   const modalContent = open ? (
-    <div className="adfree-guide-overlay" role="presentation" onClick={() => setOpen(false)}>
+    <div className="adfree-guide-overlay" role="presentation" onPointerDown={() => setOpen(false)}>
       <div
         className="adfree-guide-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="adfree-guide-title"
+        onPointerDown={(event) => event.stopPropagation()}
+        onMouseDown={(event) => event.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
         style={panelStyle || undefined}
       >
@@ -145,6 +196,12 @@ function AdFreeGuide() {
                 </span>
                 <h3 id="adfree-guide-title">Reklamsız Mod Aktif! ✅</h3>
                 <p>Tarayıcında çalışan bir engelleyici algıladık. İyi seyirler, reklamlar zaten bloklanıyor.</p>
+              </div>
+              <div className="adfree-guide-active-helper">
+                <p className="adfree-guide-active-helper-text">Halen reklam görüyorsanız şu yöntemleri deneyin:</p>
+                <div className="adfree-guide-grid adfree-guide-grid-single">
+                  {renderDeviceSpecificCard()}
+                </div>
               </div>
             </div>
           ) : (
@@ -161,7 +218,7 @@ function AdFreeGuide() {
                 </p>
               </div>
 
-              <button type="button" className="adfree-guide-close" onClick={() => setOpen(false)} aria-label="Kapat">
+              <button type="button" className="adfree-guide-close" onPointerDown={(event) => { event.stopPropagation(); setOpen(false); }} onMouseDown={(event) => event.stopPropagation()} onClick={() => setOpen(false)} aria-label="Kapat">
                 <X size={18} />
               </button>
             </div>
@@ -174,7 +231,7 @@ function AdFreeGuide() {
                     <h4>iPhone İçin Çözüm</h4>
                   </div>
                   <p>
-                    iPhone'da en temiz yol <SmartLink href={LINKS.adguardIos} title="AdGuard iOS çözümünü aç">AdGuard</SmartLink> kullanmak veya doğrudan <SmartLink href={LINKS.braveios} title="Brave Browser indirme sayfasını aç">Brave Browser</SmartLink> indirmek.
+                    iPhone'da en temiz yol <SmartLink href={LINKS.adguardIos} title="AdGuard iOS çözümünü aç">AdGuard</SmartLink> kullanmak veya doğrudan <SmartLink href={LINKS.braveIos} title="Brave iOS uygulamasını aç">Brave Browser</SmartLink> indirmek.
                   </p>
                 </article>
               )}
@@ -198,7 +255,7 @@ function AdFreeGuide() {
                     <h4>iPhone (iOS)</h4>
                   </div>
                   <p>
-                    En pratik çözüm <SmartLink href={LINKS.adguardIos} title="AdGuard iOS çözümünü aç">AdGuard</SmartLink> ya da direkt <SmartLink href={LINKS.brave} title="Brave Browser indirme sayfasını aç">Brave Browser</SmartLink> kullanmak.
+                    En pratik çözüm <SmartLink href={LINKS.adguardIos} title="AdGuard iOS çözümünü aç">AdGuard</SmartLink> ya da direkt <SmartLink href={LINKS.braveIos} title="Brave iOS uygulamasını aç">Brave Browser</SmartLink> kullanmak.
                   </p>
                 </article>
               )}
@@ -210,7 +267,7 @@ function AdFreeGuide() {
                     <h4>Android</h4>
                   </div>
                   <p>
-                    <SmartLink href={LINKS.braveandroid} title="Brave Browser indirme sayfasını aç">Brave Browser</SmartLink> veya uBlock destekli tarayıcılar tercih et. <SmartLink href={LINKS.kiwi} title="Kiwi Browser sitesini aç">Kivi</SmartLink>, <SmartLink href={LINKS.orion} title="Orion Browser sitesini aç">Orion</SmartLink> ve benzeri seçeneklerle daha temiz sonuç alırsın.
+                    <SmartLink href={LINKS.braveAndroid} title="Brave Android uygulamasını aç">Brave Browser</SmartLink> veya uBlock destekli tarayıcılar tercih et. <SmartLink href={LINKS.kiwi} title="Kiwi Browser sitesini aç">Kivi</SmartLink>, <SmartLink href={LINKS.orion} title="Orion Browser sitesini aç">Orion</SmartLink> ve benzeri seçeneklerle daha temiz sonuç alırsın.
                   </p>
                 </article>
               )}
