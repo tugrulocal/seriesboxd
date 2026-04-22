@@ -14,6 +14,7 @@ import AdminDashboard from './AdminDashboard'
 import Footer from './Footer'
 import DiscoveryMode from './DiscoveryMode'
 import { AuthProvider } from './AuthContext'
+import { Star, CalendarDays, ArrowRight, PlayCircle, X } from 'lucide-react'
 import './App.css'
 import API_BASE from './config';
 import { getImageUrl } from './utils';
@@ -86,97 +87,142 @@ function AppIcerik() {
     }, 300);
   };
 
+  const seciliDiziYil = seciliDizi?.first_air_date ? new Date(seciliDizi.first_air_date).getFullYear() : '';
+  const seciliDiziTurler = seciliDizi?.genres ? seciliDizi.genres.split(',').map(g => g.trim()).slice(0, 4) : [];
+
   return (
     <div className="App">
       <Navbar onSonuclar={handleSonuclar} onAnaSayfaGit={anaSayfayaGit} />
 
-      <Routes>
-        <Route path="/" element={
-          <>
-            {hata && <div style={{ color: 'red', marginBottom: '20px' }}>⚠️ {hata}</div>}
+      <main className="app-content">
+        <Routes>
+          <Route path="/" element={
+            <>
+              {hata && <div style={{ color: 'red', marginBottom: '20px' }}>⚠️ {hata}</div>}
 
-            {aramaAktif ? (
-              <div className="dizi-listesi">
-                {genreBaslik && <h2 className="genre-sayfa-baslik">{genreBaslik}</h2>}
-                {diziler.length > 0 ? (
-                  diziler.map((dizi) => (
-                    <div key={dizi.series_id} className="dizi-kart" onClick={() => setSeciliDizi(dizi)}>
-                      {dizi.poster_path && (
-                        <img
-                          src={getImageUrl(dizi.poster_path, 'w342')}
-                          srcSet={`${getImageUrl(dizi.poster_path, 'w185')} 185w, ${getImageUrl(dizi.poster_path, 'w342')} 342w, ${getImageUrl(dizi.poster_path, 'w500')} 500w`}
-                          sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
-                          alt={dizi.name}
-                          className="dizi-poster"
-                          loading="lazy"
-                          decoding="async"
-                        />
+              {aramaAktif ? (
+                <div className="dizi-listesi">
+                  {genreBaslik && <h2 className="genre-sayfa-baslik">{genreBaslik}</h2>}
+                  {diziler.length > 0 ? (
+                    diziler.map((dizi) => (
+                      <div key={dizi.series_id} className="dizi-kart" onClick={() => setSeciliDizi(dizi)}>
+                        {dizi.poster_path && (
+                          <img
+                            src={getImageUrl(dizi.poster_path, 'w342')}
+                            srcSet={`${getImageUrl(dizi.poster_path, 'w185')} 185w, ${getImageUrl(dizi.poster_path, 'w342')} 342w, ${getImageUrl(dizi.poster_path, 'w500')} 500w`}
+                            sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
+                            alt={dizi.name}
+                            className="dizi-poster"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        )}
+                        <div className="dizi-bilgi">
+                          <h2>{dizi.name}</h2>
+                          <p>⭐ {Number(dizi.rating).toFixed(1)}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    !hata && <p className="bulunamadi">Aradığınız dizi bulunamadı. 🍿</p>
+                  )}
+                </div>
+              ) : (
+                <Home tumDiziler={diziler} />
+              )}
+
+              {seciliDizi && (
+                <div
+                  className={`detail-modal-overlay ${kapanisAnimasyonu ? 'is-closing' : ''}`}
+                  onClick={() => modalKapatVeGit()}
+                >
+                  <div
+                    className={`detail-modal ${kapanisAnimasyonu ? 'is-closing' : ''}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button className="detail-modal-close" onClick={() => modalKapatVeGit()} aria-label="Kapat">
+                      <X size={22} strokeWidth={2.5} />
+                    </button>
+
+                    <div className="detail-modal-media">
+                      <img
+                        src={getImageUrl(seciliDizi.poster_path, 'w342')}
+                        srcSet={`${getImageUrl(seciliDizi.poster_path, 'w185')} 185w, ${getImageUrl(seciliDizi.poster_path, 'w342')} 342w, ${getImageUrl(seciliDizi.poster_path, 'w500')} 500w`}
+                        sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
+                        alt={seciliDizi.name}
+                        className="detail-modal-poster"
+                        decoding="async"
+                      />
+                      <div className="detail-modal-media-glow" />
+                    </div>
+
+                    <div className="detail-modal-content">
+                      <div className="detail-modal-badge-row">
+                        {seciliDiziYil && (
+                          <span className="detail-modal-year-chip">
+                            <CalendarDays size={14} />
+                            {seciliDiziYil}
+                          </span>
+                        )}
+                      </div>
+
+                      <h2 className="detail-modal-title">{seciliDizi.name}</h2>
+
+                      <div className="detail-modal-meta">
+                        <span className="detail-modal-rating">
+                          <Star size={18} fill="currentColor" strokeWidth={1.8} />
+                          {Number(seciliDizi.rating).toFixed(1)}
+                        </span>
+                        {seciliDiziYil && <span className="detail-modal-year-text">{seciliDiziYil}</span>}
+                      </div>
+
+                      {seciliDiziTurler.length > 0 && (
+                        <div className="detail-modal-genres">
+                          {seciliDiziTurler.map((genre) => (
+                            <span key={genre} className="detail-modal-genre-tag">{genre}</span>
+                          ))}
+                        </div>
                       )}
-                      <div className="dizi-bilgi">
-                        <h2>{dizi.name}</h2>
-                        <p>⭐ {Number(dizi.rating).toFixed(1)}</p>
+
+                      <p className="detail-modal-overview">{seciliDizi.overview || 'Bu dizi için henüz bir açıklama bulunmuyor.'}</p>
+
+                      <div className="detail-modal-actions">
+                        <button
+                          className="detail-modal-btn detail-modal-btn-secondary"
+                          onClick={() => modalKapatVeGit(`/dizi/${seciliDizi.series_id}`)}
+                        >
+                          <span>İncele</span>
+                          <ArrowRight size={18} strokeWidth={2.25} />
+                        </button>
+                        <button
+                          className="detail-modal-btn detail-modal-btn-primary"
+                          onClick={() => modalKapatVeGit(`/watch/${seciliDizi.series_id}/1/1`)}
+                        >
+                          <PlayCircle size={18} strokeWidth={2.1} />
+                          <span>İzle</span>
+                        </button>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  !hata && <p className="bulunamadi">Aradığınız dizi bulunamadı. 🍿</p>
-                )}
-              </div>
-            ) : (
-              <Home tumDiziler={diziler} />
-            )}
-
-            {seciliDizi && (
-              <div
-                className={`modal-arkaplan ${kapanisAnimasyonu ? 'arkaplan-gizle' : ''}`}
-                onClick={() => modalKapatVeGit()}
-              >
-                <div
-                  className={`modal-icerik ${kapanisAnimasyonu ? 'modal-gizle' : ''}`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button className="kapat-butonu" onClick={() => modalKapatVeGit()}>✕</button>
-                  <img
-                    src={getImageUrl(seciliDizi.poster_path, 'w342')}
-                    srcSet={`${getImageUrl(seciliDizi.poster_path, 'w185')} 185w, ${getImageUrl(seciliDizi.poster_path, 'w342')} 342w, ${getImageUrl(seciliDizi.poster_path, 'w500')} 500w`}
-                    sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
-                    alt={seciliDizi.name}
-                    className="modal-poster"
-                    decoding="async"
-                  />
-                  <div className="modal-metin">
-                    <h2>{seciliDizi.name}</h2>
-                    <div className="puan-ve-buton">
-                      <span className="modal-puan">⭐ {Number(seciliDizi.rating).toFixed(1)}</span>
-                      <button
-                        className="detay-butonu"
-                        onClick={() => modalKapatVeGit(`/dizi/${seciliDizi.series_id}`)}
-                      >
-                        Detay
-                      </button>
-                    </div>
-                    <div className="modal-ayirici"></div>
-                    <p>{seciliDizi.overview}</p>
                   </div>
                 </div>
-              </div>
-            )}
-          </>
-        } />
+              )}
+            </>
+          } />
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/dizi-detay" element={<h2 style={{ color: 'white', marginTop: '50px' }}>🎬 Detay Sayfası</h2>} />
-        <Route path="/dizi/:id" element={<DiziDetay />} />
-        <Route path="/watch/:id/:season/:episode" element={<WatchPage />} />
-        <Route path="/top50" element={<Top50 />} />
-        <Route path="/profil" element={<Profil />} />
-        <Route path="/listelerim" element={<Listelerim />} />
-        <Route path="/liste/:list_id" element={<ListeDetay isWatchlist={false} />} />
-        <Route path="/watchlist" element={<ListeDetay isWatchlist={true} />} />
-        <Route path="/dizilerim" element={<Dizilerim />} />
-        <Route path="/discovery" element={<DiscoveryMode />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      </Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/dizi-detay" element={<h2 style={{ color: 'white', marginTop: '50px' }}>🎬 Detay Sayfası</h2>} />
+          <Route path="/dizi/:id" element={<DiziDetay />} />
+          <Route path="/watch/:id/:season/:episode" element={<WatchPage />} />
+          <Route path="/top50" element={<Top50 />} />
+          <Route path="/profil" element={<Profil />} />
+          <Route path="/listelerim" element={<Listelerim />} />
+          <Route path="/liste/:list_id" element={<ListeDetay isWatchlist={false} />} />
+          <Route path="/watchlist" element={<ListeDetay isWatchlist={true} />} />
+          <Route path="/dizilerim" element={<Dizilerim />} />
+          <Route path="/discovery" element={<DiscoveryMode />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        </Routes>
+      </main>
       <Footer />
     </div>
   )

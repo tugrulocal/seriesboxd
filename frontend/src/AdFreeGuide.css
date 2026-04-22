@@ -293,7 +293,7 @@
 }
 
 .adfree-guide-link {
-  color: #f8fafc;
+  color: #ffffff;
   font-weight: 800;
   text-decoration: underline;
   text-decoration-thickness: 1.5px;
@@ -349,7 +349,7 @@
   }
 
   .adfree-guide-link:hover {
-    color: #7dd3fc;
+    color: #38bdf8;
     text-decoration-color: rgba(125, 211, 252, 1);
   }
 }

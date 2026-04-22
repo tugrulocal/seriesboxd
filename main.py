@@ -2402,7 +2402,7 @@ def stream_endpoint(series_id: int, season: int, episode: int):
     embeds.append({
         "name": "Vidplus Pro",
         "source": "player.vidplus.to",
-        "url": f"https://player.vidplus.to/embed/tv/{series_id}/{season}/{episode}",
+        "url": f"https://player.vidplus.to/embed/tv/{series_id}/{season}/{episode}?server=4k",
         "type": "alternative",
         "badge": "1080p"
     })
@@ -2574,7 +2574,7 @@ def get_discovery_cards(user = Depends(get_current_user)):
 
     try:
         if user:
-            # Giriş yapmış kullanıcı - kalıcı kaydırmaları hariç tut (left ve right)
+            # Giriş yapmış kullanıcı - kalıcı kaydırmaları ve watched/liked dizileri hariç tut
             cur.execute("""
                 SELECT s.series_id, s.name, s.poster_path, s.rating, s.genres, s.overview, s.first_air_date
                 FROM series s
@@ -2583,9 +2583,13 @@ def get_discovery_cards(user = Depends(get_current_user)):
                     SELECT series_id FROM user_discovery_swipes
                     WHERE user_id = %s AND direction IN ('left', 'right')
                 )
+                AND s.series_id NOT IN (
+                    SELECT series_id FROM user_series_activity
+                    WHERE user_id = %s AND activity_type IN ('watched', 'liked')
+                )
                 ORDER BY RANDOM()
                 LIMIT 20
-            """, (user["user_id"],))
+            """, (user["user_id"], user["user_id"]))
         else:
             # Giriş yapmamış kullanıcı - rastgele 20 dizi
             cur.execute("""

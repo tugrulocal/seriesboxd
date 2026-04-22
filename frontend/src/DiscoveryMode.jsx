@@ -2,13 +2,21 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import { Eye, Heart, Bookmark, Info, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import AuthRequiredModal from './AuthRequiredModal';
+import useAuthGate from './useAuthGate';
+import { Eye, Heart, Bookmark, ArrowUp, Info, ChevronLeft, ChevronRight, X, Star, CalendarDays, ArrowRight, PlayCircle } from 'lucide-react';
 import API_BASE from './config';
 import './DiscoveryMode.css';
 
 function DiscoveryMode() {
     const { kullanici } = useAuth();
     const navigate = useNavigate();
+    const {
+        isAuthModalOpen,
+        authModalContext,
+        ensureAuth,
+        closeAuthModal
+    } = useAuthGate();
     const [cards, setCards] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -89,6 +97,11 @@ function DiscoveryMode() {
     const handleSwipe = async (swipeDirection, isPermanent = true) => {
         if (currentIndex >= cards.length) return;
 
+        if (swipeDirection === 'right') {
+            const token = ensureAuth('Keşif kartını izleme listesine eklemek');
+            if (!token) return;
+        }
+
         const currentCard = cards[currentIndex];
         setDirection(swipeDirection);
 
@@ -142,8 +155,26 @@ function DiscoveryMode() {
     };
 
     const handleNext = () => {
-        // Next button - not permanent skip, can show again
-        handleSwipe('next', false);
+        if (currentIndex >= cards.length) return;
+
+        const currentCard = cards[currentIndex];
+        setDirection('up');
+        setCardHistory(prev => [...prev, { index: currentIndex, card: currentCard }]);
+
+        setTimeout(() => {
+            setDirection(null);
+            const nextIndex = currentIndex + 1;
+
+            if (nextIndex >= cards.length) {
+                if (cards.length < 20) {
+                    setShowSummary(true);
+                } else {
+                    fetchCards();
+                }
+            } else {
+                setCurrentIndex(nextIndex);
+            }
+        }, 300);
     };
 
     const handlePrevious = () => {
@@ -162,13 +193,10 @@ function DiscoveryMode() {
     };
 
     const toggleActivity = async (activityType) => {
-        if (!kullanici) {
-            alert('Bu özellik için giriş yapmalısınız.');
-            return;
-        }
+        const token = ensureAuth('Keşif kartında aktivite kaydetmek');
+        if (!token) return;
 
         const currentCard = cards[currentIndex];
-        const token = localStorage.getItem('sb_token');
         const currentActivity = cardActivities[currentCard.series_id]?.[activityType];
 
         try {
@@ -318,7 +346,10 @@ function DiscoveryMode() {
         <div className="discovery-container">
             <div className="discovery-header">
                 <h1 className="discovery-title">Keşfet</h1>
-                <p className="discovery-subtitle">Sağa kaydırarak watchlist'e ekle, sola kaydırarak geç</p>
+                <p className="discovery-subtitle">
+                    Sağa kaydırarak <span className="discovery-accent discovery-accent-watchlist">izleme listene ekle</span>,
+                    sola kaydırarak <span className="discovery-accent discovery-accent-pass">geç</span>
+                </p>
             </div>
 
             <div className="card-stack-container" ref={constraintsRef}>
@@ -348,6 +379,7 @@ function DiscoveryMode() {
                     key={currentCard.series_id}
                     card={currentCard}
                     onSwipe={handleSwipe}
+                    onRightSwipeAuth={ensureAuth}
                     direction={direction}
                     onInfoClick={() => openModal(currentCard)}
                     onWatchedClick={() => toggleActivity('watched')}
@@ -369,7 +401,7 @@ function DiscoveryMode() {
 
                 <button
                     className="action-btn like-btn"
-                    onClick={() => handleSwipe('right')}
+                    onClick={handleNext}
                     aria-label="İzleme listesine ekle"
                 >
                     <Bookmark strokeWidth={2} />
@@ -400,46 +432,101 @@ function DiscoveryMode() {
             {/* Detail Modal */}
             {seciliDizi && (
                 <div
-                    className={`modal-arkaplan ${kapanisAnimasyonu ? 'arkaplan-gizle' : ''}`}
+                    className={`detail-modal-overlay ${kapanisAnimasyonu ? 'is-closing' : ''}`}
                     onClick={() => closeModal()}
                 >
                     <div
-                        className={`modal-icerik ${kapanisAnimasyonu ? 'modal-gizle' : ''}`}
+                        className={`detail-modal ${kapanisAnimasyonu ? 'is-closing' : ''}`}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <button className="kapat-butonu" onClick={() => closeModal()}>✕</button>
-                        <img
-                            src={`https://image.tmdb.org/t/p/w342${seciliDizi.poster_path}`}
-                            srcSet={`https://image.tmdb.org/t/p/w185${seciliDizi.poster_path} 185w, https://image.tmdb.org/t/p/w342${seciliDizi.poster_path} 342w, https://image.tmdb.org/t/p/w500${seciliDizi.poster_path} 500w`}
-                            sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
-                            alt={seciliDizi.name}
-                            className="modal-poster"
-                            decoding="async"
-                        />
-                        <div className="modal-metin">
-                            <h2>{seciliDizi.name}</h2>
-                            <div className="puan-ve-buton">
-                                <span className="modal-puan">⭐ {Number(seciliDizi.rating).toFixed(1)}</span>
+                        <button className="detail-modal-close" onClick={() => closeModal()} aria-label="Kapat">
+                            <X size={22} strokeWidth={2.5} />
+                        </button>
+
+                        <div className="detail-modal-media">
+                            <img
+                                src={`https://image.tmdb.org/t/p/w342${seciliDizi.poster_path}`}
+                                srcSet={`https://image.tmdb.org/t/p/w185${seciliDizi.poster_path} 185w, https://image.tmdb.org/t/p/w342${seciliDizi.poster_path} 342w, https://image.tmdb.org/t/p/w500${seciliDizi.poster_path} 500w`}
+                                sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
+                                alt={seciliDizi.name}
+                                className="detail-modal-poster"
+                                decoding="async"
+                            />
+                            <div className="detail-modal-media-glow" />
+                        </div>
+
+                        <div className="detail-modal-content">
+                            <div className="detail-modal-badge-row">
+                                {seciliDizi.first_air_date && (
+                                    <span className="detail-modal-year-chip">
+                                        <CalendarDays size={14} />
+                                        {new Date(seciliDizi.first_air_date).getFullYear()}
+                                    </span>
+                                )}
+                            </div>
+
+                            <h2 className="detail-modal-title">{seciliDizi.name}</h2>
+
+                            <div className="detail-modal-meta">
+                                <span className="detail-modal-rating">
+                                    <Star size={18} fill="currentColor" strokeWidth={1.8} />
+                                    {Number(seciliDizi.rating).toFixed(1)}
+                                </span>
+                                {seciliDizi.first_air_date && (
+                                    <span className="detail-modal-year-text">
+                                        {new Date(seciliDizi.first_air_date).getFullYear()}
+                                    </span>
+                                )}
+                            </div>
+
+                            {seciliDizi.genres && (
+                                <div className="detail-modal-genres">
+                                    {seciliDizi.genres.split(',').slice(0, 4).map((genre, idx) => (
+                                        <span key={idx} className="detail-modal-genre-tag">
+                                            {genre.trim()}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            <p className="detail-modal-overview">
+                                {seciliDizi.overview || 'Bu dizi için henüz bir açıklama bulunmuyor.'}
+                            </p>
+
+                            <div className="detail-modal-actions">
                                 <button
-                                    className="detay-butonu"
+                                    className="detail-modal-btn detail-modal-btn-secondary"
                                     onClick={() => closeModal(`/dizi/${seciliDizi.series_id}`)}
                                 >
-                                    Detay
+                                    <span>İncele</span>
+                                    <ArrowRight size={18} strokeWidth={2.25} />
+                                </button>
+                                <button
+                                    className="detail-modal-btn detail-modal-btn-primary"
+                                    onClick={() => closeModal(`/watch/${seciliDizi.series_id}/1/1`)}
+                                >
+                                    <PlayCircle size={18} strokeWidth={2.1} />
+                                    <span>İzle</span>
                                 </button>
                             </div>
-                            <div className="modal-ayirici"></div>
-                            <p>{seciliDizi.overview || 'Bu dizi için henüz bir açıklama bulunmuyor.'}</p>
                         </div>
                     </div>
                 </div>
             )}
+
+            <AuthRequiredModal
+                isOpen={isAuthModalOpen}
+                contextText={authModalContext}
+                onClose={closeAuthModal}
+            />
         </div>
     );
 }
 
 // Swipe Card Component with framer-motion
-function SwipeCard({ card, onSwipe, direction, onInfoClick, onWatchedClick, onLikedClick, isWatched, isLiked }) {
+function SwipeCard({ card, onSwipe, onRightSwipeAuth, direction, onInfoClick, onWatchedClick, onLikedClick, isWatched, isLiked }) {
     const x = useMotionValue(0);
+    const y = useMotionValue(0);
     const rotate = useTransform(x, [-300, 0, 300], [-30, 0, 30]);
     const opacity = useTransform(x, [-300, -150, 0, 150, 300], [0.5, 1, 1, 1, 0.5]);
 
@@ -451,13 +538,24 @@ function SwipeCard({ card, onSwipe, direction, onInfoClick, onWatchedClick, onLi
         const threshold = 100;
 
         if (info.offset.x > threshold) {
+            if (typeof onRightSwipeAuth === 'function') {
+                const token = onRightSwipeAuth('Keşif kartını izleme listesine eklemek');
+                if (!token) {
+                    animate(x, 0, { type: 'spring', stiffness: 500, damping: 30 });
+                    animate(y, 0, { type: 'spring', stiffness: 500, damping: 30 });
+                    return;
+                }
+            }
             animate(x, 500, { duration: 0.3 });
+            animate(y, 0, { duration: 0.3 });
             onSwipe('right');
         } else if (info.offset.x < -threshold) {
             animate(x, -500, { duration: 0.3 });
+            animate(y, 0, { duration: 0.3 });
             onSwipe('left');
         } else {
             animate(x, 0, { type: 'spring', stiffness: 500, damping: 30 });
+            animate(y, 0, { type: 'spring', stiffness: 500, damping: 30 });
         }
     };
 
@@ -465,19 +563,22 @@ function SwipeCard({ card, onSwipe, direction, onInfoClick, onWatchedClick, onLi
     useEffect(() => {
         if (direction === 'right') {
             animate(x, 500, { duration: 0.3 });
+            animate(y, 0, { duration: 0.3 });
         } else if (direction === 'left') {
             animate(x, -500, { duration: 0.3 });
-        } else if (direction === 'next') {
-            animate(x, 500, { duration: 0.3 });
+            animate(y, 0, { duration: 0.3 });
+        } else if (direction === 'up') {
+            animate(x, 0, { duration: 0.12 });
+            animate(y, -260, { duration: 0.28 });
         }
-    }, [direction, x]);
+    }, [direction, x, y]);
 
     const year = card.first_air_date ? new Date(card.first_air_date).getFullYear() : '';
 
     return (
         <motion.div
             className="swipe-card"
-            style={{ x, rotate, opacity }}
+            style={{ x, y, rotate, opacity }}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={1}

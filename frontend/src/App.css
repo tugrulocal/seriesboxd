@@ -18,10 +18,28 @@ body {
 
 .App {
   width: 100%;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   padding: 0;
+}
+
+.app-content {
+  flex: 1 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content > * {
+  width: 100%;
+}
+
+.App > footer {
+  margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
 }
 
 /* =======================================
@@ -192,10 +210,17 @@ body {
 .login-btn {
   background: linear-gradient(135deg, #38bdf8, #818cf8);
   color: #0f172a !important;
-  padding: 8px 20px;
-  border-radius: 20px;
+  padding: 2px 18px 0;
+  height: 36px;
+  border-radius: 14px;
   font-weight: 700 !important;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  font-family: 'Gabarito', sans-serif;
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   transition: all 0.25s ease;
   box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
   position: relative;
@@ -379,257 +404,353 @@ h1 {
   margin-top: 20px;
 }
 
-/* Arka planı karartıp tıklanmaz yapan katman */
-.modal-arkaplan {
+/* Shared Detail Modal */
+.modal-arkaplan,
+.detail-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(5, 10, 25, 0.75);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  z-index: 12000;
+  padding: 20px;
+  background: rgba(2, 6, 23, 0.66);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  animation: detailModalFade 0.2s ease-out;
 }
 
-/* Pencerenin kendisi */
-.modal-icerik {
-  background: rgba(20, 30, 55, 0.82);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(56, 189, 248, 0.18);
-  width: 90%;
-  max-width: 700px;
-  border-radius: 18px;
-  display: flex;
+.modal-icerik,
+.detail-modal {
   position: relative;
+  width: min(1040px, 100%);
+  min-height: 560px;
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) 1fr;
   overflow: hidden;
-  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  animation: modalAcilis 0.3s ease-out;
+  border-radius: 30px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.18), transparent 42%),
+    radial-gradient(circle at 100% 0%, rgba(99, 102, 241, 0.16), transparent 44%),
+    linear-gradient(180deg, rgba(9, 16, 30, 0.94), rgba(6, 10, 20, 0.98));
+  box-shadow:
+    0 38px 90px rgba(2, 6, 23, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  font-family: 'Gabarito', sans-serif;
+  animation: detailModalPop 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-@keyframes modalAcilis {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+.detail-modal::before,
+.modal-icerik::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 24%);
 }
 
-/* Kapat Butonu */
+.detail-modal-close,
 .kapat-butonu {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  background: rgba(15, 23, 42, 0.6);
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.56);
   color: #f8fafc;
-  border: none;
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  font-size: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
 
+.detail-modal-close:hover,
 .kapat-butonu:hover {
-  background: #ef4444;
-  /* Kırmızımsı hover */
+  transform: scale(1.05);
+  background: rgba(30, 41, 59, 0.84);
+  border-color: rgba(56, 189, 248, 0.32);
 }
 
-/* Modal İçindeki Poster */
+.detail-modal-media,
 .modal-poster {
-  width: 250px;
+  position: relative;
+  min-height: 100%;
+  overflow: hidden;
+  background: #030712;
+}
+
+.detail-modal-poster,
+.modal-poster {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
 
-/* Modal İçindeki Yazılar */
+.detail-modal-media-glow {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 38%;
+  background: linear-gradient(180deg, transparent, rgba(2, 6, 23, 0.22), rgba(2, 6, 23, 0.84));
+  pointer-events: none;
+}
+
+.detail-modal-content,
 .modal-metin {
-  padding: 30px;
+  position: relative;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: 46px 46px 40px 40px;
+  color: #e2e8f0;
   text-align: left;
 }
 
-.modal-metin h2 {
-  margin: 0 0 10px 0;
-  font-size: 1.8rem;
-  color: #f8fafc;
-}
-
-.modal-puan {
-  font-size: 1.2rem;
-  color: #fbbf24;
-  font-weight: bold;
-
-
-}
-
-.modal-ayirici {
-  height: 1px;
-  background-color: #334155;
-  margin: 15px 0;
-}
-
-.modal-metin p {
-  color: #94a3b8;
-  font-size: 1rem;
-  line-height: 1.7;
-  overflow-y: auto;
-  /* Çok uzunsa kaydırma çubuğu çıkarır */
-  max-height: 250px;
-}
-
-/* Puan ve Butonu Yan Yana Hizalama */
+.detail-modal-badge-row,
 .puan-ve-buton {
   display: flex;
   align-items: center;
-  gap: 15px;
-  /* Puan ile buton arasındaki nefes boşluğu */
-  margin-bottom: 15px;
-  /* Çizgiyle (ayırıcı) arasına boşluk */
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-/* Modal Puanı (Eski haline getirdik) */
-.modal-puan {
-  font-size: 1.2rem;
-  color: #fbbf24;
-  font-weight: bold;
-}
-
-/* İŞTE YENİ DETAY BUTONUMUZ */
-.detay-butonu {
-  background-color: #38bdf8;
-  /* Seriesboxd Mavisi */
-  color: #0f172a;
-  /* Koyu lacivert, okunabilir bir yazı rengi */
-  border: none;
-  padding: 8px 18px;
-  border-radius: 8px;
-  /* Yumuşak köşeler */
-  font-weight: bold;
+.detail-modal-badge,
+.detail-modal-year-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  font-size: 0.85rem;
+}
+
+.detail-modal-badge {
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+}
+
+.detail-modal-year-chip {
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.detail-modal-title,
+.modal-metin h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-family: 'Gabarito', sans-serif !important;
+  font-size: clamp(2rem, 3vw, 3.4rem);
+  line-height: 1.03;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+  text-shadow: 0 2px 10px rgba(2, 6, 23, 0.75), 0 0 24px rgba(56, 189, 248, 0.14);
+}
+
+.detail-modal-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detail-modal-rating,
+.modal-puan {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fbbf24;
+  font-size: 1.4rem;
+  font-weight: 800;
+  text-shadow: 0 0 18px rgba(251, 191, 36, 0.2);
+}
+
+.detail-modal-year-text {
+  color: #94a3b8;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.detail-modal-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-modal-genre-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  background: rgba(56, 189, 248, 0.1);
+  color: #bfdbfe;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.detail-modal-overview,
+.modal-metin p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 1.02rem;
+  line-height: 1.8;
+  max-width: 52ch;
+}
+
+.detail-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.detail-modal-btn,
+.detay-butonu {
+  border: none;
+  border-radius: 16px;
+  min-height: 52px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: 'Gabarito', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 800;
   cursor: pointer;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2);
-  /* Hafif mavi bir parlama */
-  transition: all 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
 
-/* Mouse ile Üzerine Gelince (Hover) */
+.detail-modal-btn:hover,
 .detay-butonu:hover {
-  background-color: #0284c7;
-  /* Rengi hafif koyulaşır */
   transform: translateY(-2px);
-  /* Çok hafif yukarı zıplar */
-  box-shadow: 0 6px 15px rgba(56, 189, 248, 0.4);
 }
 
-/* Modal Kapanış Animasyonları */
-@keyframes modalKapanis {
+.detail-modal-btn-secondary,
+.detay-butonu {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.detail-modal-btn-secondary:hover,
+.detay-butonu:hover {
+  border-color: rgba(56, 189, 248, 0.3);
+  background: rgba(56, 189, 248, 0.12);
+  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.28);
+}
+
+.detail-modal-btn-primary {
+  color: #04111f;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  box-shadow: 0 14px 34px rgba(56, 189, 248, 0.28);
+}
+
+.detail-modal-btn-primary:hover {
+  box-shadow: 0 16px 38px rgba(56, 189, 248, 0.38);
+}
+
+@keyframes detailModalFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes detailModalPop {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.detail-modal-overlay.is-closing .detail-modal,
+.modal-arkaplan.arkaplan-gizle .modal-icerik,
+.detail-modal.is-closing {
+  animation: detailModalPopOut 0.24s ease forwards;
+}
+
+@keyframes detailModalPopOut {
   from {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translateY(0) scale(1);
   }
 
   to {
     opacity: 0;
-    transform: scale(0.95) translateY(20px);
+    transform: translateY(16px) scale(0.98);
   }
 }
 
-.modal-gizle {
-  animation: modalKapanis 0.3s ease-in forwards;
-}
-
-@keyframes arkaplanKapanis {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
-}
-
-.arkaplan-gizle {
-  animation: arkaplanKapanis 0.3s ease-in forwards;
-}
-
-/* Modal Mobile Responsive */
-@media (max-width: 640px) {
-  .modal-icerik {
-    flex-direction: column;
-    width: 95%;
-    max-width: none;
-    max-height: 90vh;
+@media (max-width: 900px) {
+  .modal-icerik,
+  .detail-modal {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    max-height: calc(100vh - 40px);
     overflow-y: auto;
-    border-radius: 16px;
   }
 
+  .detail-modal-media,
   .modal-poster {
-    width: 100%;
-    height: 280px;
-    object-fit: cover;
-    border-radius: 16px 16px 0 0;
+    aspect-ratio: 2 / 3;
   }
 
+  .detail-modal-content,
   .modal-metin {
-    padding: 20px;
+    padding: 28px 22px 24px;
+    gap: 14px;
   }
 
+  .detail-modal-title,
   .modal-metin h2 {
-    font-size: 1.5rem;
+    font-size: clamp(1.7rem, 7vw, 2.6rem);
   }
 
+  .detail-modal-overview,
   .modal-metin p {
-    max-height: 200px;
-    font-size: 0.95rem;
-  }
-
-  .kapat-butonu {
-    top: 10px;
-    right: 10px;
-    background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(10px);
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .puan-ve-buton {
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .detay-butonu {
-    padding: 10px 20px;
-    font-size: 0.9rem;
+    font-size: 0.98rem;
+    line-height: 1.75;
   }
 }
 
-@media (max-width: 400px) {
-  .modal-poster {
-    height: 220px;
+@media (max-width: 520px) {
+  .modal-arkaplan,
+  .detail-modal-overlay {
+    padding: 12px;
+    align-items: flex-end;
   }
 
-  .modal-metin {
-    padding: 16px;
+  .modal-icerik,
+  .detail-modal {
+    width: 100%;
+    border-radius: 24px;
   }
 
-  .modal-metin h2 {
-    font-size: 1.3rem;
+  .detail-modal-actions,
+  .puan-ve-buton {
+    flex-direction: column;
+  }
+
+  .detail-modal-btn,
+  .detay-butonu {
+    width: 100%;
   }
 }
 
@@ -2942,25 +3063,29 @@ h1.detay-baslik {
 }
 
 .avatar-btn {
-  width: 38px;
-  height: 38px;
+  position: relative;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  border: 2px solid rgba(56, 189, 248, 0.3);
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(8px);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background:
+    radial-gradient(circle at 30% 30%, rgba(56, 189, 248, 0.2), transparent 48%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(8, 15, 30, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 24px rgba(2, 6, 23, 0.3);
+  backdrop-filter: blur(10px) saturate(140%);
   cursor: pointer;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease, background 0.22s ease;
   padding: 0;
 }
 
 .avatar-btn:hover {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2), 0 0 14px rgba(56, 189, 248, 0.3);
-  transform: scale(1.06);
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12), 0 16px 30px rgba(2, 6, 23, 0.34);
+  transform: translateY(-1px) scale(1.04);
 }
 
 .avatar-img {
@@ -2972,10 +3097,29 @@ h1.detay-baslik {
 .avatar-harf {
   font-size: 1rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  color: transparent;
+  background: linear-gradient(135deg, #7dd3fc, #38bdf8 42%, #818cf8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.avatar-caret {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  padding: 1px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.85);
+  color: #7dd3fc;
+  transition: transform 0.2s ease, color 0.2s ease, background 0.2s ease;
+  pointer-events: none;
+}
+
+.avatar-caret.acik {
+  transform: rotate(180deg);
+  color: #f8fafc;
+  background: rgba(56, 189, 248, 0.16);
 }
 
 .kullanici-dropdown {
@@ -2983,21 +3127,27 @@ h1.detay-baslik {
   top: calc(100% + 12px);
   right: 0;
   width: 240px;
-  background: rgba(8, 15, 35, 0.88);
+  background:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(11, 18, 35, 0.98), rgba(6, 11, 24, 0.98));
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(56, 189, 248, 0.2);
-  border-radius: 14px;
-  padding: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 18px;
+  padding: 14px;
   z-index: 1000;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  animation: panelAc 0.2s ease-out;
+  box-shadow:
+    0 26px 52px rgba(0, 0, 0, 0.56),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform-origin: top right;
+  animation: panelAc 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
 @keyframes panelAc {
   from {
     opacity: 0;
-    transform: translateY(-8px) scale(0.97);
+    transform: translateY(-10px) scale(0.94);
   }
 
   to {
@@ -3014,19 +3164,20 @@ h1.detay-baslik {
 }
 
 .dropdown-avatar {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: #1e293b;
-  border: 2px solid #38bdf8;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(129, 140, 248, 0.18));
+  border: 1px solid rgba(56, 189, 248, 0.24);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  color: #38bdf8;
+  color: #7dd3fc;
   font-size: 1.1rem;
   flex-shrink: 0;
   overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .dropdown-avatar img {
@@ -3040,6 +3191,7 @@ h1.detay-baslik {
   font-weight: bold;
   font-size: 0.9rem;
   margin: 0;
+  font-family: 'Gabarito', sans-serif;
 }
 
 .dropdown-email {
@@ -3050,11 +3202,12 @@ h1.detay-baslik {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 145px;
+  font-family: 'Gabarito', sans-serif;
 }
 
 .dropdown-ayirici {
   height: 1px;
-  background: rgba(56, 189, 248, 0.12);
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.14), transparent);
   margin: 6px 0;
 }
 
@@ -3062,47 +3215,85 @@ h1.detay-baslik {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 10px;
-  border-radius: 8px;
+  padding: 10px 11px;
+  border-radius: 12px;
   color: #94a3b8;
   font-size: 0.875rem;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
   width: 100%;
   background: none;
   border: none;
   text-align: left;
+  font-family: 'Gabarito', sans-serif;
 }
 
 .dropdown-item:hover {
   background: rgba(56, 189, 248, 0.1);
   color: #f8fafc;
+  transform: translateX(2px);
+}
+
+.dropdown-item svg {
+  color: #7dd3fc;
+  flex: 0 0 auto;
 }
 
 .dropdown-item.cikis {
-  color: #ef4444;
+  color: #fca5a5;
 }
 
 .dropdown-item.cikis:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
 }
 
 /* =========================================
    AUTH SAYFASI (LOGIN / REGISTER)
 ========================================= */
 .auth-sayfa {
+  position: relative;
   min-height: 100vh;
-  min-width: 100vw;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   overflow: hidden;
-  /* .App padding'ini override et */
-  margin: -40px -20px;
-  padding: 40px 20px;
+  padding: 32px 20px 40px;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(56, 189, 248, 0.16), transparent 22%),
+    radial-gradient(circle at 82% 18%, rgba(99, 102, 241, 0.14), transparent 24%),
+    radial-gradient(circle at 50% 88%, rgba(16, 185, 129, 0.08), transparent 26%),
+    linear-gradient(180deg, #06101f 0%, #0b1220 45%, #050816 100%);
+}
+
+.auth-sayfa::before,
+.auth-sayfa::after {
+  content: '';
+  position: absolute;
+  inset: auto;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(28px);
+  opacity: 0.85;
+}
+
+.auth-sayfa::before {
+  width: 260px;
+  height: 260px;
+  left: -70px;
+  bottom: 8%;
+  background: rgba(14, 165, 233, 0.12);
+}
+
+.auth-sayfa::after {
+  width: 320px;
+  height: 320px;
+  right: -110px;
+  top: 8%;
+  background: rgba(99, 102, 241, 0.12);
 }
 
 /* Arkaplan katmanı */
@@ -3110,17 +3301,22 @@ h1.detay-baslik {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 20% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 50% at 80% 80%, rgba(99, 102, 241, 0.07) 0%, transparent 60%);
+    radial-gradient(ellipse 72% 54% at 18% 18%, rgba(56, 189, 248, 0.13) 0%, transparent 58%),
+    radial-gradient(ellipse 64% 48% at 84% 82%, rgba(99, 102, 241, 0.11) 0%, transparent 56%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03), transparent 45%);
   z-index: 0;
+  pointer-events: none;
 }
 
 .auth-arka-gradyan {
   position: fixed;
   inset: 0;
   background:
-    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2338bdf8' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    linear-gradient(120deg, rgba(255, 255, 255, 0.03) 0%, transparent 28%, rgba(255, 255, 255, 0.02) 52%, transparent 76%, rgba(255, 255, 255, 0.03) 100%),
+    radial-gradient(circle at center, rgba(56, 189, 248, 0.06) 0 1px, transparent 1.2px);
+  background-size: auto, 28px 28px;
   z-index: 0;
+  pointer-events: none;
 }
 
 /* Kart */
@@ -3128,91 +3324,140 @@ h1.detay-baslik {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 420px;
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 40px 36px 32px;
+  max-width: 520px;
+  background:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 38%),
+    linear-gradient(180deg, rgba(17, 24, 39, 0.84), rgba(8, 15, 30, 0.9));
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 28px;
+  padding: 34px 32px 30px;
   box-shadow:
-    0 0 0 1px rgba(56, 189, 248, 0.06),
-    0 32px 64px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    0 0 0 1px rgba(56, 189, 248, 0.08),
+    0 34px 70px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.auth-kart::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 26%);
+}
+
+.auth-kart::after {
+  content: '';
+  position: absolute;
+  inset: auto -20% -90px auto;
+  width: 240px;
+  height: 240px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.12), transparent 68%);
+  filter: blur(10px);
+  pointer-events: none;
 }
 
 .auth-logo {
   display: block;
   text-align: center;
-  font-size: 2rem;
+  font-size: 2.15rem;
   font-family: 'Mont', sans-serif;
   font-weight: 900;
-  color: #38bdf8;
+  color: transparent;
+  background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 45%, #818cf8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
   text-decoration: none;
-  letter-spacing: 1px;
-  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.28));
 }
 
 .auth-slogan {
   text-align: center;
-  color: #64748b;
-  font-size: 0.85rem;
-  margin: 0 0 28px;
+  color: #cbd5e1;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  margin: 0 0 26px;
+}
+
+.auth-social-stack {
+  margin-bottom: 16px;
 }
 
 /* Sekme (Tab) */
 .auth-tab-wrapper {
   position: relative;
   display: flex;
-  border-bottom: 2px solid #1e293b;
-  margin-bottom: 24px;
+  gap: 0;
+  padding: 4px;
+  margin-bottom: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(2, 6, 23, 0.42);
+  overflow: hidden;
 }
 
 .auth-tab {
   flex: 1;
-  background: none;
+  position: relative;
+  background: transparent;
   border: none;
-  color: #64748b;
+  border-radius: 999px;
+  color: #94a3b8;
   font-size: 0.95rem;
-  padding: 10px;
+  padding: 11px 12px;
   cursor: pointer;
-  font-weight: 500;
-  transition: color 0.2s;
+  font-weight: 700;
+  font-family: 'Gabarito', sans-serif;
+  letter-spacing: 0.01em;
+  transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  z-index: 1;
 }
 
 .auth-tab.aktif {
   color: #f8fafc;
+  background: transparent;
 }
 
 .auth-tab-cizgi {
   position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 50%;
-  height: 2px;
-  background: #38bdf8;
-  border-radius: 2px;
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(129, 140, 248, 0.2));
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 14px 26px rgba(2, 6, 23, 0.35);
+  transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.26s ease, background 0.26s ease;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .auth-tab-cizgi.sagda {
-  left: 50%;
+  transform: translateX(calc(100% + 4px));
 }
 
 /* Hata mesajı */
 .auth-hata {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 10px;
-  color: #fca5a5;
-  font-size: 0.875rem;
-  padding: 10px 14px;
+  background: rgba(127, 29, 29, 0.24);
+  border: 1px solid rgba(248, 113, 113, 0.26);
+  border-radius: 16px;
+  color: #fecaca;
+  font-size: 0.9rem;
+  padding: 12px 14px;
   margin-bottom: 18px;
   display: flex;
   align-items: center;
   gap: 8px;
-  animation: auth-shake 0.4s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: auth-shake 0.42s ease;
 }
 
 @keyframes auth-shake {
@@ -3241,23 +3486,25 @@ h1.detay-baslik {
 
 /* Başarı mesajı */
 .auth-basari {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 10px;
+  background: rgba(6, 95, 70, 0.22);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  border-radius: 16px;
   color: #6ee7b7;
-  font-size: 0.875rem;
-  padding: 10px 14px;
+  font-size: 0.9rem;
+  padding: 12px 14px;
   margin-bottom: 18px;
   display: flex;
   align-items: center;
   gap: 8px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* Form */
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .auth-alan {
@@ -3267,11 +3514,12 @@ h1.detay-baslik {
 }
 
 .auth-alan label {
-  font-size: 0.82rem;
-  color: #94a3b8;
+  font-family: 'Gabarito', sans-serif;
+  font-size: 0.9rem;
+  color: #cbd5e1;
   font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
 }
 
 .auth-label-satir {
@@ -3281,8 +3529,12 @@ h1.detay-baslik {
 }
 
 .sifre-unut-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Gabarito', sans-serif;
   font-size: 0.78rem;
-  color: #38bdf8;
+  color: #7dd3fc;
   text-decoration: none;
 }
 
@@ -3294,32 +3546,38 @@ h1.detay-baslik {
 .auth-input-wrapper {
   display: flex;
   align-items: center;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid #334155;
-  border-radius: 10px;
-  padding: 0 12px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  gap: 8px;
+  gap: 10px;
+  min-height: 56px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(2, 6, 23, 0.5);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, background 0.18s ease;
 }
 
 .auth-input-wrapper:focus-within {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.65);
+  background: rgba(2, 6, 23, 0.6);
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+  transform: translateY(-1px);
 }
 
 .auth-input-wrapper.yanlis {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.7);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
 .auth-input-wrapper.dogru {
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.7);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
 }
 
 .auth-input-ikon {
-  font-size: 0.9rem;
+  width: 18px;
+  height: 18px;
+  font-size: 0.96rem;
   flex-shrink: 0;
+  opacity: 0.95;
 }
 
 .auth-input-wrapper input {
@@ -3328,27 +3586,36 @@ h1.detay-baslik {
   border: none;
   outline: none;
   color: #f8fafc;
-  font-size: 0.95rem;
-  padding: 12px 0;
+  font-size: 0.98rem;
+  padding: 14px 0;
 }
 
 .auth-input-wrapper input::placeholder {
-  color: #475569;
+  color: #64748b;
 }
 
 .goster-btn {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
-  font-size: 0.9rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 0.92rem;
   flex-shrink: 0;
-  opacity: 0.7;
-  transition: opacity 0.2s;
+  color: #cbd5e1;
+  opacity: 0.82;
+  transition: opacity 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.goster-btn svg {
+  display: block;
 }
 
 .goster-btn:hover {
   opacity: 1;
+  background: rgba(148, 163, 184, 0.08);
+  transform: translateY(-1px);
 }
 
 /* Şifre gücü */
@@ -3356,25 +3623,25 @@ h1.detay-baslik {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .sifre-guc-bar {
   display: flex;
-  gap: 4px;
+  gap: 5px;
   flex: 1;
 }
 
 .sifre-guc-segment {
   flex: 1;
-  height: 4px;
-  border-radius: 2px;
+  height: 5px;
+  border-radius: 999px;
   transition: background 0.3s ease;
 }
 
 .sifre-guc-etiket {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
   white-space: nowrap;
   min-width: 70px;
   text-align: right;
@@ -3383,8 +3650,9 @@ h1.detay-baslik {
 
 /* Küçük ipucu yazıları */
 .auth-ipucu {
-  font-size: 0.75rem;
-  color: #64748b;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  line-height: 1.45;
 }
 
 .auth-ipucu.hata-rengi {
@@ -3399,42 +3667,77 @@ h1.detay-baslik {
 .hatirla-checkbox {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  color: #94a3b8;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: #cbd5e1;
   cursor: pointer;
+  font-family: 'Gabarito', sans-serif;
 }
 
 .hatirla-checkbox input {
-  accent-color: #38bdf8;
-  width: 15px;
-  height: 15px;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  background: rgba(2, 6, 23, 0.68);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-content: center;
   cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.hatirla-checkbox input::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  transform: scale(0);
+  transition: transform 0.18s ease;
+  background: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 10 10' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.5 5.25L3.9 7.65L8.5 2.5' stroke='white' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px 10px no-repeat;
+}
+
+.hatirla-checkbox input:checked {
+  border-color: rgba(56, 189, 248, 0.75);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.9), rgba(99, 102, 241, 0.88));
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+}
+
+.hatirla-checkbox input:checked::before {
+  transform: scale(1);
+}
+
+.hatirla-checkbox input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.16);
 }
 
 /* Submit butonu */
 .auth-submit-btn {
-  background: linear-gradient(135deg, #0ea5e9, #38bdf8);
-  color: #0f172a;
+  background: linear-gradient(135deg, #38bdf8 0%, #60a5fa 48%, #818cf8 100%);
+  color: #04111f;
   border: none;
-  border-radius: 10px;
-  padding: 13px;
+  border-radius: 16px;
+  padding: 14px 16px;
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: 800;
   cursor: pointer;
   letter-spacing: 0.5px;
-  transition: all 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 4px;
-  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+  margin-top: 6px;
+  box-shadow: 0 16px 34px rgba(56, 189, 248, 0.24);
 }
 
 .auth-submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(56, 189, 248, 0.45);
+  box-shadow: 0 18px 40px rgba(56, 189, 248, 0.34);
+  filter: brightness(1.03);
 }
 
 .auth-submit-btn:disabled {
@@ -3447,8 +3750,8 @@ h1.detay-baslik {
   display: inline-block;
   width: 18px;
   height: 18px;
-  border: 2.5px solid rgba(15, 23, 42, 0.3);
-  border-top-color: #0f172a;
+  border: 2.5px solid rgba(4, 17, 31, 0.25);
+  border-top-color: #04111f;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -3456,18 +3759,20 @@ h1.detay-baslik {
 /* Alt geçiş linki */
 .auth-alt-link {
   text-align: center;
-  font-size: 0.85rem;
-  color: #64748b;
+  font-size: 0.88rem;
+  color: #94a3b8;
   margin: 0;
+  line-height: 1.55;
 }
 
 .auth-alt-link button {
   background: none;
   border: none;
-  color: #38bdf8;
+  color: #7dd3fc;
   cursor: pointer;
   font-size: inherit;
   padding: 0;
+  font-weight: 700;
 }
 
 .auth-alt-link button:hover {
@@ -3477,37 +3782,37 @@ h1.detay-baslik {
 /* Doğrulama & Şifre Sıfırlama Başlık */
 .auth-dogrulama-baslik {
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .auth-dogrulama-ikon {
-  font-size: 2.5rem;
+  font-size: 2.7rem;
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .auth-dogrulama-baslik h3 {
   color: #f8fafc;
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  margin: 0 0 6px;
+  margin: 0 0 8px;
 }
 
 .auth-dogrulama-aciklama {
-  color: #94a3b8;
-  font-size: 0.85rem;
+  color: #cbd5e1;
+  font-size: 0.9rem;
   margin: 0;
   line-height: 1.5;
 }
 
 .auth-dogrulama-aciklama strong {
-  color: #38bdf8;
+  color: #7dd3fc;
 }
 
 /* Kod input - daha büyük, ortala */
 .auth-kod-input {
-  font-size: 1.4rem !important;
-  letter-spacing: 6px;
+  font-size: 1.3rem !important;
+  letter-spacing: 0.45rem;
   text-align: center;
   font-weight: 700;
 }
@@ -3517,7 +3822,7 @@ button.sifre-unut-link {
   background: none;
   border: none;
   font-size: 0.78rem;
-  color: #38bdf8;
+  color: #7dd3fc;
   cursor: pointer;
   padding: 0;
   text-decoration: none;
@@ -3525,6 +3830,98 @@ button.sifre-unut-link {
 
 button.sifre-unut-link:hover {
   text-decoration: underline;
+}
+
+.google-login-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.custom-google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 16px;
+  color: #e2e8f0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.custom-google-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 16px 32px rgba(2, 6, 23, 0.34);
+}
+
+.custom-google-btn:active {
+  transform: translateY(0);
+}
+
+.custom-google-btn:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .auth-sayfa {
+    padding: 20px 14px 28px;
+  }
+
+  .auth-kart {
+    max-width: 100%;
+    padding: 28px 20px 24px;
+    border-radius: 24px;
+  }
+
+  .auth-logo {
+    font-size: 1.95rem;
+  }
+
+  .auth-slogan {
+    font-size: 0.9rem;
+    margin-bottom: 22px;
+  }
+
+  .auth-tab {
+    font-size: 0.9rem;
+    padding: 10px 10px;
+  }
+
+  .auth-input-wrapper {
+    min-height: 52px;
+    padding: 0 12px;
+  }
+
+  .auth-submit-btn,
+  .custom-google-btn {
+    min-height: 52px;
+  }
+}
+
+@media (min-width: 1120px) {
+  .auth-kart {
+    max-width: 540px;
+  }
 }
 
 /* =========================================
@@ -6305,71 +6702,25 @@ button.sifre-unut-link:hover {
   display: flex;
   align-items: center;
   text-align: center;
-  margin: 20px 0;
-  color: #475569;
+  gap: 12px;
+  margin: 18px 0 2px;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .auth-divider::before,
 .auth-divider::after {
   content: '';
   flex: 1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 .auth-divider span {
   padding: 0 10px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 1px;
-}
-
-.google-login-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.custom-google-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  border-radius: 50px;
-  /* Pill shape */
-  color: #e2e8f0;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.custom-google-btn:hover {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: rgba(56, 189, 248, 0.6);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
-}
-
-.custom-google-btn:active {
-  transform: translateY(0);
-}
-
-.custom-google-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.google-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: contain;
+  font-family: 'Gabarito', sans-serif;
 }
 
 /* WatchPage Tip Icon Hover Card */
@@ -6580,11 +6931,27 @@ button.sifre-unut-link:hover {
 /* === MOBILE OPTIMIZATION === */
 .hamburger-btn {
   display: none;
+  width: 42px;
+  height: 42px;
+  display: none;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
+  border-radius: 0;
+  box-shadow: none;
   cursor: pointer;
   z-index: 1001;
-  padding: 5px;
+  padding: 0;
+  color: #f8fafc;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.hamburger-btn:hover {
+  transform: translateY(-1px);
+  color: #7dd3fc;
 }
 
 @media (max-width: 768px) {
@@ -6592,6 +6959,11 @@ button.sifre-unut-link:hover {
   /* Navbar */
   .hamburger-btn {
     display: block;
+  }
+
+  .hamburger-btn {
+    width: 40px;
+    height: 40px;
   }
 
   .menu-linkler {
@@ -6619,6 +6991,15 @@ button.sifre-unut-link:hover {
   .menu-linkler>a,
   .menu-linkler .login-btn {
     font-size: 1.5rem;
+  }
+
+  .menu-linkler .login-btn {
+    width: auto;
+    min-width: 168px;
+    height: 44px;
+    padding: 0 18px;
+    font-size: 1.08rem;
+    border-radius: 999px;
   }
 
   /* Flex direction column on mobile for grids/heros */
@@ -6661,11 +7042,13 @@ button.sifre-unut-link:hover {
   }
 
   .kullanici-dropdown {
-    position: fixed;
-    top: 70px;
+    position: absolute;
+    top: calc(100% + 12px);
     left: 50%;
-    transform: translateX(-50%);
-    width: 280px;
+    right: auto;
+    width: min(320px, calc(100vw - 24px));
+    transform: translateX(-50%) scale(0.96);
+    transform-origin: top center;
   }
 
   .menu-linkler {
@@ -6677,7 +7060,8 @@ button.sifre-unut-link:hover {
   .login-btn {
     order: -1;
     margin-bottom: 10px;
-    width: 100%;
+    width: auto;
+    max-width: min(100%, 220px);
     display: flex;
     justify-content: center;
   }

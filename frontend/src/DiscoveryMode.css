@@ -11,30 +11,43 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 30%, #1e1b4b 70%, #0f172a 100%);
+    background:
+        radial-gradient(circle at 18% 14%, rgba(56, 189, 248, 0.16), transparent 22%),
+        radial-gradient(circle at 82% 18%, rgba(99, 102, 241, 0.14), transparent 24%),
+        radial-gradient(circle at 50% 88%, rgba(16, 185, 129, 0.08), transparent 26%),
+        linear-gradient(180deg, #06101f 0%, #0b1220 45%, #050816 100%);
     position: relative;
     overflow: hidden;
     font-family: 'Gabarito', 'Inter', sans-serif;
+    isolation: isolate;
 }
 
-/* Animated background gradient - fixed to viewport */
 .discovery-container::before {
     content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 30% 30%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 70% 70%, rgba(129, 140, 248, 0.08) 0%, transparent 50%);
-    animation: backgroundPulse 8s ease-in-out infinite;
+    position: absolute;
+    width: 260px;
+    height: 260px;
+    left: -70px;
+    bottom: 8%;
+    border-radius: 999px;
+    background: rgba(14, 165, 233, 0.12);
+    filter: blur(28px);
     pointer-events: none;
     z-index: 0;
 }
 
-@keyframes backgroundPulse {
-    0%, 100% { transform: scale(1) rotate(0deg); }
-    50% { transform: scale(1.1) rotate(5deg); }
+.discovery-container::after {
+    content: '';
+    position: absolute;
+    width: 320px;
+    height: 320px;
+    right: -110px;
+    top: 8%;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.12);
+    filter: blur(28px);
+    pointer-events: none;
+    z-index: 0;
 }
 
 /* Header */
@@ -45,7 +58,7 @@
 }
 
 .discovery-title {
-    font-family: 'Gabarito', sans-serif;
+    font-family: 'Gabarito', sans-serif !important;
     font-size: 2.2rem;
     font-weight: 800;
     background: linear-gradient(135deg, #38bdf8, #818cf8);
@@ -57,9 +70,23 @@
 }
 
 .discovery-subtitle {
-    color: #94a3b8;
-    font-size: 0.95rem;
+    color: #cbd5e1;
+    font-size: 1.12rem;
+    font-weight: 700;
+    line-height: 1.5;
     margin: 0;
+}
+
+.discovery-accent {
+    font-weight: 900;
+}
+
+.discovery-accent-watchlist {
+    color: #38bdf8;
+}
+
+.discovery-accent-pass {
+    color: #ef4444;
 }
 
 /* Desktop - Larger titles */
@@ -69,7 +96,7 @@
     }
 
     .discovery-subtitle {
-        font-size: 1.05rem;
+        font-size: 1.2rem;
     }
 }
 
@@ -528,6 +555,322 @@
     box-shadow: 0 8px 30px rgba(56, 189, 248, 0.3);
 }
 
+/* Discovery Detail Modal */
+.discovery-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(2, 6, 23, 0.66);
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    animation: discoveryModalFade 0.2s ease-out;
+}
+
+.discovery-modal {
+    position: relative;
+    width: min(1040px, 100%);
+    min-height: 560px;
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) 1fr;
+    overflow: hidden;
+    border-radius: 30px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.18), transparent 42%),
+        radial-gradient(circle at 100% 0%, rgba(99, 102, 241, 0.16), transparent 44%),
+        linear-gradient(180deg, rgba(9, 16, 30, 0.94), rgba(6, 10, 20, 0.98));
+    box-shadow:
+        0 38px 90px rgba(2, 6, 23, 0.62),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    font-family: 'Gabarito', sans-serif;
+    animation: discoveryModalPop 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.discovery-modal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 24%);
+}
+
+.discovery-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 2;
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.56);
+    color: #f8fafc;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.discovery-modal-close:hover {
+    transform: scale(1.05);
+    background: rgba(30, 41, 59, 0.84);
+    border-color: rgba(56, 189, 248, 0.32);
+}
+
+.discovery-modal-media {
+    position: relative;
+    min-height: 100%;
+    overflow: hidden;
+    background: #030712;
+}
+
+.discovery-modal-poster {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.discovery-modal-media-glow {
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 38%;
+    background: linear-gradient(180deg, transparent, rgba(2, 6, 23, 0.22), rgba(2, 6, 23, 0.84));
+    pointer-events: none;
+}
+
+.discovery-modal-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 18px;
+    padding: 46px 46px 40px 40px;
+    color: #e2e8f0;
+}
+
+.discovery-modal-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.discovery-modal-badge,
+.discovery-modal-year-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.discovery-modal-badge {
+    color: #7dd3fc;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.22);
+}
+
+.discovery-modal-year-chip {
+    color: #cbd5e1;
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.discovery-modal-title {
+    margin: 0;
+    color: #f8fafc;
+    font-size: clamp(2rem, 3vw, 3.4rem);
+    line-height: 1.03;
+    letter-spacing: -0.04em;
+    font-weight: 800;
+}
+
+.discovery-modal-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.discovery-modal-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #fbbf24;
+    font-size: 1.4rem;
+    font-weight: 800;
+    text-shadow: 0 0 18px rgba(251, 191, 36, 0.2);
+}
+
+.discovery-modal-year-text {
+    color: #94a3b8;
+    font-size: 0.98rem;
+    font-weight: 700;
+}
+
+.discovery-modal-genres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.discovery-modal-genre-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(56, 189, 248, 0.15);
+    background: rgba(56, 189, 248, 0.1);
+    color: #bfdbfe;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.discovery-modal-overview {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 1.02rem;
+    line-height: 1.8;
+    max-width: 52ch;
+}
+
+.discovery-modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.discovery-modal-btn {
+    border: none;
+    border-radius: 16px;
+    min-height: 52px;
+    padding: 0 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: 'Gabarito', sans-serif;
+    font-size: 0.98rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.discovery-modal-btn:hover {
+    transform: translateY(-2px);
+}
+
+.discovery-modal-btn-secondary {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.discovery-modal-btn-secondary:hover {
+    border-color: rgba(56, 189, 248, 0.3);
+    background: rgba(56, 189, 248, 0.12);
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.28);
+}
+
+.discovery-modal-btn-primary {
+    color: #04111f;
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    box-shadow: 0 14px 34px rgba(56, 189, 248, 0.28);
+}
+
+.discovery-modal-btn-primary:hover {
+    box-shadow: 0 16px 38px rgba(56, 189, 248, 0.38);
+}
+
+@keyframes discoveryModalFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes discoveryModalPop {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.discovery-modal-overlay.is-closing .discovery-modal {
+    animation: discoveryModalPopOut 0.24s ease forwards;
+}
+
+@keyframes discoveryModalPopOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(16px) scale(0.98);
+    }
+}
+
+@media (max-width: 900px) {
+    .discovery-modal {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+
+    .discovery-modal-media {
+        aspect-ratio: 2 / 3;
+    }
+
+    .discovery-modal-content {
+        padding: 28px 22px 24px;
+        gap: 14px;
+    }
+
+    .discovery-modal-title {
+        font-size: clamp(1.7rem, 7vw, 2.6rem);
+    }
+
+    .discovery-modal-overview {
+        font-size: 0.98rem;
+        line-height: 1.75;
+    }
+}
+
+@media (max-width: 520px) {
+    .discovery-modal-overlay {
+        padding: 12px;
+        align-items: flex-end;
+    }
+
+    .discovery-modal {
+        width: 100%;
+        border-radius: 24px;
+    }
+
+    .discovery-modal-actions {
+        flex-direction: column;
+    }
+
+    .discovery-modal-btn {
+        width: 100%;
+    }
+}
+
 /* Progress Indicator with Navigation */
 .discovery-progress {
     display: flex;
@@ -813,11 +1156,12 @@
     }
 
     .discovery-title {
+        font-family: 'Gabarito', sans-serif !important;
         font-size: 1.8rem;
     }
 
     .discovery-subtitle {
-        font-size: 0.85rem;
+        font-size: 1rem;
         padding: 0 15px;
     }
 

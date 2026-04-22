@@ -61,6 +61,12 @@ function AdFreeGuide() {
 
   const bannerLabel = adblockActive ? 'Reklamsız Mod Aktif! ✅' : 'Reklamlardan nasıl kurtulurum?';
 
+  const openExternalLink = (event, href) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.open(href, '_blank', 'noopener,noreferrer');
+  };
+
   const SmartLink = ({ href, children, title }) => (
     <a
       className="adfree-guide-link"
@@ -69,17 +75,16 @@ function AdFreeGuide() {
       target="_blank"
       rel="noopener noreferrer"
       draggable="false"
-      onPointerDown={(e) => {
-        e.stopPropagation();
+      onMouseUp={(e) => {
+        if (e.button !== 0) return;
+        openExternalLink(e, href);
       }}
       onClick={(e) => {
-        e.stopPropagation();
-      }}
-      onTouchStart={(e) => {
+        e.preventDefault();
         e.stopPropagation();
       }}
       onTouchEnd={(e) => {
-        e.stopPropagation();
+        openExternalLink(e, href);
       }}
     >
       {children}

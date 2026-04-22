@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Eye, Heart, Bookmark, MessageSquare, AlertTriangle, Star, X, Check, Plus, Clock, PlayCircle } from 'lucide-react';
 import Navbar from './Navbar';
+import AuthRequiredModal from './AuthRequiredModal';
+import useAuthGate from './useAuthGate';
 import './App.css';
 import API_BASE from './config';
 
@@ -15,6 +17,12 @@ const getImageUrl = (path, size = 'w185') => {
 function DiziDetay() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const {
+    isAuthModalOpen,
+    authModalContext,
+    ensureAuth,
+    closeAuthModal
+  } = useAuthGate();
   const [dizi, setDizi] = useState(null);
   const [sezonlar, setSezonlar] = useState([]);
   const [bolumler, setBolumler] = useState([]);
@@ -96,8 +104,8 @@ function DiziDetay() {
 
   // --- SEZON / BÖLÜM İZLEME ---
   const sezonIzleToggle = (seasonId) => {
-    const token = localStorage.getItem('sb_token');
-    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const token = ensureAuth('Sezonu izlendi olarak işaretlemek');
+    if (!token) return;
     const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
@@ -114,8 +122,8 @@ function DiziDetay() {
   };
 
   const sezonIzlenecekToggle = (seasonId) => {
-    const token = localStorage.getItem('sb_token');
-    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const token = ensureAuth('Sezonu izleyeceğim listesine eklemek');
+    if (!token) return;
     const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
@@ -134,8 +142,8 @@ function DiziDetay() {
   const sezonAccordionToggle = (seasonId) => setAcikSezonlar(prev => ({ ...prev, [seasonId]: !prev[seasonId] }));
 
   const bolumIzleToggle = (bolum) => {
-    const token = localStorage.getItem('sb_token');
-    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const token = ensureAuth('Bölümü izlendi olarak işaretlemek');
+    if (!token) return;
     const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
@@ -156,8 +164,8 @@ function DiziDetay() {
   };
 
   const bolumIzlenecekToggle = (bolum) => {
-    const token = localStorage.getItem('sb_token');
-    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const token = ensureAuth('Bölümü izleyeceğim listesine eklemek');
+    if (!token) return;
     const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
@@ -169,8 +177,8 @@ function DiziDetay() {
 
   // --- ACTIVITY ---
   const seriesActivityToggle = (type, aktif, setAktif) => {
-    const token = localStorage.getItem('sb_token');
-    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const token = ensureAuth('Dizi aktivitesi eklemek');
+    if (!token) return;
     const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
@@ -181,8 +189,8 @@ function DiziDetay() {
 
   // --- LİSTE ---
   const listeToggle = (listId) => {
-    const token = localStorage.getItem('sb_token');
-    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const token = ensureAuth('Diziyi listeye eklemek');
+    if (!token) return;
     const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
@@ -193,8 +201,8 @@ function DiziDetay() {
     }
   };
   const yeniListeOlustur = () => {
-    const token = localStorage.getItem('sb_token');
-    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const token = ensureAuth('Yeni liste oluşturmak');
+    if (!token) return;
     const jsonHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
     if (!yeniListeAdi.trim()) return;
     fetch(`${API_BASE}/lists`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ name: yeniListeAdi }) })
@@ -211,21 +219,21 @@ function DiziDetay() {
   };
 
   const puanVer = (puan) => {
-    const token = localStorage.getItem('sb_token');
-    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const token = ensureAuth('Diziye puan vermek');
+    if (!token) return;
     setKullaniciPuani(puan);
     fetch(`${API_BASE}/rating`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, score: puan }) });
   };
   const puanSil = () => {
-    const token = localStorage.getItem('sb_token');
-    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const token = ensureAuth('Dizi puanını silmek');
+    if (!token) return;
     setKullaniciPuani(null);
     fetch(`${API_BASE}/rating/${dizi.series_id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
   };
 
   const bolumPuanVer = (episodeId, puan) => {
-    const token = localStorage.getItem('sb_token');
-    if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+    const token = ensureAuth('Bölüme puan vermek');
+    if (!token) return;
     const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
     if (bolumPuanlari[episodeId] === puan) {
@@ -336,7 +344,16 @@ function DiziDetay() {
             </div>
 
             {/* Review & List Buttons */}
-            <button className="dv2-btn" onClick={() => setReviewModalAcik(true)}><MessageSquare size={15} /> Yorum Yaz</button>
+            <button
+              className="dv2-btn"
+              onClick={() => {
+                const token = ensureAuth('Yorum yazmak');
+                if (!token) return;
+                setReviewModalAcik(true);
+              }}
+            >
+              <MessageSquare size={15} /> Yorum Yaz
+            </button>
             <div className="dv2-liste-container">
               <button className="dv2-btn" onClick={() => setListeMenuAcik(!listeMenuAcik)}><Bookmark size={15} /> Listeye Ekle</button>
               {listeMenuAcik && (
@@ -521,8 +538,8 @@ function DiziDetay() {
             </label>
             <button className="review-gonder-btn" disabled={!reviewText.trim() || reviewGonderiliyor}
               onClick={async () => {
-                const token = localStorage.getItem('sb_token');
-                if (!token) { alert("Bu eylemi gerçekleştirmek için giriş yapınız."); return; }
+                const token = ensureAuth('Yorum göndermek');
+                if (!token) return;
                 setReviewGonderiliyor(true);
                 try {
                   await fetch(`${API_BASE}/reviews`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, review_text: reviewText, contains_spoiler: spoilerVar }) });
@@ -538,6 +555,12 @@ function DiziDetay() {
           </div>
         </div>
       )}
+
+      <AuthRequiredModal
+        isOpen={isAuthModalOpen}
+        contextText={authModalContext}
+        onClose={closeAuthModal}
+      />
 
     </div>
   );

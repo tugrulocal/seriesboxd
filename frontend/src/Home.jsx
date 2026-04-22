@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
 import {
     Eye, Heart, Bookmark, ChevronLeft, ChevronRight,
     Drama, Search, Laugh, Rocket, Sword, Crosshair,
     Star, TrendingUp, Sparkles
 } from 'lucide-react';
+import AuthRequiredModal from './AuthRequiredModal';
+import useAuthGate from './useAuthGate';
 import './Home.css';
 import API_BASE from './config';
 
@@ -122,7 +123,12 @@ function Row({ title, icon, series, onPosterClick }) {
 /* ========== Ana Home Bileşeni ========== */
 function Home({ tumDiziler }) {
     const navigate = useNavigate();
-    const { kullanici } = useAuth();
+    const {
+        isAuthModalOpen,
+        authModalContext,
+        ensureAuth,
+        closeAuthModal
+    } = useAuthGate();
 
     // Hero Carousel state
     const [heroList, setHeroList] = useState([]);
@@ -231,14 +237,11 @@ function Home({ tumDiziler }) {
 
     // Aktivite toggle (Watch / Like / Watchlist)
     const seriesActivityToggle = async (activityType, currentState, setStateFunc) => {
-        if (!kullanici) {
-            alert("Bu özellik için giriş yapmalısınız!");
-            return;
-        }
+        const token = ensureAuth('Dizi aktivitesi eklemek');
+        if (!token) return;
         // Optimistic update
         setStateFunc(!currentState);
 
-        const token = localStorage.getItem('sb_token');
         try {
             if (currentState) {
                 // Kaldır: DELETE /series-activity/{series_id}/{activity_type}
@@ -372,6 +375,12 @@ function Home({ tumDiziler }) {
                 <Row title="Aksiyon & Macera" icon={<Sword size={18} color="#f87171" />} series={action} onPosterClick={handlePosterClick} />
                 <Row title="Suç Dizileri" icon={<Crosshair size={18} color="#94a3b8" />} series={crime} onPosterClick={handlePosterClick} />
             </div>
+
+            <AuthRequiredModal
+                isOpen={isAuthModalOpen}
+                contextText={authModalContext}
+                onClose={closeAuthModal}
+            />
         </div>
     );
 }

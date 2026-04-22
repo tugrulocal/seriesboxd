@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { ChevronDown, List, LogOut, Menu, Shield, UserRound, X } from 'lucide-react';
 import SearchBar from './SearchBar';
 import { useAuth } from './AuthContext';
 
@@ -70,13 +70,17 @@ function Navbar({ onSonuclar, onAnaSayfaGit }) {
           <div className="kullanici-menu" ref={menuRef}>
             <button
               className="avatar-btn"
+              type="button"
               onClick={() => setMenuAcik(p => !p)}
               title={kullanici.username}
+              aria-haspopup="menu"
+              aria-expanded={menuAcik}
             >
               {kullanici.avatar
                 ? <img src={kullanici.avatar} alt={kullanici.username} className="avatar-img" />
                 : <span className="avatar-harf">{basharf}</span>
               }
+              <ChevronDown size={12} className={`avatar-caret ${menuAcik ? 'acik' : ''}`} />
             </button>
 
             {menuAcik && (
@@ -95,19 +99,23 @@ function Navbar({ onSonuclar, onAnaSayfaGit }) {
                 </div>
                 <div className="dropdown-ayirici" />
                 <Link to="/profil" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
-                  👤 Profilim
+                  <UserRound size={16} strokeWidth={2} />
+                  <span>Profilim</span>
                 </Link>
                 <Link to="/listelerim" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
-                  📋 Listelerim
+                  <List size={16} strokeWidth={2} />
+                  <span>Listelerim</span>
                 </Link>
                 {kullanici?.email?.toLowerCase() === 'seriesboxd@gmail.com' && (
                   <Link to="/admin-dashboard" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
-                    Admin Panel
+                    <Shield size={16} strokeWidth={2} />
+                    <span>Admin Panel</span>
                   </Link>
                 )}
                 <div className="dropdown-ayirici" />
                 <button className="dropdown-item cikis" onClick={() => { handleCikis(); setMobileMenuAcik(false); }}>
-                  🚪 Çıkış Yap
+                  <LogOut size={16} strokeWidth={2} />
+                  <span>Çıkış Yap</span>
                 </button>
               </div>
             )}

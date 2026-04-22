@@ -36,20 +36,55 @@ function Top50() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Fetch user activity if logged in
+  // Load saved activity for the visible top list so refresh keeps the state.
   useEffect(() => {
-    if (!kullanici) return;
-    const token = localStorage.getItem('sb_token');
-    if (!token) return;
+    if (!kullanici) {
+      setUserActivity({ watched: {}, liked: {}, watchlist: {} });
+      return;
+    }
 
-    fetch(`${API_BASE}/profile/stats`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      // For simplicity in this dummy view, we'll just mock activity if the real endpoint isn't fully returning mass series states.
-      // In a real app, you'd fetch user's series activity map here.
-      .then(() => { })
-      .catch(() => { });
-  }, [kullanici]);
+    const token = localStorage.getItem('sb_token');
+    if (!token || diziler.length === 0) return;
+
+    let cancelled = false;
+
+    Promise.allSettled(
+      diziler.map(async (dizi) => {
+        const res = await fetch(`${API_BASE}/series-activity/${dizi.series_id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          return { seriesId: dizi.series_id, activityTypes: [] };
+        }
+
+        const data = await res.json();
+        return {
+          seriesId: dizi.series_id,
+          activityTypes: Array.isArray(data) ? data : []
+        };
+      })
+    ).then((results) => {
+      if (cancelled) return;
+
+      const nextActivity = { watched: {}, liked: {}, watchlist: {} };
+
+      results.forEach((result) => {
+        if (result.status !== 'fulfilled') return;
+
+        const { seriesId, activityTypes } = result.value;
+        if (activityTypes.includes('watched')) nextActivity.watched[seriesId] = true;
+        if (activityTypes.includes('liked')) nextActivity.liked[seriesId] = true;
+        if (activityTypes.includes('watchlist')) nextActivity.watchlist[seriesId] = true;
+      });
+
+      setUserActivity(nextActivity);
+    }).catch(() => { });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [kullanici, diziler]);
 
   const decades = ['2020s', '2010s', '2000s', '1990s', '1980s'];
 
@@ -104,17 +139,53 @@ function Top50() {
     navigate(`/dizi/${id}`);
   }
 
-  const toggleActivity = (seriesId, type) => {
+  const toggleActivity = async (seriesId, type) => {
     if (!kullanici) {
       navigate('/login');
       return;
     }
-    // Optimistic UI update (mocked for now, assumes backend sync elsewhere)
-    setUserActivity(prev => {
-      const next = { ...prev };
-      next[type] = { ...next[type], [seriesId]: !next[type][seriesId] };
-      return next;
-    });
+
+    const token = localStorage.getItem('sb_token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    const isActive = !!userActivity[type]?.[seriesId];
+    setUserActivity(prev => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        [seriesId]: !isActive
+      }
+    }));
+
+    try {
+      const headers = { 'Authorization': `Bearer ${token}` };
+      const requestOptions = isActive
+        ? { method: 'DELETE', headers }
+        : {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ series_id: seriesId, activity_type: type })
+        };
+
+      const endpoint = isActive
+        ? `${API_BASE}/series-activity/${seriesId}/${type}`
+        : `${API_BASE}/series-activity`;
+
+      const res = await fetch(endpoint, requestOptions);
+      if (!res.ok) throw new Error('Activity save failed');
+    } catch (err) {
+      console.error(err);
+      setUserActivity(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          [seriesId]: isActive
+        }
+      }));
+    }
   }
 
   return (
@@ -233,21 +304,21 @@ function Top50() {
                 <div className="top50-actions">
                   <button
                     className={`top50-action-btn ${userActivity.watched[dizi.series_id] ? 'active watch' : ''}`}
-                    onClick={(e) => toggleActivity(dizi.series_id, 'watched')}
+                    onClick={(e) => { e.stopPropagation(); toggleActivity(dizi.series_id, 'watched'); }}
                     title="İzlendi"
                   >
                     <Eye size={18} strokeWidth={userActivity.watched[dizi.series_id] ? 2.5 : 1.5} />
                   </button>
                   <button
                     className={`top50-action-btn ${userActivity.liked[dizi.series_id] ? 'active like' : ''}`}
-                    onClick={(e) => toggleActivity(dizi.series_id, 'liked')}
+                    onClick={(e) => { e.stopPropagation(); toggleActivity(dizi.series_id, 'liked'); }}
                     title="Beğen"
                   >
                     <Heart size={18} strokeWidth={userActivity.liked[dizi.series_id] ? 2.5 : 1.5} fill={userActivity.liked[dizi.series_id] ? 'currentColor' : 'none'} />
                   </button>
                   <button
                     className={`top50-action-btn ${userActivity.watchlist[dizi.series_id] ? 'active wl' : ''}`}
-                    onClick={(e) => toggleActivity(dizi.series_id, 'watchlist')}
+                    onClick={(e) => { e.stopPropagation(); toggleActivity(dizi.series_id, 'watchlist'); }}
                     title="Watchlist"
                   >
                     <Bookmark size={18} strokeWidth={userActivity.watchlist[dizi.series_id] ? 2.5 : 1.5} fill={userActivity.watchlist[dizi.series_id] ? 'currentColor' : 'none'} />

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Check, Eye, Heart, Bookmark, MessageSquare, Star, X, Plus, ChevronLeft, ChevronRight, Captions } from 'lucide-react';
 import AdFreeGuide from './AdFreeGuide';
 import SubtitleOverlay from './SubtitleOverlay';
+import AuthRequiredModal from './AuthRequiredModal';
+import useAuthGate from './useAuthGate';
 import './App.css';
 import API_BASE from './config';
 
@@ -55,6 +57,12 @@ function formatTimeAgo(dateString) {
 function WatchPage() {
     const { id, season, episode } = useParams();
     const navigate = useNavigate();
+    const {
+        isAuthModalOpen,
+        authModalContext,
+        ensureAuth,
+        closeAuthModal
+    } = useAuthGate();
 
     // Data State
     const [dizi, setDizi] = useState(null);
@@ -313,8 +321,8 @@ function WatchPage() {
 
     // Series Activity
     const seriesActivityToggle = (type, aktif, setAktif) => {
-        const token = localStorage.getItem('sb_token');
-        if (!token) { alert('Bu eylemi gerçekleştirmek için giriş yapınız.'); return; }
+        const token = ensureAuth('Dizi aktivitesi eklemek');
+        if (!token) return;
         const h = { 'Authorization': `Bearer ${token}` };
         setAktif(!aktif);
         if (!aktif) fetch(`${API_BASE}/series-activity`, { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), activity_type: type }) });
@@ -323,8 +331,8 @@ function WatchPage() {
 
     // Series Rating
     const puanVer = (puan) => {
-        const token = localStorage.getItem('sb_token');
-        if (!token) { alert('Bu eylemi gerçekleştirmek için giriş yapınız.'); return; }
+        const token = ensureAuth('Diziye puan vermek');
+        if (!token) return;
         setKullaniciPuani(puan);
         fetch(`${API_BASE}/rating`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: parseInt(id), score: puan }) });
     };
@@ -337,8 +345,8 @@ function WatchPage() {
 
     // Episode Activity Toggles
     const episodeWatchToggle = (epId) => {
-        const token = localStorage.getItem('sb_token');
-        if (!token) { alert('Bu eylemi gerçekleştirmek için giriş yapınız.'); return; }
+        const token = ensureAuth('Bölümü izlendi olarak işaretlemek');
+        if (!token) return;
         const h = { 'Authorization': `Bearer ${token}` };
         const isWatched = !!izlenenBolumler[epId];
         setIzlenenBolumler(prev => { if (isWatched) { const n = { ...prev }; delete n[epId]; return n; } return { ...prev, [epId]: true }; });
@@ -346,8 +354,8 @@ function WatchPage() {
         else fetch(`${API_BASE}/activity/${epId}/watched`, { method: 'DELETE', headers: h });
     };
     const episodeLikeToggle = (epId) => {
-        const token = localStorage.getItem('sb_token');
-        if (!token) { alert('Bu eylemi gerçekleştirmek için giriş yapınız.'); return; }
+        const token = ensureAuth('Bölümü beğenmek');
+        if (!token) return;
         const h = { 'Authorization': `Bearer ${token}` };
         const isLiked = !!epLikedMap[epId];
         setEpLikedMap(prev => { if (isLiked) { const n = { ...prev }; delete n[epId]; return n; } return { ...prev, [epId]: true }; });
@@ -355,8 +363,8 @@ function WatchPage() {
         else fetch(`${API_BASE}/activity/${epId}/liked`, { method: 'DELETE', headers: h });
     };
     const episodeWatchlistToggle = (epId) => {
-        const token = localStorage.getItem('sb_token');
-        if (!token) { alert('Bu eylemi gerçekleştirmek için giriş yapınız.'); return; }
+        const token = ensureAuth('Bölümü izleyeceklerine eklemek');
+        if (!token) return;
         const h = { 'Authorization': `Bearer ${token}` };
         const isWL = !!epWatchlistMap[epId];
         setEpWatchlistMap(prev => { if (isWL) { const n = { ...prev }; delete n[epId]; return n; } return { ...prev, [epId]: true }; });
@@ -373,8 +381,8 @@ function WatchPage() {
 
     // Episode Rating
     const currentBolumPuanVer = (episodeId, puan) => {
-        const token = localStorage.getItem('sb_token');
-        if (!token) { alert('Bu eylemi gerçekleştirmek için giriş yapınız.'); return; }
+        const token = ensureAuth('Bölüme puan vermek');
+        if (!token) return;
         const h = { 'Authorization': `Bearer ${token}` };
         if (bolumPuanlari[episodeId] === puan) {
             setBolumPuanlari(prev => { const s = { ...prev }; delete s[episodeId]; return s; });
@@ -387,8 +395,8 @@ function WatchPage() {
 
     // List Management
     const listeToggle = (listId) => {
-        const token = localStorage.getItem('sb_token');
-        if (!token) { alert('Bu eylemi gerçekleştirmek için giriş yapınız.'); return; }
+        const token = ensureAuth('Diziyi listeye eklemek');
+        if (!token) return;
         const h = { 'Authorization': `Bearer ${token}` };
         if (dizininListeleri.includes(listId)) {
             fetch(`${API_BASE}/lists/${listId}/items/${id}`, { method: 'DELETE', headers: h })
@@ -962,8 +970,8 @@ function WatchPage() {
                                         </label>
                                         <button className="wip-review-gonder-btn" disabled={!reviewText.trim() || reviewGonderiliyor}
                                             onClick={async () => {
-                                                const token = localStorage.getItem('sb_token');
-                                                if (!token) { alert('Giriş yapınız.'); return; }
+                                                const token = ensureAuth('Bölüme yorum göndermek');
+                                                if (!token) return;
                                                 if (!currentEpId) return;
                                                 setReviewGonderiliyor(true);
                                                 try {
@@ -1145,6 +1153,12 @@ function WatchPage() {
                     ))}
                 </div>
             )}
+
+            <AuthRequiredModal
+                isOpen={isAuthModalOpen}
+                contextText={authModalContext}
+                onClose={closeAuthModal}
+            />
         </>
     );
 }
