@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import { Bookmark, Star, Heart, Eye, ChevronDown, ChevronUp, Plus, X, Search, Film, List, MessageSquare, Camera } from 'lucide-react';
+import { Bookmark, Star, Heart, Eye, ChevronDown, ChevronUp, Plus, X, Search, Film, List, MessageSquare, Camera, Trash2 } from 'lucide-react';
 import './Profil.css';
 import API_BASE from './config';
 import { getImageUrl } from './utils';
@@ -171,6 +171,26 @@ function Profil() {
         setRecentExpanded(!recentExpanded);
     };
 
+    const handleReviewDelete = async (reviewId) => {
+        if (!window.confirm('Bu incelemeyi silmek istiyor musun?')) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/reviews/${reviewId}`, {
+                method: 'DELETE',
+                headers
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.detail || 'İnceleme silinemedi');
+            }
+
+            setTabData(prev => Array.isArray(prev) ? prev.filter(item => item.review_id !== reviewId) : prev);
+        } catch (error) {
+            alert(error.message || 'İnceleme silinemedi');
+        }
+    };
+
     if (loading) return null;
     if (!kullanici) return null;
 
@@ -255,9 +275,14 @@ function Profil() {
                     <div className="tab-reviews-list">
                         {items.map(r => (
                             <div key={r.review_id} className="tab-review-card">
-                                <Link to={`/dizi/${r.series_id}`} className="tab-review-poster-link">
-                                    <img src={getImageUrl(r.poster_path, 'w185')} alt={r.name} className="tab-review-poster" loading="lazy" decoding="async" />
-                                </Link>
+                                <div className="tab-review-side">
+                                    <Link to={`/dizi/${r.series_id}`} className="tab-review-poster-link">
+                                        <img src={getImageUrl(r.poster_path, 'w185')} alt={r.name} className="tab-review-poster" loading="lazy" decoding="async" />
+                                    </Link>
+                                    <button className="tab-review-delete-btn" onClick={() => handleReviewDelete(r.review_id)} title="İncelemeyi sil">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
                                 <div className="tab-review-body">
                                     <div className="tab-review-header">
                                         <Link to={`/dizi/${r.series_id}`} className="tab-review-title">{r.name}</Link>

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Eye, Heart, Bookmark, MessageSquare, AlertTriangle, Star, X, Check, Plus, Clock, PlayCircle } from 'lucide-react';
+import { Eye, Heart, Bookmark, MessageSquare, AlertTriangle, Star, X, Check, Plus, Clock, PlayCircle, Trash2 } from 'lucide-react';
 import Navbar from './Navbar';
 import AuthRequiredModal from './AuthRequiredModal';
 import useAuthGate from './useAuthGate';
+import { useAuth } from './AuthContext';
 import './App.css';
 import API_BASE from './config';
 
@@ -23,6 +24,7 @@ function DiziDetay() {
     ensureAuth,
     closeAuthModal
   } = useAuthGate();
+  const { kullanici, isAdmin } = useAuth();
   const [dizi, setDizi] = useState(null);
   const [sezonlar, setSezonlar] = useState([]);
   const [bolumler, setBolumler] = useState([]);
@@ -260,6 +262,26 @@ function DiziDetay() {
   };
 
   if (yukleniyor) return null;
+
+  const deleteSeriesReview = async (reviewId) => {
+    const token = ensureAuth('Yorumu silmek');
+    if (!token) return;
+    if (!window.confirm('Bu yorumu silmek istiyor musun?')) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/reviews/${reviewId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || 'Yorum silinemedi');
+      }
+      setReviews(prev => prev.filter(r => r.review_id !== reviewId));
+    } catch (error) {
+      alert(error.message || 'Yorum silinemedi');
+    }
+  };
   if (!dizi) return <div style={{ color: 'red', textAlign: 'center', marginTop: '80px' }}>Dizi bulunamadı!</div>;
 
   const arkaplanResmi = dizi.backdrop_path ? getImageUrl(dizi.backdrop_path, 'original') : getImageUrl(dizi.poster_path, 'original');
@@ -498,8 +520,20 @@ function DiziDetay() {
             {reviews.map(r => (
               <div key={r.review_id} className="review-item">
                 <div className="review-meta">
-                  <span className="review-user">@{r.username || 'anonim'}</span>
-                  <span className="review-tarih">{new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
+                  <div className="review-meta-main">
+                    <span className="review-user">@{r.username || 'anonim'}</span>
+                    <span className="review-tarih">{new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
+                  </div>
+                  {kullanici && (kullanici.user_id === r.user_id || isAdmin) && (
+                    <button
+                      type="button"
+                      className="review-delete-btn"
+                      onClick={() => deleteSeriesReview(r.review_id)}
+                      title="Yorumu sil"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
                 {r.contains_spoiler ? (
                   <div

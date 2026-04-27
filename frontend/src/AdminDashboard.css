@@ -455,6 +455,136 @@
     background: rgba(244, 63, 94, 0.25);
 }
 
+.admin-comments-section {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.admin-comments-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.admin-comments-header h3 {
+    margin: 0 0 4px;
+    color: #f1f5f9;
+    font-family: 'Gabarito', sans-serif;
+    font-size: 1.15rem;
+}
+
+.admin-comments-header p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.admin-comment-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.admin-comment-loading,
+.admin-comment-empty {
+    background: #1e293b;
+    border: 1px solid rgba(56, 189, 248, 0.12);
+    border-radius: 14px;
+    padding: 28px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.admin-comment-card {
+    background: #1e293b;
+    border: 1px solid rgba(56, 189, 248, 0.12);
+    border-radius: 16px;
+    padding: 16px;
+}
+
+.admin-comment-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.admin-comment-target {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.admin-comment-target strong {
+    color: #f1f5f9;
+    font-size: 0.98rem;
+}
+
+.admin-comment-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.admin-comment-badge.series {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+}
+
+.admin-comment-badge.episode {
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+}
+
+.admin-comment-episode {
+    color: #94a3b8;
+    font-size: 0.84rem;
+}
+
+.admin-comment-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    margin-bottom: 10px;
+}
+
+.admin-comment-text {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+}
+
+.admin-comment-spoiler {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 10px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(244, 63, 94, 0.12);
+    color: #fca5a5;
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
 .admin-empty {
     text-align: center;
     padding: 40px !important;

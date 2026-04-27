@@ -456,6 +456,14 @@
     gap: 0;
     border-bottom: 1px solid #2d3a4a;
     margin-bottom: 30px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.profil-tabs::-webkit-scrollbar {
+    display: none;
 }
 
 .profil-tab {
@@ -475,6 +483,8 @@
     transition: color 0.2s, border-color 0.2s;
     font-family: inherit;
     text-decoration: none;
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 
 .profil-tab:hover {
@@ -612,6 +622,13 @@
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.tab-review-side {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
 .tab-review-card:hover {
     border-color: rgba(56, 189, 248, 0.3);
     box-shadow: 0 4px 16px rgba(56, 189, 248, 0.08);
@@ -687,6 +704,25 @@
 .tab-review-date {
     color: #456;
     font-size: 0.75rem;
+}
+
+.tab-review-delete-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(244, 63, 94, 0.12);
+    color: #f43f5e;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.tab-review-delete-btn:hover {
+    background: rgba(244, 63, 94, 0.24);
+    transform: translateY(-1px);
 }
 
 /* Lists Grid (Listelerim) */
@@ -776,6 +812,27 @@
 
     .profil-hero-stats {
         justify-content: center;
+    }
+
+    .profil-tabs {
+        gap: 4px;
+        padding-bottom: 2px;
+        margin-bottom: 24px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .profil-tab {
+        padding: 10px 14px;
+        font-size: 0.78rem;
+    }
+
+    .tab-review-card {
+        gap: 12px;
+    }
+
+    .tab-review-poster {
+        width: 54px;
+        height: 81px;
     }
 }
 

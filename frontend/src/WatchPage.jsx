@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Check, Eye, Heart, Bookmark, MessageSquare, Star, X, Plus, ChevronLeft, ChevronRight, Captions } from 'lucide-react';
+import { AlertTriangle, Check, Eye, Heart, Bookmark, MessageSquare, Star, X, Plus, ChevronLeft, ChevronRight, Captions, Trash2 } from 'lucide-react';
 import AdFreeGuide from './AdFreeGuide';
 import SubtitleOverlay from './SubtitleOverlay';
 import AuthRequiredModal from './AuthRequiredModal';
 import useAuthGate from './useAuthGate';
+import { useAuth } from './AuthContext';
 import './App.css';
 import API_BASE from './config';
 
@@ -63,6 +64,7 @@ function WatchPage() {
         ensureAuth,
         closeAuthModal
     } = useAuthGate();
+    const { kullanici, isAdmin } = useAuth();
 
     // Data State
     const [dizi, setDizi] = useState(null);
@@ -225,6 +227,26 @@ function WatchPage() {
             .then(d => { if (Array.isArray(d)) setEpisodeReviews(d); })
             .catch(() => { });
     }, [episode, seciliSezonId, bolumler]);
+
+    const deleteEpisodeReview = async (reviewId) => {
+        const token = ensureAuth('Yorumu silmek');
+        if (!token) return;
+        if (!window.confirm('Bu yorumu silmek istiyor musun?')) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/episode-reviews/${reviewId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.detail || 'Yorum silinemedi');
+            }
+            setEpisodeReviews(prev => prev.filter(r => r.review_id !== reviewId));
+        } catch (error) {
+            alert(error.message || 'Yorum silinemedi');
+        }
+    };
 
     // 2. Load Episode Video Sources
     useEffect(() => {
@@ -992,8 +1014,20 @@ function WatchPage() {
                                             {episodeReviews.map(r => (
                                                 <div key={r.review_id} className="wip-ep-review-item">
                                                     <div className="review-meta">
-                                                        <span className="review-user">@{r.username || 'anonim'}</span>
-                                                        <span className="review-tarih">{formatTimeAgo(r.created_at)}</span>
+                                                        <div className="review-meta-main">
+                                                            <span className="review-user">@{r.username || 'anonim'}</span>
+                                                            <span className="review-tarih">{formatTimeAgo(r.created_at)}</span>
+                                                        </div>
+                                                        {kullanici && (kullanici.user_id === r.user_id || isAdmin) && (
+                                                            <button
+                                                                type="button"
+                                                                className="review-delete-btn"
+                                                                onClick={() => deleteEpisodeReview(r.review_id)}
+                                                                title="Yorumu sil"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                     {r.contains_spoiler ? (
                                                         <div className={`spoiler-blur-wrapper${revealedSpoilers.has(r.review_id) ? ' revealed' : ''}`}

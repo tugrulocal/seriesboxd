@@ -1700,7 +1700,35 @@ h1.detay-baslik {
 .review-meta {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 6px;
+}
+
+.review-meta-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.review-delete-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(244, 63, 94, 0.12);
+  color: #f43f5e;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.review-delete-btn:hover {
+  background: rgba(244, 63, 94, 0.24);
+  transform: translateY(-1px);
 }
 
 .review-user {

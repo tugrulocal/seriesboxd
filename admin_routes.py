@@ -162,6 +162,71 @@ def admin_list_users(q: Optional[str] = None, page: int = 1, per_page: int = 50,
         conn.close()
 
 
+@router.get("/reviews")
+def admin_list_reviews(limit: int = 100, user=Depends(admin_required)):
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        safe_limit = max(1, min(limit, 500))
+        cur.execute(
+            """
+            SELECT * FROM (
+                (
+                    SELECT
+                        'series'::varchar as review_type,
+                        r.review_id,
+                        r.user_id,
+                        u.username,
+                        r.series_id,
+                        s.name as series_name,
+                        NULL::int as season_id,
+                        NULL::int as season_number,
+                        NULL::int as episode_id,
+                        NULL::int as episode_number,
+                        NULL::varchar as episode_name,
+                        r.review_text,
+                        r.contains_spoiler,
+                        r.created_at
+                    FROM user_series_reviews r
+                    JOIN series s ON s.series_id = r.series_id
+                    LEFT JOIN users u ON u.user_id = r.user_id
+                )
+                UNION ALL
+                (
+                    SELECT
+                        'episode'::varchar as review_type,
+                        r.review_id,
+                        r.user_id,
+                        u.username,
+                        s.series_id,
+                        s.name as series_name,
+                        e.season_id,
+                        se.season_number,
+                        e.episode_id,
+                        e.episode_number,
+                        e.name as episode_name,
+                        r.review_text,
+                        r.contains_spoiler,
+                        r.created_at
+                    FROM user_episode_reviews r
+                    JOIN episodes e ON e.episode_id = r.episode_id
+                    JOIN seasons se ON se.season_id = e.season_id
+                    JOIN series s ON s.series_id = se.series_id
+                    LEFT JOIN users u ON u.user_id = r.user_id
+                )
+            ) reviews
+            ORDER BY created_at DESC, review_id DESC
+            LIMIT %s
+            """,
+            (safe_limit,)
+        )
+        reviews = cur.fetchall()
+        return {"reviews": reviews, "total": len(reviews), "limit": safe_limit}
+    finally:
+        cur.close()
+        conn.close()
+
+
 # --------------- Series CRUD ---------------
 
 @router.get("/series")

@@ -4,7 +4,7 @@ import { useAuth } from './AuthContext';
 import {
     Search, Plus, Trash2, Edit3, Download, X, Film, Users, Database,
     ChevronLeft, ChevronRight, Loader2, Check, AlertTriangle,
-    ChevronUp, ChevronDown, ChevronsUpDown, SlidersHorizontal, Star
+    ChevronUp, ChevronDown, ChevronsUpDown, SlidersHorizontal, Star, MessageSquare
 } from 'lucide-react';
 import API_BASE from './config';
 import './AdminDashboard.css';
@@ -105,6 +105,10 @@ function AdminPanel({ headers, cikisYap }) {
     const [heroExcludeSearching, setHeroExcludeSearching] = useState(false);
     const [heroSavingSettings, setHeroSavingSettings] = useState(false);
     const [fixDatesLoading, setFixDatesLoading] = useState(false);
+
+    // Comments tab state
+    const [adminReviews, setAdminReviews] = useState([]);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
 
     const showToast = useCallback((message, type = 'success') => {
         setToast({ message, type });
@@ -222,9 +226,24 @@ function AdminPanel({ headers, cikisYap }) {
             .finally(() => setUsersLoading(false));
     }, [usersPage, usersSearch]);
 
+    const fetchAdminReviews = useCallback(() => {
+        setReviewsLoading(true);
+        fetch(`${API_BASE}/admin/reviews?limit=100`, { headers })
+            .then(checkAuth)
+            .then(data => {
+                if (data) setAdminReviews(data.reviews || []);
+            })
+            .catch(() => {})
+            .finally(() => setReviewsLoading(false));
+    }, []);
+
     useEffect(() => {
         if (usersModalOpen) fetchUsers();
     }, [usersModalOpen, fetchUsers]);
+
+    useEffect(() => {
+        if (activeTab === 'comments') fetchAdminReviews();
+    }, [activeTab, fetchAdminReviews]);
 
     const usersTotalPages = Math.ceil(usersTotal / 50);
 
@@ -342,6 +361,30 @@ function AdminPanel({ headers, cikisYap }) {
             showToast(err.message || 'Tarih düzeltme hatası', 'error');
         } finally {
             setFixDatesLoading(false);
+        }
+    };
+
+    const handleDeleteReview = async (review) => {
+        const endpoint = review.review_type === 'episode'
+            ? `${API_BASE}/episode-reviews/${review.review_id}`
+            : `${API_BASE}/reviews/${review.review_id}`;
+
+        if (!window.confirm('Bu yorumu silmek istiyor musun?')) return;
+
+        try {
+            const res = await fetch(endpoint, { method: 'DELETE', headers });
+            if (res.status === 401 || res.status === 403) {
+                setAuthError(true);
+                return;
+            }
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.detail || 'Yorum silinemedi');
+            }
+            showToast('Yorum silindi.');
+            fetchAdminReviews();
+        } catch (err) {
+            showToast(err.message, 'error');
         }
     };
 
@@ -658,6 +701,9 @@ function AdminPanel({ headers, cikisYap }) {
                 </button>
                 <button className={activeTab === 'herobanner' ? 'active' : ''} onClick={() => setActiveTab('herobanner')}>
                     <Star size={18} /> Herobanner
+                </button>
+                <button className={activeTab === 'comments' ? 'active' : ''} onClick={() => setActiveTab('comments')}>
+                    <MessageSquare size={18} /> Yorumlar
                 </button>
             </div>
 
@@ -1198,6 +1244,70 @@ function AdminPanel({ headers, cikisYap }) {
                             </div>
                         </>
                     )}
+                </div>
+            )}
+
+            {/* ── Comments Tab ── */}
+            {activeTab === 'comments' && (
+                <div className="admin-comments-section">
+                    <div className="admin-comments-header">
+                        <div>
+                            <h3>Son Yorumlar</h3>
+                            <p>Seri ve bölüm yorumlarını tek listede görüp silebilirsiniz.</p>
+                        </div>
+                        <button className="admin-action-btn" onClick={fetchAdminReviews} disabled={reviewsLoading}>
+                            {reviewsLoading ? <Loader2 size={16} className="spin" /> : <MessageSquare size={16} />}
+                            Yenile
+                        </button>
+                    </div>
+
+                    <div className="admin-comment-feed">
+                        {reviewsLoading ? (
+                            <div className="admin-comment-loading">
+                                <Loader2 size={28} className="spin" />
+                            </div>
+                        ) : adminReviews.length === 0 ? (
+                            <div className="admin-comment-empty">
+                                Henüz gösterilecek yorum yok.
+                            </div>
+                        ) : adminReviews.map(review => {
+                            const targetLabel = review.review_type === 'episode'
+                                ? `S${review.season_number} · E${review.episode_number}${review.episode_name ? ` · ${review.episode_name}` : ''}`
+                                : review.series_name;
+
+                            return (
+                                <div key={`${review.review_type}-${review.review_id}`} className="admin-comment-card">
+                                    <div className="admin-comment-top">
+                                        <div className="admin-comment-target">
+                                            <span className={`admin-comment-badge ${review.review_type}`}>
+                                                {review.review_type === 'episode' ? 'Bölüm' : 'Dizi'}
+                                            </span>
+                                            <strong>{review.series_name}</strong>
+                                            {review.review_type === 'episode' && <span className="admin-comment-episode">{targetLabel}</span>}
+                                        </div>
+                                        <button
+                                            className="admin-delete-btn"
+                                            onClick={() => handleDeleteReview(review)}
+                                            title="Yorumu sil"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+
+                                    <div className="admin-comment-meta">
+                                        <span>@{review.username || `user-${review.user_id}`}</span>
+                                        <span>{review.created_at ? new Date(review.created_at).toLocaleString('tr-TR') : '-'}</span>
+                                    </div>
+
+                                    <p className="admin-comment-text">{review.review_text}</p>
+
+                                    {review.contains_spoiler && (
+                                        <span className="admin-comment-spoiler">Spoiler içeriyor</span>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
 

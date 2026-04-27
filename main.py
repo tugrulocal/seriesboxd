@@ -991,6 +991,68 @@ def create_episode_review(review: EpisodeReviewModel, user = Depends(get_current
     conn.close()
     return {"status": "ok", "review_id": review_id}
 
+
+def is_admin_user(user):
+    return bool(user and user.get("email", "").lower() == "seriesboxd@gmail.com")
+
+
+@app.delete("/reviews/{review_id}")
+def delete_review(review_id: int, user = Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT user_id FROM user_series_reviews WHERE review_id = %s", (review_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Yorum bulunamadı.")
+        owner_id = row[0]
+        if owner_id != user["user_id"] and not is_admin_user(user):
+            raise HTTPException(status_code=403, detail="Bu yorumu silme yetkiniz yok.")
+
+        cur.execute("DELETE FROM user_series_reviews WHERE review_id = %s", (review_id,))
+        conn.commit()
+        return {"status": "deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.delete("/episode-reviews/{review_id}")
+def delete_episode_review(review_id: int, user = Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT user_id FROM user_episode_reviews WHERE review_id = %s", (review_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Yorum bulunamadı.")
+        owner_id = row[0]
+        if owner_id != user["user_id"] and not is_admin_user(user):
+            raise HTTPException(status_code=403, detail="Bu yorumu silme yetkiniz yok.")
+
+        cur.execute("DELETE FROM user_episode_reviews WHERE review_id = %s", (review_id,))
+        conn.commit()
+        return {"status": "deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
 # ============================================================
 # --- AUTH: REGISTER / LOGIN / ME ---
 # ============================================================
