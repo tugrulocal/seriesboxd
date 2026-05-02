@@ -6,6 +6,7 @@ import './Profil.css';
 import API_BASE from './config';
 import { getImageUrl } from './utils';
 import AvatarEditor from './AvatarEditor';
+import { getRelativeTimeLabel, useRelativeTimeTicker } from './timeUtils';
 
 function Profil() {
     const { kullanici, yukleniyor: authLoading, guncelleKullanici } = useAuth();
@@ -25,7 +26,6 @@ function Profil() {
     const [tabData, setTabData] = useState(null);
     const [tabLoading, setTabLoading] = useState(false);
 
-    // Diziler tab filters
     const [filterGenre, setFilterGenre] = useState('');
     const [filterSort, setFilterSort] = useState('recent');
     const [genres, setGenres] = useState([]);
@@ -40,6 +40,11 @@ function Profil() {
 
     // Avatar editor
     const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
+    const [followersList, setFollowersList] = useState([]);
+    const [followingList, setFollowingList] = useState([]);
+    const [watchedSeriesList, setWatchedSeriesList] = useState([]);
+    const [profileModal, setProfileModal] = useState(null);
+    useRelativeTimeTicker();
 
     const token = localStorage.getItem('sb_token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
@@ -52,12 +57,12 @@ function Profil() {
         }
 
         Promise.all([
-            fetch(`${API_BASE}/profile/stats`, { headers }).then(res => res.json()),
-            fetch(`${API_BASE}/profile/recent-activity?limit=3`, { headers }).then(res => res.json()),
-            fetch(`${API_BASE}/profile/favorites`, { headers }).then(res => res.json()),
-            fetch(`${API_BASE}/profile/watchlist_preview`, { headers }).then(res => res.json()),
-            fetch(`${API_BASE}/profile/ratings-distribution`, { headers }).then(res => res.json()),
-            fetch(`${API_BASE}/turler`).then(res => res.json())
+            fetch(`${API_BASE}/profile/stats`, { headers, credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE}/profile/recent-activity?limit=3`, { headers, credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE}/profile/favorites`, { headers, credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE}/profile/watchlist_preview`, { headers, credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE}/profile/ratings-distribution`, { headers, credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE}/turler`, { credentials: 'include' }).then(res => res.json())
         ])
             .then(([st, rec, favs, wlist, rdist, genreList]) => {
                 setStats(st);
@@ -87,7 +92,7 @@ function Profil() {
         } else if (tab === 'begeniler') {
             url = `${API_BASE}/profile/liked-series`;
         }
-        fetch(url, { headers })
+        fetch(url, { headers, credentials: 'include' })
             .then(res => res.json())
             .then(data => setTabData(data))
             .catch(() => setTabData([]))
@@ -129,6 +134,7 @@ function Profil() {
         fetch(`${API_BASE}/profile/favorites`, {
             method: 'POST',
             headers: { ...headers, 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ series_id: series.series_id, slot: favModalSlot })
         })
             .then(res => res.json())
@@ -149,7 +155,7 @@ function Profil() {
     const handleFavRemove = (slot, e) => {
         e.stopPropagation();
         e.preventDefault();
-        fetch(`${API_BASE}/profile/favorites/${slot}`, { method: 'DELETE', headers })
+        fetch(`${API_BASE}/profile/favorites/${slot}`, { method: 'DELETE', headers, credentials: 'include' })
             .then(() => setFavorites(prev => prev.filter(f => f.slot !== slot)))
             .catch(() => { });
     };
@@ -163,7 +169,7 @@ function Profil() {
 
     const handleExpandActivity = () => {
         if (!recentExpanded && recentFull.length === 0) {
-            fetch(`${API_BASE}/profile/recent-activity?limit=50&days=30`, { headers })
+            fetch(`${API_BASE}/profile/recent-activity?limit=50&days=30`, { headers, credentials: 'include' })
                 .then(res => res.json())
                 .then(data => { if (Array.isArray(data)) setRecentFull(data); })
                 .catch(() => { });
@@ -200,28 +206,55 @@ function Profil() {
     const activityItems = recentExpanded ? recentFull : recent;
 
     const getActivityText = (act) => {
-        if (act.activity_type === 'watched') return 'izledi';
+        if (act.activity_type === 'watched') {
+            const ep = act.episode_number ? ` S${act.season_number}B${act.episode_number}` : '';
+            return `izledi${ep}`;
+        }
+        if (act.activity_type === 'season_watched') {
+            return `Sezon ${act.season_number} izledi`;
+        }
         if (act.activity_type === 'liked') return 'beğendi';
         if (act.activity_type === 'watchlist') return 'listesine ekledi';
         if (act.activity_type === 'series_rated') return `puanladı ★${act.score}`;
-        if (act.activity_type === 'episode_rated') return `puanladı ★${act.score}`;
+        if (act.activity_type === 'episode_rated') {
+            const ep = act.episode_number ? ` S${act.season_number}B${act.episode_number}` : '';
+            return `bölümü puanladı${ep} ★${act.score}`;
+        }
         if (act.activity_type === 'series_reviewed') return 'inceleme yazdı';
         return '';
     };
 
-    const getTimeAgo = (dateStr) => {
-        const now = new Date();
-        const date = new Date(dateStr);
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        if (diffMins < 1) return 'şimdi';
-        if (diffMins < 60) return `${diffMins}dk`;
-        const diffHours = Math.floor(diffMins / 60);
-        if (diffHours < 24) return `${diffHours}sa`;
-        const diffDays = Math.floor(diffHours / 24);
-        if (diffDays < 30) return `${diffDays}g`;
-        return `${Math.floor(diffDays / 30)}ay`;
+    const watchedCount = stats?.watched_series || 0;
+    const followersCount = stats?.followers_count || 0;
+    const followingCount = stats?.following_count || 0;
+
+    const openProfileModal = async (kind) => {
+        if (!kullanici?.username) return;
+        if (kind === 'watched' && watchedCount === 0) return;
+        if (kind === 'followers' && followersCount === 0) return;
+        if (kind === 'following' && followingCount === 0) return;
+
+        try {
+            if (kind === 'watched') {
+                const res = await fetch(`${API_BASE}/watched-series/${encodeURIComponent(kullanici.username)}`, { headers });
+                const data = await res.json();
+                setWatchedSeriesList(Array.isArray(data) ? data : []);
+            } else if (kind === 'followers') {
+                const res = await fetch(`${API_BASE}/followers/${encodeURIComponent(kullanici.username)}`, { headers });
+                const data = await res.json();
+                setFollowersList(Array.isArray(data) ? data : []);
+            } else if (kind === 'following') {
+                const res = await fetch(`${API_BASE}/following/${encodeURIComponent(kullanici.username)}`, { headers });
+                const data = await res.json();
+                setFollowingList(Array.isArray(data) ? data : []);
+            }
+            setProfileModal(kind);
+        } catch {
+            setProfileModal(null);
+        }
     };
+
+    const closeProfileModal = () => setProfileModal(null);
 
     const maxRating = ratingsDistribution
         ? Math.max(...Object.values(ratingsDistribution.distribution), 1)
@@ -376,7 +409,7 @@ function Profil() {
     };
 
     return (
-        <div className="profil-page">
+        <div className="profil-page profil-page-self">
 
             {/* HERO */}
             <div className="profil-hero">
@@ -401,17 +434,17 @@ function Profil() {
                     </div>
                 </div>
                 <div className="profil-hero-stats">
-                    <div className="stat-item">
-                        <span className="stat-value">{stats?.watched_series || 0}</span>
-                        <span className="stat-label">Dizi</span>
+                    <div className="stat-item" onClick={() => openProfileModal('watched')} style={{ cursor: watchedCount > 0 ? 'pointer' : 'default', opacity: watchedCount > 0 ? 1 : 0.6, pointerEvents: watchedCount > 0 ? 'auto' : 'none' }}>
+                        <span className="stat-value">{watchedCount}</span>
+                        <span className="stat-label">DİZİ</span>
                     </div>
-                    <div className="stat-item">
-                        <span className="stat-value">{stats?.episodes_watched || 0}</span>
-                        <span className="stat-label">Bölüm</span>
+                    <div className="stat-item" onClick={() => openProfileModal('followers')} style={{ cursor: followersCount > 0 ? 'pointer' : 'default', opacity: followersCount > 0 ? 1 : 0.6, pointerEvents: followersCount > 0 ? 'auto' : 'none' }}>
+                        <span className="stat-value">{followersCount}</span>
+                        <span className="stat-label">TAKİPÇİ</span>
                     </div>
-                    <div className="stat-item">
-                        <span className="stat-value">{stats?.total_hours || 0}</span>
-                        <span className="stat-label">Saat</span>
+                    <div className="stat-item" onClick={() => openProfileModal('following')} style={{ cursor: followingCount > 0 ? 'pointer' : 'default', opacity: followingCount > 0 ? 1 : 0.6, pointerEvents: followingCount > 0 ? 'auto' : 'none' }}>
+                        <span className="stat-value">{followingCount}</span>
+                        <span className="stat-label">TAKİP</span>
                     </div>
                 </div>
             </div>
@@ -419,21 +452,80 @@ function Profil() {
             {/* PROFILE TABS */}
             <div className="profil-tabs">
                 <Link to="/dizilerim" className="profil-tab">
-                    <Film size={15} /> Diziler
+                    <Film size={15} /> DİZİLER
                 </Link>
                 <button className={`profil-tab ${activeTab === 'incelemeler' ? 'active' : ''}`} onClick={() => handleTabClick('incelemeler')}>
-                    <MessageSquare size={15} /> İncelemelerim
+                    <MessageSquare size={15} /> İNCELEMELERİM
                 </button>
                 <button className={`profil-tab ${activeTab === 'listeler' ? 'active' : ''}`} onClick={() => handleTabClick('listeler')}>
-                    <List size={15} /> Listelerim
+                    <List size={15} /> LİSTELERİM
                 </button>
                 <button className={`profil-tab ${activeTab === 'begeniler' ? 'active' : ''}`} onClick={() => handleTabClick('begeniler')}>
-                    <Heart size={15} /> Beğendiklerim
+                    <Heart size={15} /> BEĞENDİKLERİM
                 </button>
             </div>
 
             {/* TAB CONTENT */}
             {renderTabContent()}
+
+            {profileModal && (
+                <div className="fav-modal-overlay" onClick={closeProfileModal}>
+                    <div className="fav-modal profile-modal" onClick={e => e.stopPropagation()}>
+                        <div className="fav-modal-header">
+                            <h3>
+                                {profileModal === 'watched' && 'İzlediğim Diziler'}
+                                {profileModal === 'followers' && 'Takipçilerim'}
+                                {profileModal === 'following' && 'Takip Ettiklerim'}
+                            </h3>
+                            <button className="fav-modal-close" onClick={closeProfileModal}><X size={18} /></button>
+                        </div>
+                        <div className="profile-modal-body">
+                            {profileModal === 'watched' && (
+                                watchedSeriesList.length > 0 ? (
+                                    <div className="profile-modal-grid">
+                                        {watchedSeriesList.map(series => (
+                                            <Link key={series.series_id} to={`/dizi/${series.series_id}`} className="profile-modal-card" onClick={closeProfileModal}>
+                                                <img src={getImageUrl(series.poster_path, 'w185')} alt={series.name} loading="lazy" decoding="async" />
+                                                <span>{series.name}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : <p className="fav-modal-info">Henüz izlenen dizi yok.</p>
+                            )}
+                            {profileModal === 'followers' && (
+                                followersList.length > 0 ? (
+                                    <div className="profile-modal-list">
+                                        {followersList.map(user => (
+                                            <Link key={user.user_id} to={`/u/${user.username}`} className="profile-modal-user" onClick={closeProfileModal}>
+                                                {user.avatar ? <img src={user.avatar} alt={user.username} /> : <div className="profile-modal-avatar">{String(user.username || '?')[0]?.toUpperCase()}</div>}
+                                                <div>
+                                                    <strong>@{user.username}</strong>
+                                                    {user.bio ? <span>{user.bio}</span> : null}
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : <p className="fav-modal-info">Takipçi yok.</p>
+                            )}
+                            {profileModal === 'following' && (
+                                followingList.length > 0 ? (
+                                    <div className="profile-modal-list">
+                                        {followingList.map(user => (
+                                            <Link key={user.user_id} to={`/u/${user.username}`} className="profile-modal-user" onClick={closeProfileModal}>
+                                                {user.avatar ? <img src={user.avatar} alt={user.username} /> : <div className="profile-modal-avatar">{String(user.username || '?')[0]?.toUpperCase()}</div>}
+                                                <div>
+                                                    <strong>@{user.username}</strong>
+                                                    {user.bio ? <span>{user.bio}</span> : null}
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : <p className="fav-modal-info">Takip edilen kullanıcı yok.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* İÇERİK: SOL + SAĞ */}
             <div className="profil-main-content">
@@ -547,7 +639,7 @@ function Profil() {
                                         <Link to={`/dizi/${act.series_id}`} className="act-link">{act.series_name}</Link>
                                         {' '}{getActivityText(act)}
                                     </span>
-                                    <span className="act-time">{getTimeAgo(act.created_at)}</span>
+                                    <span className="act-time">{getRelativeTimeLabel(act.created_at)}</span>
                                 </div>
                             )) : (
                                 <p className="sidebar-empty">Henüz bir hareket yok.</p>

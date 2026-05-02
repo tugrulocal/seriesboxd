@@ -6,6 +6,11 @@
     padding: 30px 20px 80px;
     color: #f1f5f9;
     animation: dizilerimFadeIn 0.4s ease-out;
+    font-family: 'Mont', 'Montserrat', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+.dizilerim-page * {
+    font-family: inherit !important;
 }
 
 @keyframes dizilerimFadeIn {
@@ -53,11 +58,13 @@
     font-weight: 400;
     margin: 0;
     color: #9ab;
+    font-family: 'Mont', 'Montserrat', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif !important;
 }
 
 .dizilerim-username {
     color: #fff;
     font-weight: 700;
+    font-family: inherit;
 }
 
 .dizilerim-count {

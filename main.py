@@ -332,6 +332,17 @@ def ensure_users_table():
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS review_replies (
+            reply_id          SERIAL PRIMARY KEY,
+            user_id           INTEGER NOT NULL,
+            review_type       VARCHAR(20) NOT NULL CHECK (review_type IN ('series', 'episode')),
+            parent_review_id  INTEGER NOT NULL,
+            reply_text        TEXT NOT NULL,
+            created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_review_replies_parent ON review_replies (review_type, parent_review_id, created_at);")
     # Kullanıcı aktiviteleri tablosu (bölüm bazlı izlendi/watchlist)
     cur.execute("""
         CREATE TABLE IF NOT EXISTS user_activity (
@@ -416,9 +427,164 @@ def ensure_users_table():
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     """)
+
+    # ============================================================
+    # --- SOSYAL: TAKİP (FOLLOW) GRAFİĞİ ---
+    # ============================================================
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_follows (
+            follower_id  INTEGER NOT NULL,
+            following_id INTEGER NOT NULL,
+            created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (follower_id, following_id),
+            CHECK (follower_id <> following_id)
+        );
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_user_follows_follower ON user_follows (follower_id);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_user_follows_following ON user_follows (following_id);")
     conn.commit()
     cur.close()
     conn.close()
+
+
+def _get_user_by_username(username: str):
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute(
+        "SELECT user_id, username, avatar, bio, created_at FROM users WHERE LOWER(username) = LOWER(%s)",
+        (username,),
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return row
+
+
+def _get_follow_counts(user_id: int):
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM user_follows WHERE following_id = %s", (user_id,))
+    followers_count = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM user_follows WHERE follower_id = %s", (user_id,))
+    following_count = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+    return followers_count, following_count
+
+
+def _get_user_recent_activity(user_id: int, limit: int = 15):
+    safe_limit = max(0, min(limit, 50))
+
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute(
+        """
+        (
+            SELECT ua.activity_id, ua.activity_type, ua.created_at,
+                   s.name as series_name, s.series_id, s.poster_path,
+                   e.season_id, se.season_number, e.episode_number, e.name as episode_name,
+                   NULL::int as score, NULL::varchar as review_text
+            FROM user_activity ua
+            JOIN series s ON ua.series_id = s.series_id
+            JOIN episodes e ON ua.episode_id = e.episode_id
+            JOIN seasons se ON e.season_id = se.season_id
+            WHERE ua.user_id = %(uid)s
+        )
+        UNION ALL
+        (
+            SELECT usa.id as activity_id, usa.activity_type, usa.created_at,
+                   s.name as series_name, s.series_id, s.poster_path,
+                   NULL::int as season_id, NULL::int as season_number, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as score, NULL::varchar as review_text
+            FROM user_series_activity usa
+            JOIN series s ON usa.series_id = s.series_id
+            WHERE usa.user_id = %(uid)s
+        )
+        UNION ALL
+        (
+            SELECT ur.rating_id as activity_id, 'series_rated' as activity_type, ur.created_at,
+                   s.name as series_name, s.series_id, s.poster_path,
+                   NULL::int as season_id, NULL::int as season_number, NULL::int as episode_number, NULL::varchar as episode_name,
+                   ur.score as score, NULL::varchar as review_text
+            FROM user_ratings ur
+            JOIN series s ON ur.series_id = s.series_id
+            WHERE ur.user_id = %(uid)s
+        )
+        UNION ALL
+        (
+            SELECT uer.id as activity_id, 'episode_rated' as activity_type, uer.created_at,
+                 s.name as series_name, s.series_id, s.poster_path,
+                   e.season_id as season_id, senum.season_number, e.episode_number as episode_number, e.name as episode_name,
+                   uer.score as score, NULL::varchar as review_text
+            FROM user_episode_ratings uer
+            JOIN episodes e ON uer.episode_id = e.episode_id
+            JOIN seasons senum ON e.season_id = senum.season_id
+            JOIN series s ON senum.series_id = s.series_id
+            WHERE uer.user_id = %(uid)s
+        )
+        UNION ALL
+        (
+            SELECT usr.review_id as activity_id, 'series_reviewed' as activity_type, usr.created_at,
+                   s.name as series_name, s.series_id, s.poster_path,
+                   NULL::int as season_id, NULL::int as season_number, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as score, usr.review_text as review_text
+            FROM user_series_reviews usr
+            JOIN series s ON usr.series_id = s.series_id
+            WHERE usr.user_id = %(uid)s
+        )
+        ORDER BY created_at DESC
+        LIMIT %(limit)s
+        """,
+        {"uid": user_id, "limit": safe_limit},
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    # Group watched episodes by season on same day
+    from datetime import datetime
+    from collections import defaultdict
+    
+    episode_groups = defaultdict(list)
+    final_results = []
+    
+    for row in rows:
+        if row['activity_type'] == 'watched' and row['season_id'] is not None:
+            activity_date = row['created_at'].date() if hasattr(row['created_at'], 'date') else row['created_at']
+            group_key = (row['series_id'], row['season_id'], str(activity_date))
+            episode_groups[group_key].append(row)
+        else:
+            final_results.append(row)
+    
+    # Check if episode groups form complete seasons
+    for group_key, episodes in episode_groups.items():
+        series_id, season_id, activity_date = group_key
+        
+        # Count episodes in season from database
+        try:
+            temp_conn = get_db_conn()
+            temp_cur = temp_conn.cursor()
+            temp_cur.execute(
+                "SELECT COUNT(*) FROM episodes WHERE season_id = %s",
+                (season_id,)
+            )
+            total_episodes_in_season = temp_cur.fetchone()[0]
+            temp_cur.close()
+            temp_conn.close()
+        except:
+            total_episodes_in_season = -1
+        
+        if len(episodes) == total_episodes_in_season and total_episodes_in_season > 0:
+            template = episodes[0]
+            season_activity = dict(template)
+            season_activity['activity_type'] = 'season_watched'
+            season_activity['episode_number'] = None
+            final_results.append(season_activity)
+        else:
+            final_results.extend(episodes)
+    
+    final_results.sort(key=lambda x: x['created_at'], reverse=True)
+    return final_results[:safe_limit]
 
 from admin_routes import router as admin_router
 app.include_router(admin_router)
@@ -436,6 +602,349 @@ def lazy_init_db():
         logger.warning("Veritabanı tabloları hazır.")
     except Exception as e:
         logger.error(f"DB başlatma hatası: {e}")
+
+
+# ============================================================
+# --- SOSYAL: PUBLIC PROFIL / FOLLOW / FEED ---
+# ============================================================
+
+
+@app.get("/u/{username}")
+def get_public_profile(username: str, user = Depends(get_current_user), limit: int = 15):
+    lazy_init_db()
+
+    profile_user = _get_user_by_username(username)
+    if not profile_user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+
+    followers_count, following_count = _get_follow_counts(profile_user["user_id"])
+
+    is_following = False
+    if user:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT 1 FROM user_follows WHERE follower_id = %s AND following_id = %s",
+            (user["user_id"], profile_user["user_id"]),
+        )
+        is_following = cur.fetchone() is not None
+        cur.close()
+        conn.close()
+
+    recent_activity = _get_user_recent_activity(profile_user["user_id"], limit=limit)
+
+    return {
+        "user": profile_user,
+        "followers_count": followers_count,
+        "following_count": following_count,
+        "is_following": is_following,
+        "recent_activity": recent_activity,
+    }
+
+
+@app.get("/followers/{username}")
+def get_followers(username: str, user = Depends(get_current_user)):
+    lazy_init_db()
+    target = _get_user_by_username(username)
+    if not target:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT u.user_id, u.username, u.avatar, u.bio FROM users u JOIN user_follows uf ON u.user_id = uf.follower_id WHERE uf.following_id = %s ORDER BY u.username ASC", (target["user_id"],))
+    followers = cur.fetchall()
+    cur.close()
+    conn.close()
+    return followers
+
+
+@app.get("/following/{username}")
+def get_following(username: str, user = Depends(get_current_user)):
+    lazy_init_db()
+    target = _get_user_by_username(username)
+    if not target:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT u.user_id, u.username, u.avatar, u.bio FROM users u JOIN user_follows uf ON u.user_id = uf.following_id WHERE uf.follower_id = %s ORDER BY u.username ASC", (target["user_id"],))
+    following = cur.fetchall()
+    cur.close()
+    conn.close()
+    return following
+
+
+@app.get("/watched-series/{username}")
+def get_user_watched_series(username: str, user = Depends(get_current_user)):
+    lazy_init_db()
+    target = _get_user_by_username(username)
+    if not target:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT DISTINCT s.series_id, s.name, s.poster_path, s.rating FROM user_activity ua JOIN series s ON ua.series_id = s.series_id JOIN episodes e ON ua.episode_id = e.episode_id WHERE ua.user_id = %s AND ua.activity_type = 'watched' UNION SELECT s.series_id, s.name, s.poster_path, s.rating FROM user_series_activity usa JOIN series s ON usa.series_id = s.series_id WHERE usa.user_id = %s AND usa.activity_type = 'watched' ORDER BY name ASC", (target["user_id"], target["user_id"]))
+    watched_series = cur.fetchall()
+    cur.close()
+    conn.close()
+    return watched_series
+
+
+@app.post("/follow/{username}")
+def follow_user(username: str, user = Depends(get_current_user)):
+    lazy_init_db()
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+
+    target = _get_user_by_username(username)
+    if not target:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+    if target["user_id"] == user["user_id"]:
+        raise HTTPException(status_code=400, detail="Kendinizi takip edemezsiniz.")
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO user_follows (follower_id, following_id)
+        VALUES (%s, %s)
+        ON CONFLICT (follower_id, following_id) DO NOTHING
+        """,
+        (user["user_id"], target["user_id"]),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"status": "ok"}
+
+
+@app.delete("/follow/{username}")
+def unfollow_user(username: str, user = Depends(get_current_user)):
+    lazy_init_db()
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+
+    target = _get_user_by_username(username)
+    if not target:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "DELETE FROM user_follows WHERE follower_id = %s AND following_id = %s",
+        (user["user_id"], target["user_id"]),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {"status": "deleted"}
+
+
+@app.get("/follow/status/{username}")
+def follow_status(username: str, user = Depends(get_current_user)):
+    lazy_init_db()
+    if not user:
+        return {"is_following": False}
+
+    target = _get_user_by_username(username)
+    if not target:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT 1 FROM user_follows WHERE follower_id = %s AND following_id = %s",
+        (user["user_id"], target["user_id"]),
+    )
+    is_following = cur.fetchone() is not None
+    cur.close()
+    conn.close()
+    return {"is_following": is_following}
+
+
+# Helper function to check if user has watched all episodes of a series
+def get_series_completion_status(user_id: int, series_id: int):
+    """
+    Check if a user has watched all episodes of a series.
+    Returns a dict: {
+        'total_episodes': int,
+        'watched_episodes': int,
+        'is_complete': bool
+    }
+    """
+    conn = get_db_conn()
+    cur = conn.cursor()
+    
+    # Get total episodes in series
+    cur.execute(
+        "SELECT COUNT(*) as total FROM episodes WHERE season_id IN (SELECT season_id FROM seasons WHERE series_id = %s)",
+        (series_id,)
+    )
+    total_result = cur.fetchone()
+    total_episodes = total_result[0] if total_result else 0
+    
+    # Get watched episodes count for user
+    cur.execute(
+        """
+        SELECT COUNT(*) as watched FROM user_activity 
+        WHERE user_id = %s AND series_id = %s AND activity_type = 'watched'
+        """,
+        (user_id, series_id)
+    )
+    watched_result = cur.fetchone()
+    watched_episodes = watched_result[0] if watched_result else 0
+    
+    cur.close()
+    conn.close()
+    
+    return {
+        'total_episodes': total_episodes,
+        'watched_episodes': watched_episodes,
+        'is_complete': watched_episodes == total_episodes and total_episodes > 0
+    }
+
+
+@app.get("/feed")
+def get_feed(limit: int = 50, user = Depends(get_current_user)):
+    lazy_init_db()
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+
+    safe_limit = max(1, min(limit, 100))
+
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute(
+        """
+        WITH followings AS (
+            SELECT following_id AS uid FROM user_follows WHERE follower_id = %(me)s
+            UNION
+            SELECT %(me)s AS uid
+        )
+        (
+            SELECT ua.activity_id, ua.activity_type, ua.created_at,
+                   u.user_id as actor_user_id, u.username as actor_username, u.avatar as actor_avatar,
+                   s.name as series_name, s.series_id, s.poster_path,
+                   e.season_id, se.season_number, e.episode_number, e.name as episode_name,
+                   NULL::int as score, NULL::varchar as review_text
+            FROM user_activity ua
+            JOIN followings f ON f.uid = ua.user_id
+            JOIN users u ON u.user_id = ua.user_id
+            JOIN series s ON ua.series_id = s.series_id
+            JOIN episodes e ON ua.episode_id = e.episode_id
+            JOIN seasons se ON e.season_id = se.season_id
+        )
+        UNION ALL
+        (
+            SELECT usa.id as activity_id, usa.activity_type, usa.created_at,
+                   u.user_id as actor_user_id, u.username as actor_username, u.avatar as actor_avatar,
+                   s.name as series_name, s.series_id, s.poster_path,
+                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as score, NULL::varchar as review_text
+            FROM user_series_activity usa
+            JOIN followings f ON f.uid = usa.user_id
+            JOIN users u ON u.user_id = usa.user_id
+            JOIN series s ON usa.series_id = s.series_id
+        )
+        UNION ALL
+        (
+            SELECT ur.rating_id as activity_id, 'series_rated' as activity_type, ur.created_at,
+                   u.user_id as actor_user_id, u.username as actor_username, u.avatar as actor_avatar,
+                   s.name as series_name, s.series_id, s.poster_path,
+                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   ur.score as score, NULL::varchar as review_text
+            FROM user_ratings ur
+            JOIN followings f ON f.uid = ur.user_id
+            JOIN users u ON u.user_id = ur.user_id
+            JOIN series s ON ur.series_id = s.series_id
+        )
+        UNION ALL
+        (
+            SELECT uer.id as activity_id, 'episode_rated' as activity_type, uer.created_at,
+                   u.user_id as actor_user_id, u.username as actor_username, u.avatar as actor_avatar,
+                   s.name as series_name, se.series_id, s.poster_path,
+                   e.season_id as season_id, e.episode_number as episode_number, e.name as episode_name,
+                   uer.score as score, NULL::varchar as review_text
+            FROM user_episode_ratings uer
+            JOIN followings f ON f.uid = uer.user_id
+            JOIN users u ON u.user_id = uer.user_id
+            JOIN episodes e ON uer.episode_id = e.episode_id
+            JOIN seasons se ON e.season_id = se.season_id
+            JOIN series s ON se.series_id = s.series_id
+        )
+        UNION ALL
+        (
+            SELECT usr.review_id as activity_id, 'series_reviewed' as activity_type, usr.created_at,
+                   u.user_id as actor_user_id, u.username as actor_username, u.avatar as actor_avatar,
+                   s.name as series_name, s.series_id, s.poster_path,
+                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as score, usr.review_text as review_text
+            FROM user_series_reviews usr
+            JOIN followings f ON f.uid = usr.user_id
+            JOIN users u ON u.user_id = usr.user_id
+            JOIN series s ON usr.series_id = s.series_id
+        )
+        ORDER BY created_at DESC
+        LIMIT %(limit)s
+        """,
+        {"me": user["user_id"], "limit": safe_limit},
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    # Process results for season-level grouping
+    # Group individual 'watched' episodes by (actor_user_id, series_id, season_id, date)
+    from datetime import datetime
+    from collections import defaultdict
+    
+    episode_groups = defaultdict(list)  # (actor_id, series_id, season_id, date) -> [rows]
+    final_results = []
+    
+    for row in rows:
+        # If it's a watched activity with season info, group it for analysis
+        if row['activity_type'] == 'watched' and row['season_id'] is not None:
+            activity_date = row['created_at'].date() if hasattr(row['created_at'], 'date') else row['created_at']
+            group_key = (row['actor_user_id'], row['series_id'], row['season_id'], str(activity_date))
+            episode_groups[group_key].append(row)
+        else:
+            # Non-watched activities pass through as-is
+            final_results.append(row)
+    
+    # Check if any episode groups form complete seasons and replace with season_watched activity
+    for group_key, episodes in episode_groups.items():
+        actor_id, series_id, season_id, activity_date = group_key
+        
+        # Count episodes in this season from database
+        try:
+            conn = get_db_conn()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT COUNT(*) FROM episodes WHERE season_id = %s",
+                (season_id,)
+            )
+            total_episodes_in_season = cur.fetchone()[0]
+            cur.close()
+            conn.close()
+        except:
+            total_episodes_in_season = -1  # Skip grouping on error
+        
+        # If all episodes in season are watched on same day, create season_watched activity
+        if len(episodes) == total_episodes_in_season and total_episodes_in_season > 0:
+            # Create a grouped season_watched activity (use first episode's data as template)
+            template = episodes[0]
+            season_activity = dict(template)
+            season_activity['activity_type'] = 'season_watched'
+            season_activity['episode_number'] = None
+            season_activity['episode_name'] = None
+            season_activity['episode_count'] = len(episodes)
+            final_results.append(season_activity)
+        else:
+            # Keep individual episodes
+            final_results.extend(episodes)
+    
+    # Sort by created_at DESC to maintain proper chronological order
+    final_results.sort(key=lambda x: x['created_at'], reverse=True)
+    
+    # Return the limit-based results
+    return final_results[:safe_limit]
 
 @app.get("/health")
 @app.get("/api/health")
@@ -780,12 +1289,51 @@ def set_activity(activity: ActivityModel, user = Depends(get_current_user)):
             (user["user_id"], activity.series_id, activity.season_id, activity.episode_id, activity.activity_type)
         )
         conn.commit()
+        
+        # If marking as watched, check if all episodes are now watched and auto-mark series if needed
+        if activity.activity_type == 'watched':
+            cur.close()
+            conn.close()
+            
+            # Check series completion
+            completion_status = get_series_completion_status(user["user_id"], activity.series_id)
+            
+            if completion_status['is_complete']:
+                # Check if series is already marked as watched at series level
+                conn = get_db_conn()
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT 1 FROM user_series_activity WHERE user_id = %s AND series_id = %s AND activity_type = 'watched'",
+                    (user["user_id"], activity.series_id)
+                )
+                already_marked = cur.fetchone() is not None
+                
+                # If not already marked, mark it now
+                if not already_marked:
+                    cur.execute(
+                        """
+                        INSERT INTO user_series_activity (user_id, series_id, activity_type)
+                        VALUES (%s, %s, 'watched')
+                        ON CONFLICT (user_id, series_id, activity_type) DO NOTHING
+                        """,
+                        (user["user_id"], activity.series_id)
+                    )
+                    conn.commit()
+                
+                cur.close()
+                conn.close()
+        else:
+            cur.close()
+            conn.close()
+            
     except Exception as e:
         conn.rollback()
         print(e)
-    cur.close()
-    conn.close()
+        cur.close()
+        conn.close()
+    
     return {"status": "ok"}
+
 
 @app.delete("/activity/{episode_id}/{activity_type}")
 def delete_activity(episode_id: int, activity_type: str, user = Depends(get_current_user)):
@@ -793,13 +1341,53 @@ def delete_activity(episode_id: int, activity_type: str, user = Depends(get_curr
         raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor()
-    cur.execute(
-        "DELETE FROM user_activity WHERE user_id = %s AND episode_id = %s AND activity_type = %s",
-        (user["user_id"], episode_id, activity_type)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+    
+    try:
+        # First, get the series_id for this episode
+        cur.execute(
+            "SELECT series_id FROM user_activity WHERE user_id = %s AND episode_id = %s AND activity_type = %s LIMIT 1",
+            (user["user_id"], episode_id, activity_type)
+        )
+        result = cur.fetchone()
+        series_id = result[0] if result else None
+        
+        # Delete the activity
+        cur.execute(
+            "DELETE FROM user_activity WHERE user_id = %s AND episode_id = %s AND activity_type = %s",
+            (user["user_id"], episode_id, activity_type)
+        )
+        conn.commit()
+        
+        # If we're deleting a 'watched' activity and found a series_id, check if series should be unmarked
+        if activity_type == 'watched' and series_id:
+            # Check series completion after deletion
+            cur.close()
+            conn.close()
+            
+            completion_status = get_series_completion_status(user["user_id"], series_id)
+            
+            # If no longer complete but series was marked, unmark it
+            if not completion_status['is_complete']:
+                conn = get_db_conn()
+                cur = conn.cursor()
+                
+                cur.execute(
+                    "DELETE FROM user_series_activity WHERE user_id = %s AND series_id = %s AND activity_type = 'watched'",
+                    (user["user_id"], series_id)
+                )
+                conn.commit()
+                cur.close()
+                conn.close()
+        else:
+            cur.close()
+            conn.close()
+            
+    except Exception as e:
+        conn.rollback()
+        print(e)
+        cur.close()
+        conn.close()
+    
     return {"status": "deleted"}
 
 # --- PUANLAMA (RATING) SİSTEMİ ---
@@ -865,6 +1453,11 @@ class EpisodeReviewModel(BaseModel):
     review_text: str
     contains_spoiler: bool = False
 
+class ReviewReplyModel(BaseModel):
+    review_type: str
+    parent_review_id: int
+    reply_text: str
+
 @app.get("/series-activity/{series_id}")
 def get_series_activity(series_id: int, user = Depends(get_current_user)):
     if not user:
@@ -889,6 +1482,7 @@ def set_series_activity(item: SeriesActivityModel, user = Depends(get_current_us
     conn = get_db_conn()
     cur = conn.cursor()
     try:
+        # Insert series-level activity
         cur.execute(
             """
             INSERT INTO user_series_activity (user_id, series_id, activity_type)
@@ -898,9 +1492,38 @@ def set_series_activity(item: SeriesActivityModel, user = Depends(get_current_us
             (user["user_id"], item.series_id, item.activity_type)
         )
         conn.commit()
+        
+        # If marking series as watched, also mark all episodes as watched
+        if item.activity_type == 'watched':
+            # Get all episodes for this series
+            cur.execute(
+                """
+                SELECT e.episode_id FROM episodes e
+                JOIN seasons s ON e.season_id = s.season_id
+                WHERE s.series_id = %s
+                """,
+                (item.series_id,)
+            )
+            episodes = cur.fetchall()
+            
+            # Insert each episode as watched (ON CONFLICT will handle duplicates)
+            for episode in episodes:
+                episode_id = episode[0]
+                cur.execute(
+                    """
+                    INSERT INTO user_activity (user_id, series_id, episode_id, activity_type)
+                    VALUES (%s, %s, %s, 'watched')
+                    ON CONFLICT (user_id, episode_id, activity_type) DO NOTHING
+                    """,
+                    (user["user_id"], item.series_id, episode_id)
+                )
+            
+            conn.commit()
+        
     except Exception as e:
         conn.rollback()
         print(e)
+    
     cur.close()
     conn.close()
     return {"status": "ok"}
@@ -929,7 +1552,8 @@ def get_reviews(series_id: int):
         conn = get_db_conn()
         cur = conn.cursor(cursor_factory=RealDictCursor)
         cur.execute(
-            """SELECT r.*, u.username FROM user_series_reviews r
+            """SELECT r.*, u.username, u.avatar
+               FROM user_series_reviews r
                LEFT JOIN users u ON u.user_id = r.user_id
                WHERE r.series_id = %s ORDER BY r.created_at DESC""",
             (series_id,)
@@ -964,7 +1588,8 @@ def get_episode_reviews(episode_id: int):
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute(
-        """SELECT r.*, u.username FROM user_episode_reviews r
+        """SELECT r.*, u.username, u.avatar
+           FROM user_episode_reviews r
            LEFT JOIN users u ON u.user_id = r.user_id
            WHERE r.episode_id = %s ORDER BY r.created_at DESC""",
         (episode_id,)
@@ -992,6 +1617,133 @@ def create_episode_review(review: EpisodeReviewModel, user = Depends(get_current
     return {"status": "ok", "review_id": review_id}
 
 
+def _validate_review_parent(cur, review_type: str, parent_review_id: int):
+    if review_type == "series":
+        cur.execute("SELECT review_id FROM user_series_reviews WHERE review_id = %s", (parent_review_id,))
+        return cur.fetchone()
+    if review_type == "episode":
+        cur.execute("SELECT review_id FROM user_episode_reviews WHERE review_id = %s", (parent_review_id,))
+        return cur.fetchone()
+    raise HTTPException(status_code=400, detail="Geçersiz yanıt türü.")
+
+
+@app.get("/review-replies/series/{series_id}")
+def get_series_review_replies(series_id: int):
+    lazy_init_db()
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute(
+        """
+        SELECT rr.reply_id, rr.parent_review_id, rr.reply_text, rr.created_at,
+               rr.user_id, u.username, u.avatar
+        FROM review_replies rr
+        JOIN user_series_reviews r ON rr.review_type = 'series' AND rr.parent_review_id = r.review_id
+        LEFT JOIN users u ON u.user_id = rr.user_id
+        WHERE r.series_id = %s
+        ORDER BY rr.created_at ASC, rr.reply_id ASC
+        """,
+        (series_id,)
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+
+@app.get("/review-replies/episode/{episode_id}")
+def get_episode_review_replies(episode_id: int):
+    lazy_init_db()
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute(
+        """
+        SELECT rr.reply_id, rr.parent_review_id, rr.reply_text, rr.created_at,
+               rr.user_id, u.username, u.avatar
+        FROM review_replies rr
+        JOIN user_episode_reviews r ON rr.review_type = 'episode' AND rr.parent_review_id = r.review_id
+        LEFT JOIN users u ON u.user_id = rr.user_id
+        WHERE r.episode_id = %s
+        ORDER BY rr.created_at ASC, rr.reply_id ASC
+        """,
+        (episode_id,)
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+
+@app.post("/review-replies")
+def create_review_reply(reply: ReviewReplyModel, user = Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+
+    review_type = (reply.review_type or "").strip().lower()
+    if review_type not in {"series", "episode"}:
+        raise HTTPException(status_code=400, detail="Geçersiz yanıt türü.")
+    if not reply.reply_text or not reply.reply_text.strip():
+        raise HTTPException(status_code=400, detail="Yanıt boş olamaz.")
+
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        parent = _validate_review_parent(cur, review_type, reply.parent_review_id)
+        if not parent:
+            raise HTTPException(status_code=404, detail="Yorum bulunamadı.")
+
+        cur.execute(
+            """
+            INSERT INTO review_replies (user_id, review_type, parent_review_id, reply_text)
+            VALUES (%s, %s, %s, %s)
+            RETURNING reply_id
+            """,
+            (user["user_id"], review_type, reply.parent_review_id, reply.reply_text)
+        )
+        reply_id = cur.fetchone()[0]
+        conn.commit()
+        return {"status": "ok", "reply_id": reply_id}
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.delete("/review-replies/{reply_id}")
+def delete_review_reply(reply_id: int, user = Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
+
+    lazy_init_db()
+    conn = get_db_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT user_id FROM review_replies WHERE reply_id = %s", (reply_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Yanıt bulunamadı.")
+
+        owner_id = row[0]
+        if owner_id != user["user_id"] and not is_admin_user(user):
+            raise HTTPException(status_code=403, detail="Bu yanıtı silme yetkiniz yok.")
+
+        cur.execute("DELETE FROM review_replies WHERE reply_id = %s", (reply_id,))
+        conn.commit()
+        return {"status": "deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+
 def is_admin_user(user):
     return bool(user and user.get("email", "").lower() == "seriesboxd@gmail.com")
 
@@ -1012,6 +1764,7 @@ def delete_review(review_id: int, user = Depends(get_current_user)):
         if owner_id != user["user_id"] and not is_admin_user(user):
             raise HTTPException(status_code=403, detail="Bu yorumu silme yetkiniz yok.")
 
+        cur.execute("DELETE FROM review_replies WHERE review_type = 'series' AND parent_review_id = %s", (review_id,))
         cur.execute("DELETE FROM user_series_reviews WHERE review_id = %s", (review_id,))
         conn.commit()
         return {"status": "deleted"}
@@ -1041,6 +1794,7 @@ def delete_episode_review(review_id: int, user = Depends(get_current_user)):
         if owner_id != user["user_id"] and not is_admin_user(user):
             raise HTTPException(status_code=403, detail="Bu yorumu silme yetkiniz yok.")
 
+        cur.execute("DELETE FROM review_replies WHERE review_type = 'episode' AND parent_review_id = %s", (review_id,))
         cur.execute("DELETE FROM user_episode_reviews WHERE review_id = %s", (review_id,))
         conn.commit()
         return {"status": "deleted"}
@@ -1360,6 +2114,7 @@ def get_profile_stats(user = Depends(get_current_user)):
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     user_id = user["user_id"]
+    followers_count, following_count = _get_follow_counts(user_id)
     
     # 1. Toplam İzlenen Saat ve Gün
     cur.execute("""
@@ -1374,7 +2129,14 @@ def get_profile_stats(user = Depends(get_current_user)):
     total_days = total_hours // 24
     
     # 2. İzlenen Dizi Sayısı
-    cur.execute("SELECT COUNT(DISTINCT series_id) as watched_series FROM user_activity WHERE user_id = %s AND activity_type = 'watched'", (user_id,))
+    cur.execute("""
+        SELECT COUNT(DISTINCT series_id) as watched_series
+        FROM (
+            SELECT series_id FROM user_activity WHERE user_id = %s AND activity_type = 'watched'
+            UNION
+            SELECT series_id FROM user_series_activity WHERE user_id = %s AND activity_type = 'watched'
+        ) watched
+    """, (user_id, user_id))
     watched_series = cur.fetchone()["watched_series"]
     
     # 3. Watchlist Sayısı
@@ -1419,6 +2181,8 @@ def get_profile_stats(user = Depends(get_current_user)):
         "episodes_watched": time_stats["episodes_watched"],
         "watched_series": watched_series,
         "watchlist_count": watchlist_count,
+        "followers_count": followers_count,
+        "following_count": following_count,
         "top_genres": top_genres_names,
         "monthly_activity": monthly_stats
     }
@@ -1438,18 +2202,19 @@ def get_recent_activity(limit: int = 15, days: Optional[int] = None, user = Depe
         (
             SELECT ua.activity_id, ua.activity_type, ua.created_at, 
                    s.name as series_name, s.series_id, s.poster_path,
-                   e.season_id, e.episode_number, e.name as episode_name,
+                   e.season_id, se.season_number, e.episode_number, e.name as episode_name,
                    NULL::int as score, NULL::varchar as review_text
             FROM user_activity ua
             JOIN series s ON ua.series_id = s.series_id
             JOIN episodes e ON ua.episode_id = e.episode_id
+            JOIN seasons se ON e.season_id = se.season_id
             WHERE ua.user_id = %(uid)s {date_filter}
         )
         UNION ALL
         (
             SELECT usa.id as activity_id, usa.activity_type, usa.created_at, 
                    s.name as series_name, s.series_id, s.poster_path,
-                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as season_id, NULL::int as season_number, NULL::int as episode_number, NULL::varchar as episode_name,
                    NULL::int as score, NULL::varchar as review_text
             FROM user_series_activity usa
             JOIN series s ON usa.series_id = s.series_id
@@ -1459,7 +2224,7 @@ def get_recent_activity(limit: int = 15, days: Optional[int] = None, user = Depe
         (
             SELECT ur.rating_id as activity_id, 'series_rated' as activity_type, ur.created_at,
                    s.name as series_name, s.series_id, s.poster_path,
-                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as season_id, NULL::int as season_number, NULL::int as episode_number, NULL::varchar as episode_name,
                    ur.score as score, NULL::varchar as review_text
             FROM user_ratings ur
             JOIN series s ON ur.series_id = s.series_id
@@ -1469,12 +2234,12 @@ def get_recent_activity(limit: int = 15, days: Optional[int] = None, user = Depe
         (
             SELECT uer.id as activity_id, 'episode_rated' as activity_type, uer.created_at,
                    s.name as series_name, se.series_id, s.poster_path,
-                   e.season_id as season_id, e.episode_number as episode_number, e.name as episode_name,
+                   e.season_id as season_id, senum.season_number, e.episode_number as episode_number, e.name as episode_name,
                    uer.score as score, NULL::varchar as review_text
             FROM user_episode_ratings uer
             JOIN episodes e ON uer.episode_id = e.episode_id
-            JOIN seasons se ON e.season_id = se.season_id
-            JOIN series s ON se.series_id = s.series_id
+            JOIN seasons senum ON e.season_id = senum.season_id
+            JOIN series s ON senum.series_id = s.series_id
             WHERE uer.user_id = %(uid)s {date_filter}
         )
         UNION ALL
@@ -1723,10 +2488,12 @@ def get_user_reviews(user = Depends(get_current_user)):
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("""
         SELECT r.review_id, r.review_text, r.contains_spoiler, r.created_at,
+               u.avatar,
                s.series_id, s.name, s.poster_path, s.rating,
                ur.score as user_score
         FROM user_series_reviews r
         JOIN series s ON r.series_id = s.series_id
+        LEFT JOIN users u ON u.user_id = r.user_id
         LEFT JOIN user_ratings ur ON ur.series_id = s.series_id AND ur.user_id = r.user_id
         WHERE r.user_id = %s
         ORDER BY r.created_at DESC

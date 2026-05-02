@@ -7,6 +7,8 @@ import Top50 from './Top50'
 import Login from './Login'
 import Home from './Home'
 import Profil from './Profil'
+import Feed from './Feed'
+import PublicProfile from './PublicProfile'
 import Listelerim from './Listelerim'
 import ListeDetay from './ListeDetay'
 import Dizilerim from './Dizilerim'
@@ -214,7 +216,9 @@ function AppIcerik() {
           <Route path="/dizi/:id" element={<DiziDetay />} />
           <Route path="/watch/:id/:season/:episode" element={<WatchPage />} />
           <Route path="/top50" element={<Top50 />} />
+          <Route path="/feed" element={<Feed />} />
           <Route path="/profil" element={<Profil />} />
+          <Route path="/u/:username" element={<PublicProfile />} />
           <Route path="/listelerim" element={<Listelerim />} />
           <Route path="/liste/:list_id" element={<ListeDetay isWatchlist={false} />} />
           <Route path="/watchlist" element={<ListeDetay isWatchlist={true} />} />

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AlertTriangle, Check, Eye, Heart, Bookmark, MessageSquare, Star, X, Plus, ChevronLeft, ChevronRight, Captions, Trash2 } from 'lucide-react';
 import AdFreeGuide from './AdFreeGuide';
 import SubtitleOverlay from './SubtitleOverlay';
@@ -8,6 +8,7 @@ import useAuthGate from './useAuthGate';
 import { useAuth } from './AuthContext';
 import './App.css';
 import API_BASE from './config';
+import { getRelativeTimeLabel, parseApiDate, useRelativeTimeTicker } from './timeUtils';
 
 const SOURCE_PREF_KEY = 'sb_watch_source_pref_v2';
 
@@ -36,23 +37,6 @@ function findPreferredSourceIndex(results) {
 function sourceNeedsFullscreenFallback(source) {
     const key = getSourceKey(source);
     return key.includes('vidsrc') || key.includes('superembed') || key.includes('multiembed') || key.includes('hnembed');
-}
-
-function formatTimeAgo(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMinutes = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-
-    if (diffMinutes < 60) {
-        if (diffMinutes <= 0) return 'şimdi';
-        return `${diffMinutes} dakika önce`;
-    } else if (diffHours < 24) {
-        return `${diffHours} saat önce`;
-    } else {
-        return date.toLocaleDateString('tr-TR');
-    }
 }
 
 function WatchPage() {
@@ -115,6 +99,13 @@ function WatchPage() {
 
     // Episode Reviews State
     const [episodeReviews, setEpisodeReviews] = useState([]);
+    const [episodeReplies, setEpisodeReplies] = useState([]);
+    const [episodeReplyDrafts, setEpisodeReplyDrafts] = useState({});
+    const [openEpisodeReplyId, setOpenEpisodeReplyId] = useState(null);
+    const [replySendingEpisodeId, setReplySendingEpisodeId] = useState(null);
+    const [episodeReviewFiltersOpen, setEpisodeReviewFiltersOpen] = useState(false);
+    const [episodeReviewSort, setEpisodeReviewSort] = useState('newest');
+    const [episodeReviewFilter, setEpisodeReviewFilter] = useState('all');
     const [revealedSpoilers, setRevealedSpoilers] = useState(new Set());
 
     // Subtitle State
@@ -135,6 +126,96 @@ function WatchPage() {
     // Subtitle menu state
     const [subMenuOpen, setSubMenuOpen] = useState(false);
     const [showManualSyncPanel, setShowManualSyncPanel] = useState(true);
+
+    useRelativeTimeTicker();
+
+    const visibleEpisodeReviews = useMemo(() => {
+        const filtered = episodeReviews.filter(review => {
+            if (episodeReviewFilter === 'spoiler-free') return !review.contains_spoiler;
+            if (episodeReviewFilter === 'spoiler-only') return Boolean(review.contains_spoiler);
+            return true;
+        });
+
+        return [...filtered].sort((a, b) => {
+            const aTime = parseApiDate(a.created_at)?.getTime() || 0;
+            const bTime = parseApiDate(b.created_at)?.getTime() || 0;
+            return episodeReviewSort === 'oldest' ? aTime - bTime : bTime - aTime;
+        });
+    }, [episodeReviews, episodeReviewFilter, episodeReviewSort]);
+
+    const episodeRepliesByReview = useMemo(() => {
+        return episodeReplies.reduce((acc, reply) => {
+            if (!acc[reply.parent_review_id]) acc[reply.parent_review_id] = [];
+            acc[reply.parent_review_id].push(reply);
+            return acc;
+        }, {});
+    }, [episodeReplies]);
+
+    const loadEpisodeReplies = async (episodeId) => {
+        try {
+            const response = await fetch(`${API_BASE}/review-replies/episode/${episodeId}`);
+            const data = await response.json();
+            setEpisodeReplies(Array.isArray(data) ? data : []);
+        } catch {
+            setEpisodeReplies([]);
+        }
+    };
+
+    const submitEpisodeReply = async (reviewId) => {
+        const token = ensureAuth('Yoruma yanıt vermek');
+        if (!token) return;
+
+        const replyText = String(episodeReplyDrafts[reviewId] || '').trim();
+        if (!replyText) return;
+
+        setReplySendingEpisodeId(reviewId);
+        try {
+            const response = await fetch(`${API_BASE}/review-replies`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    review_type: 'episode',
+                    parent_review_id: reviewId,
+                    reply_text: replyText,
+                }),
+            });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.detail || 'Yanıt gönderilemedi');
+            }
+
+            setEpisodeReplyDrafts(prev => ({ ...prev, [reviewId]: '' }));
+            setOpenEpisodeReplyId(null);
+            if (currentEpId) await loadEpisodeReplies(currentEpId);
+        } catch (error) {
+            alert(error.message || 'Yanıt gönderilemedi');
+        } finally {
+            setReplySendingEpisodeId(null);
+        }
+    };
+
+    const deleteEpisodeReply = async (replyId) => {
+        const token = ensureAuth('Yanıtı silmek');
+        if (!token) return;
+        if (!window.confirm('Bu yanıtı silmek istiyor musun?')) return;
+
+        try {
+            const response = await fetch(`${API_BASE}/review-replies/${replyId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.detail || 'Yanıt silinemedi');
+            }
+            if (currentEpId) await loadEpisodeReplies(currentEpId);
+        } catch (error) {
+            alert(error.message || 'Yanıt silinemedi');
+        }
+    };
 
     const wrapperRef = useRef(null);
     const sezonBtnRef = useRef(null);
@@ -221,11 +302,17 @@ function WatchPage() {
     // Load episode reviews when episode/season changes
     useEffect(() => {
         const epData = bolumler.find(b => b.episode_number === parseInt(episode) && b.season_id === seciliSezonId);
-        if (!epData) return;
+        if (!epData) {
+            setEpisodeReviews([]);
+            setEpisodeReplies([]);
+            return;
+        }
         fetch(`${API_BASE}/episode-reviews/${epData.episode_id}`)
             .then(r => r.json())
             .then(d => { if (Array.isArray(d)) setEpisodeReviews(d); })
             .catch(() => { });
+
+        loadEpisodeReplies(epData.episode_id);
     }, [episode, seciliSezonId, bolumler]);
 
     const deleteEpisodeReview = async (reviewId) => {
@@ -243,6 +330,7 @@ function WatchPage() {
                 throw new Error(data.detail || 'Yorum silinemedi');
             }
             setEpisodeReviews(prev => prev.filter(r => r.review_id !== reviewId));
+            if (currentEpId) loadEpisodeReplies(currentEpId);
         } catch (error) {
             alert(error.message || 'Yorum silinemedi');
         }
@@ -1001,6 +1089,7 @@ function WatchPage() {
                                                     const r = await fetch(`${API_BASE}/episode-reviews/${currentEpId}`);
                                                     const d = await r.json();
                                                     if (Array.isArray(d)) setEpisodeReviews(d);
+                                                    loadEpisodeReplies(currentEpId);
                                                     setReviewText(''); setSpoilerVar(false);
                                                 } catch (e) { console.error(e); }
                                                 setReviewGonderiliyor(false);
@@ -1011,12 +1100,58 @@ function WatchPage() {
                                     {/* Episode Reviews */}
                                     {episodeReviews.length > 0 && (
                                         <div className="wip-ep-reviews">
-                                            {episodeReviews.map(r => (
+                                            <div className="review-section-header" style={{ marginBottom: 10 }}>
+                                                <h3 style={{ margin: 0, fontSize: '1rem' }}>Yorumlar ({visibleEpisodeReviews.length})</h3>
+                                                <button
+                                                    type="button"
+                                                    className="review-filter-toggle"
+                                                    onClick={() => setEpisodeReviewFiltersOpen(prev => !prev)}
+                                                >
+                                                    {episodeReviewFiltersOpen ? 'Filtreyi Kapat' : 'Filtrele'}
+                                                </button>
+                                            </div>
+
+                                            {episodeReviewFiltersOpen && (
+                                                <div className="review-filter-bar" style={{ marginBottom: 12 }}>
+                                                    <label className="review-filter-group">
+                                                        <span>Sırala</span>
+                                                        <select value={episodeReviewSort} onChange={e => setEpisodeReviewSort(e.target.value)}>
+                                                            <option value="newest">En yeni</option>
+                                                            <option value="oldest">En eski</option>
+                                                        </select>
+                                                    </label>
+                                                    <label className="review-filter-group">
+                                                        <span>Göster</span>
+                                                        <select value={episodeReviewFilter} onChange={e => setEpisodeReviewFilter(e.target.value)}>
+                                                            <option value="all">Tümü</option>
+                                                            <option value="spoiler-free">Spoiler olmayanlar</option>
+                                                            <option value="spoiler-only">Sadece spoiler</option>
+                                                        </select>
+                                                    </label>
+                                                </div>
+                                            )}
+
+                                            {visibleEpisodeReviews.length > 0 ? visibleEpisodeReviews.map(r => (
                                                 <div key={r.review_id} className="wip-ep-review-item">
                                                     <div className="review-meta">
                                                         <div className="review-meta-main">
-                                                            <span className="review-user">@{r.username || 'anonim'}</span>
-                                                            <span className="review-tarih">{formatTimeAgo(r.created_at)}</span>
+                                                            <div className="review-user-row">
+                                                                <Link className="review-avatar-link" to={r.username ? `/u/${encodeURIComponent(r.username)}` : '#'} onClick={e => { if (!r.username) e.preventDefault(); }}>
+                                                                    {r.avatar ? (
+                                                                        <img className="review-avatar" src={r.avatar} alt={r.username || 'anonim'} />
+                                                                    ) : (
+                                                                        <div className="review-avatar review-avatar-fallback">{String(r.username || '?')[0]?.toUpperCase()}</div>
+                                                                    )}
+                                                                </Link>
+                                                                <div className="review-user-stack">
+                                                                    {r.username ? (
+                                                                        <Link className="review-user" to={`/u/${encodeURIComponent(r.username)}`}>@{r.username}</Link>
+                                                                    ) : (
+                                                                        <span className="review-user">@anonim</span>
+                                                                    )}
+                                                                    <span className="review-tarih">{getRelativeTimeLabel(r.created_at)}</span>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                         {kullanici && (kullanici.user_id === r.user_id || isAdmin) && (
                                                             <button
@@ -1043,8 +1178,81 @@ function WatchPage() {
                                                     ) : (
                                                         <p className="review-text">{r.review_text}</p>
                                                     )}
+
+                                                    <div className="review-actions">
+                                                        <button
+                                                            type="button"
+                                                            className="review-reply-toggle"
+                                                            onClick={() => setOpenEpisodeReplyId(prev => prev === r.review_id ? null : r.review_id)}
+                                                        >
+                                                            Yanıtla{(episodeRepliesByReview[r.review_id]?.length || 0) > 0 ? ` (${episodeRepliesByReview[r.review_id].length})` : ''}
+                                                        </button>
+                                                    </div>
+
+                                                    {openEpisodeReplyId === r.review_id && (
+                                                        <div className="review-reply-form">
+                                                            <textarea
+                                                                className="review-reply-textarea"
+                                                                placeholder="Yanıtını yaz..."
+                                                                rows={3}
+                                                                value={episodeReplyDrafts[r.review_id] || ''}
+                                                                onChange={e => setEpisodeReplyDrafts(prev => ({ ...prev, [r.review_id]: e.target.value }))}
+                                                            />
+                                                            <div className="review-reply-form-actions">
+                                                                <button
+                                                                    type="button"
+                                                                    className="review-reply-send"
+                                                                    disabled={!String(episodeReplyDrafts[r.review_id] || '').trim() || replySendingEpisodeId === r.review_id}
+                                                                    onClick={() => submitEpisodeReply(r.review_id)}
+                                                                >
+                                                                    {replySendingEpisodeId === r.review_id ? 'Gönderiliyor...' : 'Yanıtla'}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {(episodeRepliesByReview[r.review_id] || []).length > 0 && (
+                                                        <div className="review-replies">
+                                                            {episodeRepliesByReview[r.review_id].map(reply => (
+                                                                <div key={reply.reply_id} className="review-reply-item">
+                                                                    <div className="review-reply-meta">
+                                                                        <div className="review-user-row">
+                                                                            <Link className="review-avatar-link" to={reply.username ? `/u/${encodeURIComponent(reply.username)}` : '#'} onClick={e => { if (!reply.username) e.preventDefault(); }}>
+                                                                                {reply.avatar ? (
+                                                                                    <img className="review-reply-avatar" src={reply.avatar} alt={reply.username || 'anonim'} />
+                                                                                ) : (
+                                                                                    <div className="review-reply-avatar review-avatar-fallback">{String(reply.username || '?')[0]?.toUpperCase()}</div>
+                                                                                )}
+                                                                            </Link>
+                                                                            <div className="review-user-stack">
+                                                                                {reply.username ? (
+                                                                                    <Link className="review-user" to={`/u/${encodeURIComponent(reply.username)}`}>@{reply.username}</Link>
+                                                                                ) : (
+                                                                                    <span className="review-user">@anonim</span>
+                                                                                )}
+                                                                                <span className="review-tarih">{getRelativeTimeLabel(reply.created_at)}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                        {kullanici && (kullanici.user_id === reply.user_id || isAdmin) && (
+                                                                            <button
+                                                                                type="button"
+                                                                                className="review-delete-btn review-reply-delete-btn"
+                                                                                onClick={() => deleteEpisodeReply(reply.reply_id)}
+                                                                                title="Yanıtı sil"
+                                                                            >
+                                                                                <Trash2 size={14} />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                    <p className="review-reply-text">{reply.reply_text}</p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            ))}
+                                            )) : (
+                                                <p style={{ color: '#64748b', margin: 0 }}>Filtreye uyan yorum bulunamadı.</p>
+                                            )}
                                         </div>
                                     )}
                                 </div>

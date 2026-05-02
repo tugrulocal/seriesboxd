@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Eye, Heart, Bookmark, MessageSquare, AlertTriangle, Star, X, Check, Plus, Clock, PlayCircle, Trash2 } from 'lucide-react';
 import Navbar from './Navbar';
 import AuthRequiredModal from './AuthRequiredModal';
@@ -7,6 +7,7 @@ import useAuthGate from './useAuthGate';
 import { useAuth } from './AuthContext';
 import './App.css';
 import API_BASE from './config';
+import { getRelativeTimeLabel, parseApiDate, useRelativeTimeTicker } from './timeUtils';
 
 // Helper: Detect if path is full URL or TMDB path
 const getImageUrl = (path, size = 'w185') => {
@@ -56,9 +57,106 @@ function DiziDetay() {
   const [reviewText, setReviewText] = useState('');
   const [spoilerVar, setSpoilerVar] = useState(false);
   const [reviews, setReviews] = useState([]);
+  const [reviewReplies, setReviewReplies] = useState([]);
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [openReplyReviewId, setOpenReplyReviewId] = useState(null);
+  const [replySendingId, setReplySendingId] = useState(null);
+  const [reviewFiltersOpen, setReviewFiltersOpen] = useState(false);
+  const [reviewSort, setReviewSort] = useState('newest');
+  const [reviewFilter, setReviewFilter] = useState('all');
   const [revealedSpoilers, setRevealedSpoilers] = useState(new Set());
   const [watchProviders, setWatchProviders] = useState([]);
   const [reviewGonderiliyor, setReviewGonderiliyor] = useState(false);
+
+  useRelativeTimeTicker();
+
+  const visibleReviews = useMemo(() => {
+    const filtered = reviews.filter(review => {
+      if (reviewFilter === 'spoiler-free') return !review.contains_spoiler;
+      if (reviewFilter === 'spoiler-only') return Boolean(review.contains_spoiler);
+      return true;
+    });
+
+    return [...filtered].sort((a, b) => {
+      const aTime = parseApiDate(a.created_at)?.getTime() || 0;
+      const bTime = parseApiDate(b.created_at)?.getTime() || 0;
+      return reviewSort === 'oldest' ? aTime - bTime : bTime - aTime;
+    });
+  }, [reviews, reviewFilter, reviewSort]);
+
+  const seriesRepliesByReview = useMemo(() => {
+    return reviewReplies.reduce((acc, reply) => {
+      if (!acc[reply.parent_review_id]) acc[reply.parent_review_id] = [];
+      acc[reply.parent_review_id].push(reply);
+      return acc;
+    }, {});
+  }, [reviewReplies]);
+
+  const loadSeriesReplies = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/review-replies/series/${id}`);
+      const data = await response.json();
+      setReviewReplies(Array.isArray(data) ? data : []);
+    } catch {
+      setReviewReplies([]);
+    }
+  };
+
+  const submitSeriesReply = async (reviewId) => {
+    const token = ensureAuth('Yoruma yanıt vermek');
+    if (!token) return;
+
+    const replyText = String(replyDrafts[reviewId] || '').trim();
+    if (!replyText) return;
+
+    setReplySendingId(reviewId);
+    try {
+      const response = await fetch(`${API_BASE}/review-replies`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          review_type: 'series',
+          parent_review_id: reviewId,
+          reply_text: replyText,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.detail || 'Yanıt gönderilemedi');
+      }
+
+      setReplyDrafts(prev => ({ ...prev, [reviewId]: '' }));
+      setOpenReplyReviewId(null);
+      await loadSeriesReplies();
+    } catch (error) {
+      alert(error.message || 'Yanıt gönderilemedi');
+    } finally {
+      setReplySendingId(null);
+    }
+  };
+
+  const deleteSeriesReply = async (replyId) => {
+    const token = ensureAuth('Yanıtı silmek');
+    if (!token) return;
+    if (!window.confirm('Bu yanıtı silmek istiyor musun?')) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/review-replies/${replyId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.detail || 'Yanıt silinemedi');
+      }
+      await loadSeriesReplies();
+    } catch (error) {
+      alert(error.message || 'Yanıt silinemedi');
+    }
+  };
 
   useEffect(() => {
     fetch(`${API_BASE}/dizi/${id}`)
@@ -96,6 +194,8 @@ function DiziDetay() {
 
     fetch(`${API_BASE}/reviews/${id}`).then(r => r.json()).then(d => { if (Array.isArray(d)) setReviews(d); }).catch(() => { });
 
+    loadSeriesReplies();
+
     fetch(`${API_BASE}/watch-providers/${id}`)
       .then(r => r.json())
       .then(d => {
@@ -103,6 +203,48 @@ function DiziDetay() {
       })
       .catch(() => { });
   }, [id]);
+
+  // --- REFETCH WATCHED STATUS ---
+  const refetchWatchedStatus = async () => {
+    const token = localStorage.getItem('sb_token');
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    if (!token || !dizi) return;
+
+    try {
+      // Refetch episode watched status
+      const episodeRes = await fetch(`${API_BASE}/activity/${id}`, { headers: authHeaders });
+      const episodeData = await episodeRes.json();
+      if (Array.isArray(episodeData)) {
+        const watched = {}, watchlist = {};
+        episodeData.forEach(a => {
+          if (a.activity_type === 'watched') watched[a.episode_id] = true;
+          if (a.activity_type === 'watchlist') watchlist[a.episode_id] = true;
+        });
+        setIzlenenBolumler(watched);
+        setIzlenecekBolumler(watchlist);
+
+        // Update season status based on episodes
+        const newSeasonStatus = {};
+        sezonlar.forEach(s => {
+          const seasonEpisodes = bolumler.filter(b => b.season_id === s.season_id);
+          newSeasonStatus[s.season_id] = seasonEpisodes.length > 0 && seasonEpisodes.every(b => watched[b.episode_id]);
+        });
+        setIzlenenSezonlar(newSeasonStatus);
+      }
+
+      // Refetch series watched status
+      const seriesRes = await fetch(`${API_BASE}/series-activity/${id}`, { headers: authHeaders });
+      const seriesData = await seriesRes.json();
+      if (Array.isArray(seriesData)) {
+        setDiziIzlendi(seriesData.includes('watched'));
+        setDiziLiked(seriesData.includes('liked'));
+        setDiziWatchlist(seriesData.includes('watchlist'));
+      }
+    } catch (error) {
+      console.error('Error refetching watched status:', error);
+    }
+  };
 
   // --- SEZON / BÖLÜM İZLEME ---
   const sezonIzleToggle = (seasonId) => {
@@ -115,10 +257,20 @@ function DiziDetay() {
     setIzlenenSezonlar(prev => ({ ...prev, [seasonId]: yeniDurum }));
     const buSezonunBolumleri = bolumler.filter(b => b.season_id === seasonId);
     const yeni = {};
+    let pendingRequests = 0;
+    
     buSezonunBolumleri.forEach(b => {
       yeni[b.episode_id] = yeniDurum;
-      if (yeniDurum) fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: b.episode_id, activity_type: 'watched' }) });
-      else fetch(`${API_BASE}/activity/${b.episode_id}/watched`, { method: 'DELETE', headers: authHeaders });
+      pendingRequests++;
+      if (yeniDurum) {
+        fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: b.episode_id, activity_type: 'watched' }) })
+          .then(() => { pendingRequests--; if (pendingRequests === 0) refetchWatchedStatus(); })
+          .catch(() => { pendingRequests--; });
+      } else {
+        fetch(`${API_BASE}/activity/${b.episode_id}/watched`, { method: 'DELETE', headers: authHeaders })
+          .then(() => { pendingRequests--; if (pendingRequests === 0) refetchWatchedStatus(); })
+          .catch(() => { pendingRequests--; });
+      }
     });
     setIzlenenBolumler(prev => ({ ...prev, ...yeni }));
   };
@@ -133,10 +285,20 @@ function DiziDetay() {
     setIzlenecekSezonlar(prev => ({ ...prev, [seasonId]: yeniDurum }));
     const buSezonunBolumleri = bolumler.filter(b => b.season_id === seasonId);
     const yeni = {};
+    let pendingRequests = 0;
+    
     buSezonunBolumleri.forEach(b => {
       yeni[b.episode_id] = yeniDurum;
-      if (yeniDurum) fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: b.episode_id, activity_type: 'watchlist' }) });
-      else fetch(`${API_BASE}/activity/${b.episode_id}/watchlist`, { method: 'DELETE', headers: authHeaders });
+      pendingRequests++;
+      if (yeniDurum) {
+        fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: seasonId, episode_id: b.episode_id, activity_type: 'watchlist' }) })
+          .then(() => { pendingRequests--; if (pendingRequests === 0) refetchWatchedStatus(); })
+          .catch(() => { pendingRequests--; });
+      } else {
+        fetch(`${API_BASE}/activity/${b.episode_id}/watchlist`, { method: 'DELETE', headers: authHeaders })
+          .then(() => { pendingRequests--; if (pendingRequests === 0) refetchWatchedStatus(); })
+          .catch(() => { pendingRequests--; });
+      }
     });
     setIzlenecekBolumler(prev => ({ ...prev, ...yeni }));
   };
@@ -156,10 +318,20 @@ function DiziDetay() {
     }
     const yeniState = { ...izlenenBolumler, ...guncellenecek };
     setIzlenenBolumler(yeniState);
+    let pendingRequests = 0;
+    
     Object.entries(guncellenecek).forEach(([epId, izlendi]) => {
       const ep = bolumler.find(b => b.episode_id === parseInt(epId));
-      if (izlendi) fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: ep ? ep.season_id : bolum.season_id, episode_id: parseInt(epId), activity_type: 'watched' }) });
-      else fetch(`${API_BASE}/activity/${epId}/watched`, { method: 'DELETE', headers: authHeaders });
+      pendingRequests++;
+      if (izlendi) {
+        fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: ep ? ep.season_id : bolum.season_id, episode_id: parseInt(epId), activity_type: 'watched' }) })
+          .then(() => { pendingRequests--; if (pendingRequests === 0) refetchWatchedStatus(); })
+          .catch(() => { pendingRequests--; });
+      } else {
+        fetch(`${API_BASE}/activity/${epId}/watched`, { method: 'DELETE', headers: authHeaders })
+          .then(() => { pendingRequests--; if (pendingRequests === 0) refetchWatchedStatus(); })
+          .catch(() => { pendingRequests--; });
+      }
     });
     const hepsi = bolumler.filter(b => b.season_id === bolum.season_id).every(b => yeniState[b.episode_id]);
     setIzlenenSezonlar(prev => ({ ...prev, [bolum.season_id]: hepsi }));
@@ -173,8 +345,15 @@ function DiziDetay() {
 
     const yeniDurum = !izlenecekBolumler[bolum.episode_id];
     setIzlenecekBolumler(prev => ({ ...prev, [bolum.episode_id]: yeniDurum }));
-    if (yeniDurum) fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: bolum.season_id, episode_id: bolum.episode_id, activity_type: 'watchlist' }) });
-    else fetch(`${API_BASE}/activity/${bolum.episode_id}/watchlist`, { method: 'DELETE', headers: authHeaders });
+    if (yeniDurum) {
+      fetch(`${API_BASE}/activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, season_id: bolum.season_id, episode_id: bolum.episode_id, activity_type: 'watchlist' }) })
+        .then(() => refetchWatchedStatus())
+        .catch(() => {});
+    } else {
+      fetch(`${API_BASE}/activity/${bolum.episode_id}/watchlist`, { method: 'DELETE', headers: authHeaders })
+        .then(() => refetchWatchedStatus())
+        .catch(() => {});
+    }
   };
 
   // --- ACTIVITY ---
@@ -185,8 +364,23 @@ function DiziDetay() {
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
     setAktif(!aktif);
-    if (!aktif) fetch(`${API_BASE}/series-activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, activity_type: type }) });
-    else fetch(`${API_BASE}/series-activity/${dizi.series_id}/${type}`, { method: 'DELETE', headers: authHeaders });
+    
+    if (!aktif && type === 'watched') {
+      // Mark all episodes as watched
+      const allEpisodes = bolumler;
+      const newWatched = { ...izlenenBolumler };
+      const newSeasonStatus = { ...izlenenSezonlar };
+      
+      allEpisodes.forEach(ep => { newWatched[ep.episode_id] = true; });
+      sezonlar.forEach(s => { newSeasonStatus[s.season_id] = true; });
+      
+      setIzlenenBolumler(newWatched);
+      setIzlenenSezonlar(newSeasonStatus);
+    }
+    
+    fetch(`${API_BASE}/series-activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, activity_type: type }) })
+      .then(() => { if (!aktif && type === 'watched') refetchWatchedStatus(); })
+      .catch(() => {});
   };
 
   // --- LİSTE ---
@@ -278,6 +472,7 @@ function DiziDetay() {
         throw new Error(data.detail || 'Yorum silinemedi');
       }
       setReviews(prev => prev.filter(r => r.review_id !== reviewId));
+      loadSeriesReplies();
     } catch (error) {
       alert(error.message || 'Yorum silinemedi');
     }
@@ -516,13 +711,59 @@ function DiziDetay() {
         {/* Reviews Alt Kısım */}
         {reviews.length > 0 && (
           <div className="dv2-reviews-section">
-            <h3>Yorumlar ({reviews.length})</h3>
-            {reviews.map(r => (
+            <div className="review-section-header">
+              <h3>Yorumlar ({visibleReviews.length})</h3>
+              <button
+                type="button"
+                className="review-filter-toggle"
+                onClick={() => setReviewFiltersOpen(prev => !prev)}
+              >
+                <Clock size={14} />
+                {reviewFiltersOpen ? 'Filtreyi Kapat' : 'Filtrele'}
+              </button>
+            </div>
+
+            {reviewFiltersOpen && (
+              <div className="review-filter-bar">
+                <label className="review-filter-group">
+                  <span>Sırala</span>
+                  <select value={reviewSort} onChange={e => setReviewSort(e.target.value)}>
+                    <option value="newest">En yeni</option>
+                    <option value="oldest">En eski</option>
+                  </select>
+                </label>
+                <label className="review-filter-group">
+                  <span>Göster</span>
+                  <select value={reviewFilter} onChange={e => setReviewFilter(e.target.value)}>
+                    <option value="all">Tümü</option>
+                    <option value="spoiler-free">Spoiler olmayanlar</option>
+                    <option value="spoiler-only">Sadece spoiler</option>
+                  </select>
+                </label>
+              </div>
+            )}
+
+            {visibleReviews.length > 0 ? visibleReviews.map(r => (
               <div key={r.review_id} className="review-item">
                 <div className="review-meta">
                   <div className="review-meta-main">
-                    <span className="review-user">@{r.username || 'anonim'}</span>
-                    <span className="review-tarih">{new Date(r.created_at).toLocaleDateString('tr-TR')}</span>
+                    <div className="review-user-row">
+                      <Link className="review-avatar-link" to={r.username ? `/u/${encodeURIComponent(r.username)}` : '#'} onClick={e => { if (!r.username) e.preventDefault(); }}>
+                        {r.avatar ? (
+                          <img className="review-avatar" src={r.avatar} alt={r.username || 'anonim'} />
+                        ) : (
+                          <div className="review-avatar review-avatar-fallback">{String(r.username || '?')[0]?.toUpperCase()}</div>
+                        )}
+                      </Link>
+                      <div className="review-user-stack">
+                        {r.username ? (
+                          <Link className="review-user" to={`/u/${encodeURIComponent(r.username)}`}>@{r.username}</Link>
+                        ) : (
+                          <span className="review-user">@anonim</span>
+                        )}
+                        <span className="review-tarih">{getRelativeTimeLabel(r.created_at)}</span>
+                      </div>
+                    </div>
                   </div>
                   {kullanici && (kullanici.user_id === r.user_id || isAdmin) && (
                     <button
@@ -551,8 +792,81 @@ function DiziDetay() {
                 ) : (
                   <p className="review-text">{r.review_text}</p>
                 )}
+
+                <div className="review-actions">
+                  <button
+                    type="button"
+                    className="review-reply-toggle"
+                    onClick={() => setOpenReplyReviewId(prev => prev === r.review_id ? null : r.review_id)}
+                  >
+                    Yanıtla{(seriesRepliesByReview[r.review_id]?.length || 0) > 0 ? ` (${seriesRepliesByReview[r.review_id].length})` : ''}
+                  </button>
+                </div>
+
+                {openReplyReviewId === r.review_id && (
+                  <div className="review-reply-form">
+                    <textarea
+                      className="review-reply-textarea"
+                      placeholder="Yanıtını yaz..."
+                      rows={3}
+                      value={replyDrafts[r.review_id] || ''}
+                      onChange={e => setReplyDrafts(prev => ({ ...prev, [r.review_id]: e.target.value }))}
+                    />
+                    <div className="review-reply-form-actions">
+                      <button
+                        type="button"
+                        className="review-reply-send"
+                        disabled={!String(replyDrafts[r.review_id] || '').trim() || replySendingId === r.review_id}
+                        onClick={() => submitSeriesReply(r.review_id)}
+                      >
+                        {replySendingId === r.review_id ? 'Gönderiliyor...' : 'Yanıtla'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {(seriesRepliesByReview[r.review_id] || []).length > 0 && (
+                  <div className="review-replies">
+                    {seriesRepliesByReview[r.review_id].map(reply => (
+                      <div key={reply.reply_id} className="review-reply-item">
+                        <div className="review-reply-meta">
+                          <div className="review-user-row">
+                            <Link className="review-avatar-link" to={reply.username ? `/u/${encodeURIComponent(reply.username)}` : '#'} onClick={e => { if (!reply.username) e.preventDefault(); }}>
+                              {reply.avatar ? (
+                                <img className="review-reply-avatar" src={reply.avatar} alt={reply.username || 'anonim'} />
+                              ) : (
+                                <div className="review-reply-avatar review-avatar-fallback">{String(reply.username || '?')[0]?.toUpperCase()}</div>
+                              )}
+                            </Link>
+                            <div className="review-user-stack">
+                              {reply.username ? (
+                                <Link className="review-user" to={`/u/${encodeURIComponent(reply.username)}`}>@{reply.username}</Link>
+                              ) : (
+                                <span className="review-user">@anonim</span>
+                              )}
+                              <span className="review-tarih">{getRelativeTimeLabel(reply.created_at)}</span>
+                            </div>
+                          </div>
+                          {kullanici && (kullanici.user_id === reply.user_id || isAdmin) && (
+                            <button
+                              type="button"
+                              className="review-delete-btn review-reply-delete-btn"
+                              onClick={() => deleteSeriesReply(reply.reply_id)}
+                              title="Yanıtı sil"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                        <p className="review-reply-text">{reply.reply_text}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            ))}
+            )) : (
+              <p style={{ color: '#64748b', margin: 0 }}>Filtreye uyan yorum bulunamadı.</p>
+            )}
           </div>
         )}
       </div>
@@ -580,6 +894,7 @@ function DiziDetay() {
                   const r = await fetch(`${API_BASE}/reviews/${dizi.series_id}`);
                   const d = await r.json();
                   if (Array.isArray(d)) setReviews(d);
+                  loadSeriesReplies();
                   setReviewText(''); setSpoilerVar(false); setReviewModalAcik(false);
                 } catch (e) { console.error(e); }
                 setReviewGonderiliyor(false);

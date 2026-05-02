@@ -62,64 +62,67 @@ function Navbar({ onSonuclar, onAnaSayfaGit }) {
       <div className={`menu-linkler ${mobileMenuAcik ? 'mobile-open' : ''}`}>
         <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); setMobileMenuAcik(false); }}>Ana Sayfa</Link>
         <Link to="/top50" onClick={() => setMobileMenuAcik(false)}>Top 50</Link>
+        {kullanici && <Link to="/feed" onClick={() => setMobileMenuAcik(false)}>Akış</Link>}
         <Link to="/discovery" onClick={() => setMobileMenuAcik(false)} className="discovery-link">Keşfet</Link>
         <SearchBar onHeisenberg={setHeisenbergLogo} onSonuclar={(data, isActive) => { if (onSonuclar) onSonuclar(data, isActive); setMobileMenuAcik(false); }} />
 
         {kullanici ? (
-          /* Giriş yapıldıysa avatar + dropdown */
-          <div className="kullanici-menu" ref={menuRef}>
-            <button
-              className="avatar-btn"
-              type="button"
-              onClick={() => setMenuAcik(p => !p)}
-              title={kullanici.username}
-              aria-haspopup="menu"
-              aria-expanded={menuAcik}
-            >
-              {kullanici.avatar
-                ? <img src={kullanici.avatar} alt={kullanici.username} className="avatar-img" />
-                : <span className="avatar-harf">{basharf}</span>
-              }
-              <ChevronDown size={12} className={`avatar-caret ${menuAcik ? 'acik' : ''}`} />
-            </button>
+          <>
+            {/* Giriş yapıldıysa avatar + dropdown */}
+            <div className="kullanici-menu" ref={menuRef}>
+              <button
+                className="avatar-btn"
+                type="button"
+                onClick={() => setMenuAcik(p => !p)}
+                title={kullanici.username}
+                aria-haspopup="menu"
+                aria-expanded={menuAcik}
+              >
+                {kullanici.avatar
+                  ? <img src={kullanici.avatar} alt={kullanici.username} className="avatar-img" />
+                  : <span className="avatar-harf">{basharf}</span>
+                }
+                <ChevronDown size={12} className={`avatar-caret ${menuAcik ? 'acik' : ''}`} />
+              </button>
 
-            {menuAcik && (
-              <div className="kullanici-dropdown">
-                <div className="dropdown-kullanici-bilgi">
-                  <div className="dropdown-avatar">
-                    {kullanici.avatar
-                      ? <img src={kullanici.avatar} alt="" />
-                      : <span>{basharf}</span>
-                    }
+              {menuAcik && (
+                <div className="kullanici-dropdown">
+                  <div className="dropdown-kullanici-bilgi">
+                    <div className="dropdown-avatar">
+                      {kullanici.avatar
+                        ? <img src={kullanici.avatar} alt="" />
+                        : <span>{basharf}</span>
+                      }
+                    </div>
+                    <div>
+                      <p className="dropdown-username">@{kullanici.username}</p>
+                      <p className="dropdown-email">{kullanici.email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="dropdown-username">@{kullanici.username}</p>
-                    <p className="dropdown-email">{kullanici.email}</p>
-                  </div>
-                </div>
-                <div className="dropdown-ayirici" />
-                <Link to="/profil" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
-                  <UserRound size={16} strokeWidth={2} />
-                  <span>Profilim</span>
-                </Link>
-                <Link to="/listelerim" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
-                  <List size={16} strokeWidth={2} />
-                  <span>Listelerim</span>
-                </Link>
-                {kullanici?.email?.toLowerCase() === 'seriesboxd@gmail.com' && (
-                  <Link to="/admin-dashboard" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
-                    <Shield size={16} strokeWidth={2} />
-                    <span>Admin Panel</span>
+                  <div className="dropdown-ayirici" />
+                  <Link to="/profil" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
+                    <UserRound size={16} strokeWidth={2} />
+                    <span>Profilim</span>
                   </Link>
-                )}
-                <div className="dropdown-ayirici" />
-                <button className="dropdown-item cikis" onClick={() => { handleCikis(); setMobileMenuAcik(false); }}>
-                  <LogOut size={16} strokeWidth={2} />
-                  <span>Çıkış Yap</span>
-                </button>
-              </div>
-            )}
-          </div>
+                  <Link to="/listelerim" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
+                    <List size={16} strokeWidth={2} />
+                    <span>Listelerim</span>
+                  </Link>
+                  {kullanici?.email?.toLowerCase() === 'seriesboxd@gmail.com' && (
+                    <Link to="/admin-dashboard" className="dropdown-item" onClick={() => { setMenuAcik(false); setMobileMenuAcik(false); }}>
+                      <Shield size={16} strokeWidth={2} />
+                      <span>Admin Panel</span>
+                    </Link>
+                  )}
+                  <div className="dropdown-ayirici" />
+                  <button className="dropdown-item cikis" onClick={() => { handleCikis(); setMobileMenuAcik(false); }}>
+                    <LogOut size={16} strokeWidth={2} />
+                    <span>Çıkış Yap</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
         ) : (
           /* Giriş yapılmadıysa Giriş Yap butonu */
           <Link to="/login" className="login-btn" onClick={() => setMobileMenuAcik(false)}>Giriş Yap</Link>
