@@ -57,18 +57,31 @@ function Profil() {
         }
 
         Promise.all([
-            fetch(`${API_BASE}/profile/stats`, { headers, credentials: 'include' }).then(res => res.json()),
-            fetch(`${API_BASE}/profile/recent-activity?limit=3`, { headers, credentials: 'include' }).then(res => res.json()),
-            fetch(`${API_BASE}/profile/favorites`, { headers, credentials: 'include' }).then(res => res.json()),
-            fetch(`${API_BASE}/profile/watchlist_preview`, { headers, credentials: 'include' }).then(res => res.json()),
-            fetch(`${API_BASE}/profile/ratings-distribution`, { headers, credentials: 'include' }).then(res => res.json()),
+            fetch(`${API_BASE}/profile/stats`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
+            fetch(`${API_BASE}/profile/recent-activity?limit=3`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
+            fetch(`${API_BASE}/profile/favorites`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
+            fetch(`${API_BASE}/profile/watchlist_preview`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
+            fetch(`${API_BASE}/profile/ratings-distribution`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
+            fetch(`${API_BASE}/u/${encodeURIComponent(kullanici.username)}`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
             fetch(`${API_BASE}/turler`, { credentials: 'include' }).then(res => res.json())
         ])
-            .then(([st, rec, favs, wlist, rdist, genreList]) => {
-                setStats(st);
+            .then(([st, rec, favs, wlist, rdist, fallbackProfile, genreList]) => {
+                setStats(st || (fallbackProfile ? {
+                    watched_series: fallbackProfile.watched_series || 0,
+                    watchlist_count: fallbackProfile.watchlist_count || 0,
+                    followers_count: fallbackProfile.followers_count || 0,
+                    following_count: fallbackProfile.following_count || 0,
+                    top_genres: [],
+                    total_hours: 0,
+                    total_days: 0,
+                    episodes_watched: 0,
+                    monthly_activity: []
+                } : null));
                 if (Array.isArray(rec)) setRecent(rec);
+                else if (fallbackProfile && Array.isArray(fallbackProfile.recent_activity)) setRecent(fallbackProfile.recent_activity);
                 if (Array.isArray(favs)) setFavorites(favs);
                 if (Array.isArray(wlist)) setWatchlistPreview(wlist);
+                else if (fallbackProfile && fallbackProfile.watchlist_count > 0) setWatchlistPreview([]);
                 if (rdist && rdist.distribution) setRatingsDistribution(rdist);
                 if (Array.isArray(genreList)) setGenres(genreList);
             })

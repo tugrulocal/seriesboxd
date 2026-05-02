@@ -619,6 +619,21 @@ def get_public_profile(username: str, user = Depends(get_current_user), limit: i
 
     followers_count, following_count = _get_follow_counts(profile_user["user_id"])
 
+    conn = get_db_conn()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute(
+        "SELECT COUNT(DISTINCT series_id) as watched_series FROM user_activity WHERE user_id = %s AND activity_type = 'watched'",
+        (profile_user["user_id"],),
+    )
+    watched_series = cur.fetchone()["watched_series"]
+    cur.execute(
+        "SELECT COUNT(*) as watchlist_count FROM user_series_activity WHERE user_id = %s AND activity_type = 'watchlist'",
+        (profile_user["user_id"],),
+    )
+    watchlist_count = cur.fetchone()["watchlist_count"]
+    cur.close()
+    conn.close()
+
     is_following = False
     if user:
         conn = get_db_conn()
@@ -637,6 +652,8 @@ def get_public_profile(username: str, user = Depends(get_current_user), limit: i
         "user": profile_user,
         "followers_count": followers_count,
         "following_count": following_count,
+        "watched_series": watched_series,
+        "watchlist_count": watchlist_count,
         "is_following": is_following,
         "recent_activity": recent_activity,
     }
