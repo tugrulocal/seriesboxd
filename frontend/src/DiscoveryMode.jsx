@@ -6,6 +6,7 @@ import AuthRequiredModal from './AuthRequiredModal';
 import useAuthGate from './useAuthGate';
 import { Eye, Heart, Bookmark, ArrowUp, Info, ChevronLeft, ChevronRight, X, Star, CalendarDays, ArrowRight, PlayCircle } from 'lucide-react';
 import API_BASE from './config';
+import { getImageUrl } from './utils';
 import './DiscoveryMode.css';
 
 function DiscoveryMode() {
@@ -364,8 +365,8 @@ function DiscoveryMode() {
                         }}
                     >
                         <img
-                            src={`https://image.tmdb.org/t/p/w500${card.poster_path}`}
-                            srcSet={`https://image.tmdb.org/t/p/w342${card.poster_path} 342w, https://image.tmdb.org/t/p/w500${card.poster_path} 500w, https://image.tmdb.org/t/p/w780${card.poster_path} 780w`}
+                            src={getImageUrl(card.poster_path, 'w500')}
+                            srcSet={`${getImageUrl(card.poster_path, 'w342')} 342w, ${getImageUrl(card.poster_path, 'w500')} 500w, ${getImageUrl(card.poster_path, 'w780')} 780w`}
                             sizes="(max-width: 640px) 342px, (max-width: 1024px) 500px, 780px"
                             alt={card.name}
                             loading="lazy"
@@ -401,7 +402,7 @@ function DiscoveryMode() {
 
                 <button
                     className="action-btn like-btn"
-                    onClick={handleNext}
+                    onClick={() => handleSwipe('right')}
                     aria-label="İzleme listesine ekle"
                 >
                     <Bookmark strokeWidth={2} />
@@ -445,8 +446,8 @@ function DiscoveryMode() {
 
                         <div className="detail-modal-media">
                             <img
-                                src={`https://image.tmdb.org/t/p/w342${seciliDizi.poster_path}`}
-                                srcSet={`https://image.tmdb.org/t/p/w185${seciliDizi.poster_path} 185w, https://image.tmdb.org/t/p/w342${seciliDizi.poster_path} 342w, https://image.tmdb.org/t/p/w500${seciliDizi.poster_path} 500w`}
+                                src={getImageUrl(seciliDizi.poster_path, 'w342')}
+                                srcSet={`${getImageUrl(seciliDizi.poster_path, 'w185')} 185w, ${getImageUrl(seciliDizi.poster_path, 'w342')} 342w, ${getImageUrl(seciliDizi.poster_path, 'w500')} 500w`}
                                 sizes="(max-width: 640px) 185px, (max-width: 1024px) 342px, 500px"
                                 alt={seciliDizi.name}
                                 className="detail-modal-poster"
@@ -596,8 +597,8 @@ function SwipeCard({ card, onSwipe, onRightSwipeAuth, direction, onInfoClick, on
 
             <div className="card-image-container">
                 <img
-                    src={`https://image.tmdb.org/t/p/w500${card.poster_path}`}
-                    srcSet={`https://image.tmdb.org/t/p/w342${card.poster_path} 342w, https://image.tmdb.org/t/p/w500${card.poster_path} 500w, https://image.tmdb.org/t/p/w780${card.poster_path} 780w`}
+                    src={getImageUrl(card.poster_path, 'w500')}
+                    srcSet={`${getImageUrl(card.poster_path, 'w342')} 342w, ${getImageUrl(card.poster_path, 'w500')} 500w, ${getImageUrl(card.poster_path, 'w780')} 780w`}
                     sizes="(max-width: 640px) 342px, (max-width: 1024px) 500px, 780px"
                     alt={card.name}
                     loading="lazy"

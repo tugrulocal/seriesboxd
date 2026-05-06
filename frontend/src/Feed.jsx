@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import './Profil.css';
 import API_BASE from './config';
 import { getRelativeTimeLabel, useRelativeTimeTicker } from './timeUtils';
+import { getImageUrl } from './utils';
 
 function Feed() {
   const { kullanici, yukleniyor: authLoading } = useAuth();
@@ -58,55 +59,51 @@ function Feed() {
       <div className="profil-hero">
         <div className="profil-hero-left">
           <div className="profil-hero-info">
-            <h1 className="profil-username" style={{ fontFamily: 'Montserrat, sans-serif' }}>Akış</h1>
+            <h1 className="profil-username feed-title" style={{ fontFamily: 'Montserrat, sans-serif' }}>Akış</h1>
             <p className="profil-bio">Takip ettiklerinin son aktiviteleri</p>
           </div>
         </div>
       </div>
 
-      {loading ? (
-        <div className="tab-loading">Yükleniyor...</div>
-      ) : (
-        <div className="profil-section">
-          <h3 className="section-title-lb" style={{ fontFamily: 'Montserrat, sans-serif' }}>Son Hareketler</h3>
-          {items.length > 0 ? (
-            <div className="activity-compact-list feed-list">
-              {items.map((act, index) => (
-                <div key={`${act.activity_type}-${act.activity_id}-${index}`} className="activity-compact-item">
-                  {act.poster_path && (
-                    <Link to={`/dizi/${act.series_id}`} className="feed-poster-link">
-                      <img 
-                        className="feed-poster-thumb" 
-                        src={act.poster_path} 
-                        alt={act.series_name || 'Dizi'} 
-                      />
-                    </Link>
-                  )}
-                  <Link className="activity-avatar-link" to={act.actor_username ? `/u/${encodeURIComponent(act.actor_username)}` : '#'} onClick={e => { if (!act.actor_username) e.preventDefault(); }}>
-                    {act.actor_avatar ? (
-                      <img className="activity-avatar" src={act.actor_avatar} alt={act.actor_username || 'anonim'} />
-                    ) : (
-                      <div className="activity-avatar activity-avatar-fallback">{String(act.actor_username || '?')[0]?.toUpperCase()}</div>
-                    )}
+      <div className="profil-section">
+        <h3 className="section-title-lb feed-title" style={{ fontFamily: 'Montserrat, sans-serif' }}>Son Hareketler</h3>
+        {!loading && items.length > 0 ? (
+          <div className="activity-compact-list feed-list">
+            {items.map((act, index) => (
+              <div key={`${act.activity_type}-${act.activity_id}-${index}`} className="activity-compact-item">
+                {act.poster_path && (
+                  <Link to={`/dizi/${act.series_id}`} className="feed-poster-link">
+                    <img 
+                      className="feed-poster-thumb" 
+                      src={getImageUrl(act.poster_path, 'w92')} 
+                      alt={act.series_name || 'Dizi'} 
+                    />
                   </Link>
-                  <span className="act-dot" />
-                  <div className="act-compact-text">
-                    <Link className="act-link" to={`/u/${encodeURIComponent(act.actor_username || '')}`}>@{act.actor_username || 'anonim'}</Link>{' '}
-                    {getActivityText(act)}{' '}
-                    <Link className="act-link" to={`/dizi/${act.series_id}`}>{act.series_name}</Link>
-                    {act.activity_type === 'series_reviewed' && act.review_text ? (
-                      <span style={{ marginLeft: 6, color: 'inherit' }}>— {String(act.review_text).slice(0, 90)}{String(act.review_text).length > 90 ? '…' : ''}</span>
-                    ) : null}
-                  </div>
-                  <span className="act-time">{getRelativeTimeLabel(act.created_at)}</span>
+                )}
+                <Link className="activity-avatar-link" to={act.actor_username ? `/u/${encodeURIComponent(act.actor_username)}` : '#'} onClick={e => { if (!act.actor_username) e.preventDefault(); }}>
+                  {act.actor_avatar ? (
+                    <img className="activity-avatar" src={act.actor_avatar} alt={act.actor_username || 'anonim'} />
+                  ) : (
+                    <div className="activity-avatar activity-avatar-fallback">{String(act.actor_username || '?')[0]?.toUpperCase()}</div>
+                  )}
+                </Link>
+                <span className="act-dot" />
+                <div className="act-compact-text">
+                  <Link className="act-link" to={`/u/${encodeURIComponent(act.actor_username || '')}`}>@{act.actor_username || 'anonim'}</Link>{' '}
+                  {getActivityText(act)}{' '}
+                  <Link className="act-link" to={`/dizi/${act.series_id}`}>{act.series_name}</Link>
+                  {act.activity_type === 'series_reviewed' && act.review_text ? (
+                    <span style={{ marginLeft: 6, color: 'inherit' }}>— {String(act.review_text).slice(0, 90)}{String(act.review_text).length > 90 ? '…' : ''}</span>
+                  ) : null}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="tab-empty" style={{ textAlign: 'left' }}>Henüz akış boş. Birkaç kullanıcı takip etmeyi dene.</p>
-          )}
-        </div>
-      )}
+                <span className="act-time">{getRelativeTimeLabel(act.created_at)}</span>
+              </div>
+            ))}
+          </div>
+        ) : !loading ? (
+          <p className="tab-empty" style={{ textAlign: 'left' }}>Henüz akış boş. Birkaç kullanıcı takip etmeyi dene.</p>
+        ) : null}
+      </div>
     </div>
   );
 }

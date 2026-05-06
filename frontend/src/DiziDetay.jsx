@@ -458,8 +458,15 @@ function DiziDetay() {
   if (yukleniyor) {
     return (
       <div className="detay-v2">
-        <div style={{ textAlign: 'center', marginTop: '100px', color: '#94a3b8' }}>
-          Yükleniyor...
+        <div className="dv2-hero" style={{ background: 'linear-gradient(180deg, rgba(17, 24, 39, 0.78), rgba(8, 15, 30, 0.86))' }}>
+          <div className="dv2-hero-inner">
+            <div className="dv2-hero-poster" style={{ backgroundColor: '#1e293b', width: '240px', height: '360px', borderRadius: '12px' }}></div>
+            <div className="dv2-hero-info">
+              <div style={{ width: '60%', height: '40px', backgroundColor: '#1e293b', borderRadius: '8px', marginBottom: '20px' }}></div>
+              <div style={{ width: '40%', height: '20px', backgroundColor: '#1e293b', borderRadius: '4px', marginBottom: '30px' }}></div>
+              <div style={{ width: '100%', height: '100px', backgroundColor: '#1e293b', borderRadius: '8px' }}></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -526,7 +533,7 @@ function DiziDetay() {
               {watchProviders.map(p => (
                 p.logo_path && (
                   <a key={p.provider_id} href={p.url || '#'} target="_blank" rel="noopener noreferrer" className="dv2-provider-logo-link" title={p.provider_name}>
-                    <img src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} alt={p.provider_name} className="dv2-provider-logo" loading="lazy" decoding="async" />
+                    <img src={getImageUrl(p.logo_path, 'w92')} alt={p.provider_name} className="dv2-provider-logo" loading="lazy" decoding="async" />
                   </a>
                 )
               ))}
@@ -624,7 +631,7 @@ function DiziDetay() {
                 return (
                   <div key={sezon.season_id}>
                     <div className="sezon-satir" onClick={() => sezonAccordionToggle(sezon.season_id)}>
-                      <img src={sezon.poster_path ? `https://image.tmdb.org/t/p/w185${sezon.poster_path}` : `https://image.tmdb.org/t/p/w185${dizi.poster_path}`} alt={sezon.name} className="sezon-poster-kucuk" loading="lazy" decoding="async" />
+                      <img src={sezon.poster_path ? getImageUrl(sezon.poster_path, 'w185') : getImageUrl(dizi.poster_path, 'w185')} alt={sezon.name} className="sezon-poster-kucuk" loading="lazy" decoding="async" />
                       <div className="sezon-bilgi">
                         <div className="sezon-baslik">{sezon.name}</div>
                         <div className="sezon-detay">
@@ -690,7 +697,7 @@ function DiziDetay() {
             <div className="cast-grid">
               {oyuncular.length > 0 ? oyuncular.map((oyuncu, i) => (
                 <div key={i} className="cast-kart">
-                  {oyuncu.profile_path ? <img src={`https://image.tmdb.org/t/p/w185${oyuncu.profile_path}`} alt={oyuncu.name} className="cast-foto" loading="lazy" decoding="async" /> : <div className="cast-foto-yok">👤</div>}
+                  {oyuncu.profile_path ? <img src={getImageUrl(oyuncu.profile_path, 'w185')} alt={oyuncu.name} className="cast-foto" loading="lazy" decoding="async" /> : <div className="cast-foto-yok">👤</div>}
                   <div className="cast-bilgi"><span className="cast-isim">{oyuncu.name}</span><span className="cast-rol">{oyuncu.character}</span></div>
                 </div>
               )) : <p style={{ color: '#64748b' }}>Oyuncu bilgisi bulunamadı.</p>}
@@ -705,7 +712,7 @@ function DiziDetay() {
                   <div className="crew-grid">
                     {kisiler.map((kisi, i) => (
                       <div key={i} className="crew-kart">
-                        {kisi.profile_path ? <img src={`https://image.tmdb.org/t/p/w185${kisi.profile_path}`} alt={kisi.name} className="cast-foto" loading="lazy" decoding="async" /> : <div className="cast-foto-yok">👤</div>}
+                        {kisi.profile_path ? <img src={getImageUrl(kisi.profile_path, 'w185')} alt={kisi.name} className="cast-foto" loading="lazy" decoding="async" /> : <div className="cast-foto-yok">👤</div>}
                         <div className="cast-bilgi"><span className="cast-isim">{kisi.name}</span><span className="cast-rol">{kisi.job}</span></div>
                       </div>
                     ))}

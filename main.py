@@ -80,11 +80,11 @@ def send_verification_email(to_email: str, code: str, purpose: str = "verify"):
         msg['From'] = SMTP_EMAIL
         msg['To'] = to_email
         if purpose == "verify":
-            msg['Subject'] = "Seriesboxd - E-posta Doğrulama Kodu"
+            msg['Subject'] = "Dizilog - E-posta Doğrulama Kodu"
             body = f"""
             <html><body style="font-family:sans-serif;background:#0f172a;color:#f1f5f9;padding:30px;">
             <div style="max-width:400px;margin:0 auto;background:#1e293b;border-radius:16px;padding:32px;text-align:center;">
-                <h1 style="color:#38bdf8;margin:0 0 8px;">seriesboxd</h1>
+                <h1 style="color:#38bdf8;margin:0 0 8px;">dizilog</h1>
                 <p style="color:#94a3b8;font-size:14px;">E-posta adresini doğrula</p>
                 <div style="background:#0f172a;border-radius:12px;padding:20px;margin:20px 0;">
                     <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#38bdf8;">{code}</span>
@@ -94,11 +94,11 @@ def send_verification_email(to_email: str, code: str, purpose: str = "verify"):
             </body></html>
             """
         else:
-            msg['Subject'] = "Seriesboxd - Şifre Sıfırlama Kodu"
+            msg['Subject'] = "Dizilog - Şifre Sıfırlama Kodu"
             body = f"""
             <html><body style="font-family:sans-serif;background:#0f172a;color:#f1f5f9;padding:30px;">
             <div style="max-width:400px;margin:0 auto;background:#1e293b;border-radius:16px;padding:32px;text-align:center;">
-                <h1 style="color:#38bdf8;margin:0 0 8px;">seriesboxd</h1>
+                <h1 style="color:#38bdf8;margin:0 0 8px;">dizilog</h1>
                 <p style="color:#94a3b8;font-size:14px;">Şifre sıfırlama kodun</p>
                 <div style="background:#0f172a;border-radius:12px;padding:20px;margin:20px 0;">
                     <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#f59e0b;">{code}</span>
@@ -145,7 +145,7 @@ async def lifespan(app):
 
 # 1. Uygulamayı lifespan ile oluştur
 app = FastAPI(
-    title="Seriesboxd API",
+    title="Dizilog API",
     docs_url=None if IS_PRODUCTION else "/docs",   # prod'da /docs kapalı
     redoc_url=None if IS_PRODUCTION else "/redoc",
     lifespan=lifespan,
@@ -860,7 +860,7 @@ def get_feed(limit: int = 50, user = Depends(get_current_user)):
             SELECT usa.id as activity_id, usa.activity_type, usa.created_at,
                    u.user_id as actor_user_id, u.username as actor_username, u.avatar as actor_avatar,
                    s.name as series_name, s.series_id, s.poster_path,
-                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as season_id, NULL::int as season_number, NULL::int as episode_number, NULL::varchar as episode_name,
                    NULL::int as score, NULL::varchar as review_text
             FROM user_series_activity usa
             JOIN followings f ON f.uid = usa.user_id
@@ -872,7 +872,7 @@ def get_feed(limit: int = 50, user = Depends(get_current_user)):
             SELECT ur.rating_id as activity_id, 'series_rated' as activity_type, ur.created_at,
                    u.user_id as actor_user_id, u.username as actor_username, u.avatar as actor_avatar,
                    s.name as series_name, s.series_id, s.poster_path,
-                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as season_id, NULL::int as season_number, NULL::int as episode_number, NULL::varchar as episode_name,
                    ur.score as score, NULL::varchar as review_text
             FROM user_ratings ur
             JOIN followings f ON f.uid = ur.user_id
@@ -884,7 +884,7 @@ def get_feed(limit: int = 50, user = Depends(get_current_user)):
             SELECT uer.id as activity_id, 'episode_rated' as activity_type, uer.created_at,
                    u.user_id as actor_user_id, u.username as actor_username, u.avatar as actor_avatar,
                    s.name as series_name, se.series_id, s.poster_path,
-                   e.season_id as season_id, e.episode_number as episode_number, e.name as episode_name,
+                   e.season_id as season_id, se.season_number, e.episode_number as episode_number, e.name as episode_name,
                    uer.score as score, NULL::varchar as review_text
             FROM user_episode_ratings uer
             JOIN followings f ON f.uid = uer.user_id
@@ -898,7 +898,7 @@ def get_feed(limit: int = 50, user = Depends(get_current_user)):
             SELECT usr.review_id as activity_id, 'series_reviewed' as activity_type, usr.created_at,
                    u.user_id as actor_user_id, u.username as actor_username, u.avatar as actor_avatar,
                    s.name as series_name, s.series_id, s.poster_path,
-                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as season_id, NULL::int as season_number, NULL::int as episode_number, NULL::varchar as episode_name,
                    NULL::int as score, usr.review_text as review_text
             FROM user_series_reviews usr
             JOIN followings f ON f.uid = usr.user_id
@@ -978,7 +978,7 @@ def health_check():
 
 @app.get("/")
 def ana_sayfa():
-    return {"mesaj": "Seriesboxd API'sine Hoş Geldin! İTÜ'lü Mühendis İş Başında."}
+    return {"mesaj": "Dizilog API'sine Hoş Geldin! İTÜ'lü Mühendis İş Başında."}
 
 @app.get("/diziler")
 def tum_dizileri_getir():
@@ -2270,7 +2270,7 @@ def get_recent_activity(limit: int = 15, days: Optional[int] = None, user = Depe
         (
             SELECT usr.review_id as activity_id, 'series_reviewed' as activity_type, usr.created_at,
                    s.name as series_name, s.series_id, s.poster_path,
-                   NULL::int as season_id, NULL::int as episode_number, NULL::varchar as episode_name,
+                   NULL::int as season_id, NULL::int as season_number, NULL::int as episode_number, NULL::varchar as episode_name,
                    NULL::int as score, usr.review_text as review_text
             FROM user_series_reviews usr
             JOIN series s ON usr.series_id = s.series_id

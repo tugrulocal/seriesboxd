@@ -228,7 +228,7 @@ function AdFreeGuide() {
             <div className="adfree-guide-modal-header">
               <div className="adfree-guide-title-wrap">
                 <span className="adfree-guide-badge">
-                  <Sparkles size={14} /> Seriesboxd Reklamsız İzleme Rehberi
+                  <Sparkles size={14} /> Dizilog Reklamsız İzleme Rehberi
                 </span>
                 <h3 id="adfree-guide-title">Reklamları minimuma indirmenin en temiz yolu</h3>
                 <p>

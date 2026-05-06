@@ -8,6 +8,7 @@ import useAuthGate from './useAuthGate';
 import { useAuth } from './AuthContext';
 import './App.css';
 import API_BASE from './config';
+import { getImageUrl } from './utils';
 import { getRelativeTimeLabel, parseApiDate, useRelativeTimeTicker } from './timeUtils';
 
 const SOURCE_PREF_KEY = 'sb_watch_source_pref_v2';
@@ -678,8 +679,8 @@ function WatchPage() {
     if (yukleniyor) return <div style={{ color: 'white', textAlign: 'center', marginTop: '100px' }}>Yükleniyor...</div>;
     if (!dizi) return <div style={{ color: 'red', textAlign: 'center', marginTop: '100px' }}>Dizi bulunamadı.</div>;
 
-    const arkaplanResmi = dizi.backdrop_path ? `https://image.tmdb.org/t/p/original${dizi.backdrop_path}` : `https://image.tmdb.org/t/p/original${dizi.poster_path}`;
-    const posterResmi = dizi.poster_path ? `https://image.tmdb.org/t/p/w500${dizi.poster_path}` : arkaplanResmi;
+    const arkaplanResmi = dizi.backdrop_path ? getImageUrl(dizi.backdrop_path, 'original') : getImageUrl(dizi.poster_path, 'original');
+    const posterResmi = dizi.poster_path ? getImageUrl(dizi.poster_path, 'w500') : arkaplanResmi;
     const displayBolumler = bolumler.filter(b => b.season_id === seciliSezonId);
     const activeSource = bulunanMagnetler[seciliMagnetIndex];
     const dropdownSources = bulunanMagnetler

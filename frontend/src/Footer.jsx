@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Github, Mail } from 'lucide-react';
 
 export default function Footer() {
@@ -16,7 +16,7 @@ export default function Footer() {
                         to="/"
                         className="text-xl font-black tracking-tight text-white hover:text-sky-400 transition-colors duration-200"
                     >
-                        series<span className="text-sky-400">boxd</span>
+                        dizi<span className="text-sky-400">log</span>
                     </Link>
                     <p className="text-gray-600 text-[11px] leading-snug max-w-xs">
                         This product uses the TMDB API but is not endorsed or certified by TMDB.
@@ -48,7 +48,7 @@ export default function Footer() {
             <div className="border-t border-gray-800 w-full">
                 <div className="w-full px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-2">
                     <p className="text-gray-600 text-xs">
-                        © 2026 <span className="text-gray-400 font-medium">Seriesboxd</span>. Tüm hakları saklıdır.
+                        © 2026 <span className="text-gray-400 font-medium">Dizilog</span>. Tüm hakları saklıdır.
                     </p>
                     <div className="flex items-center gap-3 text-xs text-gray-600">
                         <span>Made with ❤️ for series lovers</span>

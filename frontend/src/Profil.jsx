@@ -58,7 +58,7 @@ function Profil() {
 
         Promise.all([
             fetch(`${API_BASE}/profile/stats`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
-            fetch(`${API_BASE}/profile/recent-activity?limit=3`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
+            fetch(`${API_BASE}/profile/recent-activity?limit=3&days=30`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
             fetch(`${API_BASE}/profile/favorites`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
             fetch(`${API_BASE}/profile/watchlist_preview`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
             fetch(`${API_BASE}/profile/ratings-distribution`, { headers, credentials: 'include' }).then(res => res.ok ? res.json() : null).catch(() => null),
@@ -210,21 +210,13 @@ function Profil() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="profil-page profil-page-self">
-                <div style={{ textAlign: 'center', marginTop: '100px', color: '#94a3b8' }}>
-                    Yükleniyor...
-                </div>
-            </div>
-        );
-    }
+
     if (!kullanici) return null;
 
     const basharf = kullanici.username?.[0]?.toUpperCase() || '?';
     const kayitTarihi = new Date(kullanici.created_at || Date.now()).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    const activityItems = recentExpanded ? recentFull : recent;
+    const activityItems = recentExpanded ? (recentFull.length > 0 ? recentFull : recent) : recent;
 
     const getActivityText = (act) => {
         if (act.activity_type === 'watched') {

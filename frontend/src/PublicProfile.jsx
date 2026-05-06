@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import './Profil.css';
 import API_BASE from './config';
 import { getRelativeTimeLabel, useRelativeTimeTicker } from './timeUtils';
+import { getImageUrl } from './utils';
 
 function PublicProfile() {
   const { username } = useParams();
@@ -306,7 +307,7 @@ function PublicProfile() {
                   {watchedSeries.map(series => (
                     <Link key={series.series_id} to={`/dizi/${series.series_id}`} style={{ textDecoration: 'none', color: 'inherit' }} onClick={() => setShowWatchedModal(false)}>
                       <div style={{ borderRadius: '6px', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s', textAlign: 'center' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-                        {series.poster_path ? <img src={series.poster_path} alt={series.name} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '4px' }} /> : <div style={{ width: '100%', height: '150px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8em', textAlign: 'center', padding: '5px' }}>Poster Yok</div>}
+                        {series.poster_path ? <img src={getImageUrl(series.poster_path, 'w185')} alt={series.name} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '4px' }} /> : <div style={{ width: '100%', height: '150px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8em', textAlign: 'center', padding: '5px' }}>Poster Yok</div>}
                         <div style={{ marginTop: '8px', fontSize: '0.9em', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{series.name}</div>
                         {series.rating ? <div style={{ fontSize: '0.8em', color: '#888', marginTop: '2px' }}>★{series.rating.toFixed(1)}</div> : null}
                       </div>

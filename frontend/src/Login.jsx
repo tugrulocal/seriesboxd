@@ -291,7 +291,7 @@ function Login() {
             <div className="auth-arka-gradyan" />
 
             <div className={`auth-kart ${isVerificationModalOpen ? 'blur-background' : ''}`}>
-                <Link to="/" className="auth-logo">seriesboxd</Link>
+                <Link to="/" className="auth-logo">dizilog</Link>
                 <p className="auth-slogan">Dizilerini takip et, keşfet, paylaş, izle.</p>
 
                 {(sekme === 'giris' || sekme === 'kayit') && (

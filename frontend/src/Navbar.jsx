@@ -40,12 +40,13 @@ function Navbar({ onSonuclar, onAnaSayfaGit }) {
         <Link to="/" onClick={(e) => { e.preventDefault(); onAnaSayfaGit && onAnaSayfaGit(); setMobileMenuAcik(false); }}>
           {heisenbergLogo ? (
             <>
-              <span className="logo-element" data-number="16" data-mass="32.06"><span className="logo-element-letter">S</span></span>
-              eries
-              <span className="logo-element" data-number="5" data-mass="10.81"><span className="logo-element-letter">B</span></span>
-              oxd
+              D
+              <span className="logo-element" data-number="53" data-mass="126.90"><span className="logo-element-letter">i</span></span>
+              zil
+              <span className="logo-element" data-number="8" data-mass="16.00"><span className="logo-element-letter">o</span></span>
+              g
             </>
-          ) : 'seriesboxd'}
+          ) : 'dizilog'}
         </Link>
       </div>
 

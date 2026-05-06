@@ -685,7 +685,7 @@ function AdminPanel({ headers, cikisYap }) {
             {/* Header */}
             <div className="admin-header">
                 <h1>Admin Panel</h1>
-                <p>Seriesboxd Yönetim Paneli</p>
+                <p>Dizilog Yönetim Paneli</p>
             </div>
 
             {/* Tabs */}
