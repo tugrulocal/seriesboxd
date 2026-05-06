@@ -38,27 +38,37 @@ function PublicProfile() {
   useEffect(() => {
     if (!username) return;
     setLoading(true);
-    fetch(`${API_BASE}/u/${encodeURIComponent(username)}`, { headers, credentials: 'include' })
+
+    const tok = localStorage.getItem('sb_token');
+    const hdrs = tok ? { 'Authorization': `Bearer ${tok}` } : {};
+
+    fetch(`${API_BASE}/u/${encodeURIComponent(username)}`, { headers: hdrs, credentials: 'include' })
       .then(res => {
-        if (!res.ok) throw new Error('profile');
+        if (res.status === 404) throw new Error('not_found');
+        if (!res.ok) throw new Error('error');
         return res.json();
       })
       .then(data => {
         setProfile(data.user || null);
         setFollowersCount(Number(data.followers_count || 0));
         setFollowingCount(Number(data.following_count || 0));
+        setWatchedCount(Number(data.watched_series || 0));
         setIsFollowing(Boolean(data.is_following));
         setRecent(Array.isArray(data.recent_activity) ? data.recent_activity : []);
       })
-      .catch(() => setProfile(null))
+      .catch((err) => {
+        if (err.message === 'not_found') setProfile(null);
+        else setProfile(null); // ağ hatası da null — "bulunamadı" göster
+      })
       .finally(() => setLoading(false));
-    
-    fetch(`${API_BASE}/watched-series/${encodeURIComponent(username)}`, { headers, credentials: 'include' })
-      .then(res => res.json())
+
+    fetch(`${API_BASE}/watched-series/${encodeURIComponent(username)}`, { headers: hdrs, credentials: 'include' })
+      .then(res => res.ok ? res.json() : [])
       .then(data => {
         const series = Array.isArray(data) ? data : [];
         setWatchedSeries(series);
-        setWatchedCount(series.length);
+        // watched count backend /u/{username} response'undan geliyor, ama burada da güncelle
+        if (series.length > 0) setWatchedCount(series.length);
       })
       .catch(() => { });
   }, [username]);

@@ -621,9 +621,16 @@ def get_public_profile(username: str, user = Depends(get_current_user), limit: i
 
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
+    # Her iki tablodan izlenen dizileri birleştirerek say
     cur.execute(
-        "SELECT COUNT(DISTINCT series_id) as watched_series FROM user_activity WHERE user_id = %s AND activity_type = 'watched'",
-        (profile_user["user_id"],),
+        """
+        SELECT COUNT(DISTINCT series_id) as watched_series FROM (
+            SELECT series_id FROM user_activity WHERE user_id = %s AND activity_type = 'watched'
+            UNION
+            SELECT series_id FROM user_series_activity WHERE user_id = %s AND activity_type = 'watched'
+        ) combined
+        """,
+        (profile_user["user_id"], profile_user["user_id"]),
     )
     watched_series = cur.fetchone()["watched_series"]
     cur.execute(
@@ -2427,57 +2434,104 @@ def get_watched_series(
         raise HTTPException(status_code=401, detail="Giriş yapmalısınız.")
     conn = get_db_conn()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-    conditions = ["usa.user_id = %s", "usa.activity_type = 'watched'"]
-    params = [user["user_id"]]
+
+    # Filtre koşulları (series tablosuna uygulanır)
+    series_conditions = ["1=1"]
+    filter_params = []
     if genre and genre.strip():
-        conditions.append("s.genres ILIKE %s")
-        params.append(f"%{genre.strip()}%")
+        series_conditions.append("s.genres ILIKE %s")
+        filter_params.append(f"%{genre.strip()}%")
     if min_rating is not None:
-        conditions.append("s.rating >= %s")
-        params.append(min_rating)
+        series_conditions.append("s.rating >= %s")
+        filter_params.append(min_rating)
     if max_rating is not None:
-        conditions.append("s.rating <= %s")
-        params.append(max_rating)
+        series_conditions.append("s.rating <= %s")
+        filter_params.append(max_rating)
     if decade and decade.strip():
         try:
             decade_start = int(decade.strip().rstrip('s'))
             decade_end = decade_start + 9
-            conditions.append("""
+            series_conditions.append("""
                 EXISTS (
-                    SELECT 1 FROM seasons se
-                    WHERE se.series_id = s.series_id AND se.season_number = 1
-                    AND EXTRACT(YEAR FROM se.air_date::date) BETWEEN %s AND %s
+                    SELECT 1 FROM seasons se2
+                    WHERE se2.series_id = s.series_id AND se2.season_number = 1
+                    AND EXTRACT(YEAR FROM se2.air_date::date) BETWEEN %s AND %s
                 )
             """)
-            params.extend([decade_start, decade_end])
+            filter_params.extend([decade_start, decade_end])
         except ValueError:
             pass
     if service and service.strip():
-        conditions.append("s.networks ILIKE %s")
-        params.append(f"%{service.strip()}%")
-    where = " AND ".join(conditions)
+        series_conditions.append("s.networks ILIKE %s")
+        filter_params.append(f"%{service.strip()}%")
+
+    series_where = " AND ".join(series_conditions)
+
     sort_map = {
-        "recent": "usa.created_at DESC",
-        "rating_desc": "s.rating DESC NULLS LAST",
-        "rating_asc": "s.rating ASC NULLS LAST",
-        "name_asc": "s.name ASC",
-        "name_desc": "s.name DESC",
-        "user_score_desc": "ur.score DESC NULLS LAST",
+        "recent": "watched_at DESC",
+        "rating_desc": "s_rating DESC NULLS LAST",
+        "rating_asc": "s_rating ASC NULLS LAST",
+        "name_asc": "s_name ASC",
+        "name_desc": "s_name DESC",
+        "user_score_desc": "user_score DESC NULLS LAST",
     }
-    order = sort_map.get(sort, "usa.created_at DESC")
+    order = sort_map.get(sort, "watched_at DESC")
+
+    uid = user["user_id"]
+    # Her iki tabloyu birleştir: user_series_activity (dizi bazlı) + user_activity (bölüm bazlı)
     cur.execute(f"""
-        SELECT s.series_id, s.name, s.poster_path, s.rating, s.genres, s.networks,
-               usa.created_at as watched_at,
+        SELECT DISTINCT ON (s.series_id)
+               s.series_id, s.name AS s_name, s.poster_path, s.rating AS s_rating, s.genres, s.networks,
+               combined.watched_at,
                ur.score as user_score
-        FROM user_series_activity usa
-        JOIN series s ON usa.series_id = s.series_id
-        LEFT JOIN user_ratings ur ON ur.series_id = s.series_id AND ur.user_id = usa.user_id
-        WHERE {where}
-        ORDER BY {order}
-    """, params)
-    rows = cur.fetchall()
+        FROM (
+            SELECT series_id, created_at AS watched_at
+            FROM user_series_activity
+            WHERE user_id = %s AND activity_type = 'watched'
+            UNION
+            SELECT series_id, MAX(created_at) AS watched_at
+            FROM user_activity
+            WHERE user_id = %s AND activity_type = 'watched'
+            GROUP BY series_id
+        ) combined
+        JOIN series s ON s.series_id = combined.series_id
+        LEFT JOIN user_ratings ur ON ur.series_id = s.series_id AND ur.user_id = %s
+        WHERE {series_where}
+        ORDER BY s.series_id, combined.watched_at DESC
+    """, [uid, uid, uid] + filter_params)
+
+    raw_rows = cur.fetchall()
     cur.close()
     conn.close()
+
+    # Rename keys to match original field names expected by frontend
+    rows = []
+    for r in raw_rows:
+        row = dict(r)
+        row['name'] = row.pop('s_name', row.get('name'))
+        row['rating'] = row.pop('s_rating', row.get('rating'))
+        rows.append(row)
+
+    # Sort by requested order after deduplication
+    sort_key_map = {
+        "recent": lambda x: x.get('watched_at') or '',
+        "rating_desc": lambda x: (x.get('rating') or 0),
+        "rating_asc": lambda x: (x.get('rating') or 0),
+        "name_asc": lambda x: (x.get('name') or '').lower(),
+        "name_desc": lambda x: (x.get('name') or '').lower(),
+        "user_score_desc": lambda x: (x.get('user_score') or 0),
+    }
+    reverse_map = {
+        "recent": True,
+        "rating_desc": True,
+        "rating_asc": False,
+        "name_asc": False,
+        "name_desc": True,
+        "user_score_desc": True,
+    }
+    if sort in sort_key_map:
+        rows.sort(key=sort_key_map[sort], reverse=reverse_map.get(sort, True))
+
     return rows
 
 @app.get("/services")
