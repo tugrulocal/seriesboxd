@@ -1,7 +1,7 @@
 """
 fix_missing_images.py
 ─────────────────────────────────────────────────────────────────────
-DB'de poster_path veya backdrop_path NULL olan dizileri tespit edip
+DB'de poster_path veyaa backdrop_path NULL olan dizileri tespit edip
 TMDB'den (önce tr-TR, null dönerse en-US) görselleri yeniden çeker.
 """
 
