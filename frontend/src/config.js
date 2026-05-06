@@ -5,3 +5,4 @@ const isLocalhost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].
 const API_BASE = import.meta.env.VITE_API_URL ?? (isLocalhost ? 'http://127.0.0.1:8000' : '');
 
 export default API_BASE;
+// build: 1778097781
