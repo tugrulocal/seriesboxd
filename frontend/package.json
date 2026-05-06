@@ -1,11 +1,11 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.00", 
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build", 
     "lint": "eslint .",
     "preview": "vite preview"
   },
