@@ -210,7 +210,15 @@ function Profil() {
         }
     };
 
-    if (loading) return null;
+    if (loading) {
+        return (
+            <div className="profil-page profil-page-self">
+                <div style={{ textAlign: 'center', marginTop: '100px', color: '#94a3b8' }}>
+                    Yükleniyor...
+                </div>
+            </div>
+        );
+    }
     if (!kullanici) return null;
 
     const basharf = kullanici.username?.[0]?.toUpperCase() || '?';

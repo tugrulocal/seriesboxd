@@ -455,7 +455,15 @@ function DiziDetay() {
     stremioModalAc(hedefBolum);
   };
 
-  if (yukleniyor) return null;
+  if (yukleniyor) {
+    return (
+      <div className="detay-v2">
+        <div style={{ textAlign: 'center', marginTop: '100px', color: '#94a3b8' }}>
+          Yükleniyor...
+        </div>
+      </div>
+    );
+  }
 
   const deleteSeriesReview = async (reviewId) => {
     const token = ensureAuth('Yorumu silmek');

@@ -466,8 +466,7 @@
 }
 
 .activity-compact-list.expanded {
-    max-height: 600px;
-    overflow-y: auto;
+    max-height: 3000px;
 }
 
 /* Feed page should scroll with the page, not inside a capped panel */
