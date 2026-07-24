@@ -194,7 +194,7 @@ function Top50() {
     <div className="top50-page">
       <div className="top50-hero">
         <div className="top50-title-area">
-          <h1>En Yüksek Puanlı 50 Dizi</h1>
+          <h1 className="top50-main-title">En Yüksek Puanlı 50 Dizi</h1>
           <p className="top50-subtitle">IMDb puanlarına göre tüm zamanların en iyi dizileri.</p>
         </div>
         <div className="top50-filter-toggle-container">
@@ -266,15 +266,16 @@ function Top50() {
               >
                 <div className="top50-rank-rail">
                   <span className="top50-rank">{index + 1}</span>
-                  <div className="top50-poster-wrapper">
-                    <PosterImage
-                      path={dizi.poster_path}
-                      size="w342"
-                      alt={dizi.name}
-                      className="top50-poster"
-                      loading="lazy"
-                    />
-                  </div>
+                </div>
+
+                <div className="top50-poster-wrapper">
+                  <PosterImage
+                    path={dizi.poster_path}
+                    size="w342"
+                    alt={dizi.name}
+                    className="top50-poster"
+                    loading="lazy"
+                  />
                 </div>
 
                 <div className="top50-content">
@@ -290,12 +291,11 @@ function Top50() {
                         <span className="top50-rating-val">{Number(dizi.rating).toFixed(1)}</span>
                       </div>
                       <span className="top50-votes">{(parseInt(dizi.vote_count) || 0).toLocaleString('tr-TR')} oy</span>
-                    </div>
-
-                    <div className="top50-genres">
-                      {genreList.map(g => (
-                        <span key={g} className="top50-genre-tag">{g}</span>
-                      ))}
+                      <div className="top50-genres top50-genres-inline">
+                        {genreList.map(g => (
+                          <span key={g} className="top50-genre-tag">{g}</span>
+                        ))}
+                      </div>
                     </div>
 
                     <p className="top50-overview">{dizi.overview}</p>

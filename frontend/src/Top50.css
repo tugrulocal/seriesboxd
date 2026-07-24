@@ -21,14 +21,15 @@
     box-shadow: 0 14px 48px rgba(2, 6, 23, 0.32);
 }
 
-.top50-title-area h1 {
+.top50-main-title {
     font-family: 'Montserrat', 'Mont', sans-serif !important;
-    font-weight: 900 !important;
-    font-size: clamp(2rem, 3vw, 2.8rem) !important;
-    line-height: 0.95;
+    font-weight: 800 !important;
+    font-size: clamp(1.9rem, 2.9vw, 2.55rem) !important;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
     color: #f8fafc;
     margin: 0 0 10px 0;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.36);
 }
 
 .top50-subtitle {
@@ -158,15 +159,16 @@
 }
 
 .top50-item {
-    display: flex;
-    align-items: stretch;
-    gap: 16px;
+    display: grid;
+    grid-template-columns: 56px 112px minmax(0, 1fr);
+    align-items: start;
+    gap: 14px 16px;
     background: linear-gradient(135deg, rgba(15, 23, 42, 0.76), rgba(20, 30, 55, 0.58));
     backdrop-filter: blur(14px) saturate(145%);
     -webkit-backdrop-filter: blur(14px) saturate(145%);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 18px;
-    padding: 14px;
+    padding: 16px 16px 16px 14px;
     transition: all 0.3s ease;
     cursor: pointer;
     position: relative;
@@ -197,29 +199,26 @@
 
 /* Rank / Poster */
 .top50-rank-rail {
-    width: 132px;
+    width: auto;
+    padding-top: 4px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-start;
     flex-shrink: 0;
-    gap: 10px;
 }
 
 .top50-rank {
-    font-size: 2.4rem;
-    font-weight: 800;
+    font-size: 2.05rem;
+    font-weight: 700;
     color: rgba(148, 163, 184, 0.7);
     line-height: 1;
     transition: color 0.3s;
 }
 
-.top50-item:hover .top50-rank {
-    color: #f8fafc;
-}
-
 .top50-poster-wrapper {
     width: 100%;
+    height: 100%;
     aspect-ratio: 2 / 3;
     flex-shrink: 0;
     border-radius: 14px;
@@ -244,6 +243,7 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 0;
 }
 
 .top50-title-row {
@@ -278,6 +278,11 @@ h2.top50-title {
     color: #cbd5e1;
     font-size: 0.9rem;
     flex-wrap: wrap;
+}
+
+.top50-genres-inline {
+    margin-left: 0;
+    margin-bottom: 0;
 }
 
 .top50-rating-box {
@@ -333,8 +338,8 @@ h2.top50-title {
 }
 
 .top50-footer {
-    margin-top: auto;
-    padding-top: 14px;
+    margin-top: 10px;
+    padding-top: 0;
 }
 
 /* User Actions */
@@ -443,34 +448,30 @@ h2.top50-title {
     }
 
     .top50-item {
-        align-items: flex-start;
-        gap: 12px;
-        padding: 12px;
+        grid-template-columns: 46px 72px minmax(0, 1fr);
+        gap: 10px 12px;
+        padding: 12px 12px 13px 12px;
     }
 
     .top50-rank-rail {
-        width: 100%;
-        flex-direction: row;
-        align-items: center;
-        gap: 12px;
+        padding-top: 2px;
     }
 
     .top50-rank {
-        font-size: 2rem;
-        min-width: 44px;
-        text-align: center;
+        font-size: 1.75rem;
+        text-align: left;
     }
 
     .top50-poster-wrapper {
-        width: 68px;
-        flex: 0 0 68px;
+        width: 72px;
+        height: auto;
     }
 
     .top50-content {
-        width: 100%;
+        grid-column: 3;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
     }
 
     .top50-info {
@@ -478,15 +479,16 @@ h2.top50-title {
     }
 
     .top50-title-row {
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
 
     h2.top50-title {
-        font-size: 1.02rem !important;
+        font-size: 0.98rem !important;
     }
 
     .top50-meta-row {
-        gap: 8px;
+        gap: 7px;
+        margin-bottom: 8px;
     }
 
     .top50-genres {
@@ -494,7 +496,7 @@ h2.top50-title {
     }
 
     .top50-footer {
-        padding-top: 8px;
+        margin-top: 2px;
     }
 
     .top50-actions {
@@ -534,8 +536,8 @@ h2.top50-title {
     }
 
     .top50-title-area h1 {
-        font-size: 1.75rem !important;
-        line-height: 1;
+        font-size: 1.55rem !important;
+        line-height: 1.04;
         margin-bottom: 8px;
     }
 
@@ -544,22 +546,44 @@ h2.top50-title {
     }
 
     .top50-item {
+        grid-template-columns: 36px 62px minmax(0, 1fr);
+        gap: 10px;
         border-radius: 16px;
     }
 
     .top50-rank {
-        font-size: 1.85rem;
+        font-size: 1.5rem;
     }
 
     .top50-poster-wrapper {
-        width: 60px;
-        flex-basis: 60px;
+        width: 62px;
+    }
+
+    .top50-title-row {
+        align-items: center;
+    }
+
+    .top50-year {
+        font-size: 0.82rem;
+    }
+
+    .top50-meta-row {
+        align-items: center;
+    }
+
+    .top50-genres-inline {
+        width: 100%;
+        order: 3;
     }
 
     .top50-overview {
-        font-size: 0.9rem;
-        -webkit-line-clamp: 3;
-        line-clamp: 3;
+        font-size: 0.88rem;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    .top50-overview {
+        grid-column: 3;
     }
 
     .top50-action-btn {
