@@ -133,6 +133,8 @@ function Top50() {
     setSortBy('rating');
   };
 
+  const hasActiveFilters = Boolean(filterGenre || filterDecade || sortBy !== 'rating');
+
   const handleSeriesClick = (id, e) => {
     // Prevent navigation if clicking action buttons
     if (e.target.closest('.top50-action-btn')) return;
@@ -190,50 +192,52 @@ function Top50() {
 
   return (
     <div className="top50-page">
-      <div className="top50-header">
+      <div className="top50-hero">
         <div className="top50-title-area">
           <h1>En Yüksek Puanlı 50 Dizi</h1>
           <p className="top50-subtitle">IMDb puanlarına göre tüm zamanların en iyi dizileri.</p>
         </div>
         <div className="top50-filter-toggle-container">
           <button
-            className="top50-filter-toggle-btn"
+            className={`top50-filter-toggle-btn ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters(!showFilters)}
-            style={{ background: 'rgba(30, 41, 59, 0.8)', color: '#fff', border: '1px solid #38bdf8', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
           >
-            <span style={{ fontSize: '1.2em', marginRight: '4px' }}>⧩</span> {showFilters ? 'Filtreleri Gizle' : 'Filtrele & Sırala'}
+            <FilterX size={16} />
+            <span>{showFilters ? 'Filtreleri Gizle' : 'Filtreler'}</span>
           </button>
         </div>
       </div>
 
       {showFilters && (
         <div className="top50-filters-wrapper">
-          <div className="top50-filter-group">
-            <label className="top50-filter-label">Sırala</label>
-            <select className="top50-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              <option value="rating">Puan (Yüksekten Düşüğe)</option>
-              <option value="popularity">Popülerlik (Oy Sayısı)</option>
-              <option value="newest">Yenilik (En Son Çıkanlar)</option>
-            </select>
+          <div className="top50-filter-row">
+            <div className="top50-filter-group">
+              <label className="top50-filter-label">Sırala</label>
+              <select className="top50-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                <option value="rating">Puan</option>
+                <option value="popularity">Oy sayısı</option>
+                <option value="newest">Yeniler</option>
+              </select>
+            </div>
+
+            <div className="top50-filter-group">
+              <label className="top50-filter-label">Tür</label>
+              <select className="top50-select" value={filterGenre} onChange={(e) => setFilterGenre(e.target.value)}>
+                <option value="">Tümü</option>
+                {genres.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+
+            <div className="top50-filter-group">
+              <label className="top50-filter-label">Yıl</label>
+              <select className="top50-select" value={filterDecade} onChange={(e) => setFilterDecade(e.target.value)}>
+                <option value="">Tümü</option>
+                {decades.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
           </div>
 
-          <div className="top50-filter-group">
-            <label className="top50-filter-label">Tür</label>
-            <select className="top50-select" value={filterGenre} onChange={(e) => setFilterGenre(e.target.value)}>
-              <option value="">Tüm Türler</option>
-              {genres.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </div>
-
-          <div className="top50-filter-group">
-            <label className="top50-filter-label">Yıllar</label>
-            <select className="top50-select" value={filterDecade} onChange={(e) => setFilterDecade(e.target.value)}>
-              <option value="">Tüm Yıllar</option>
-              {decades.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
-
-          {(filterGenre || filterDecade || sortBy !== 'rating') && (
+          {hasActiveFilters && (
             <button className="top50-filter-clear" onClick={clearFilters}>
               <FilterX size={16} /> Temizle
             </button>
@@ -260,69 +264,68 @@ function Top50() {
                 className="top50-item"
                 onClick={(e) => handleSeriesClick(dizi.series_id, e)}
               >
-                {/* Rank */}
-                <div className="top50-rank-container">
+                <div className="top50-rank-rail">
                   <span className="top50-rank">{index + 1}</span>
-                </div>
-
-                {/* Poster */}
-                <div className="top50-poster-wrapper">
-                  <PosterImage
-                    path={dizi.poster_path}
-                    size="w342"
-                    alt={dizi.name}
-                    className="top50-poster"
-                    loading="lazy"
-                  />
-                </div>
-
-                {/* Info */}
-                <div className="top50-info">
-                  <div className="top50-title-row">
-                    <h2 className="top50-title">{dizi.name}</h2>
-                    {year && <span className="top50-year">({year})</span>}
+                  <div className="top50-poster-wrapper">
+                    <PosterImage
+                      path={dizi.poster_path}
+                      size="w342"
+                      alt={dizi.name}
+                      className="top50-poster"
+                      loading="lazy"
+                    />
                   </div>
+                </div>
 
-                  <div className="top50-meta">
-                    <div className="top50-rating-box">
-                      <Star size={14} className="top50-star" fill="currentColor" />
-                      <span className="top50-rating-val">{Number(dizi.rating).toFixed(1)}</span>
+                <div className="top50-content">
+                  <div className="top50-info">
+                    <div className="top50-title-row">
+                      <h2 className="top50-title">{dizi.name}</h2>
+                      {year && <span className="top50-year">{year}</span>}
                     </div>
-                    <span className="top50-votes">{(parseInt(dizi.vote_count) || 0).toLocaleString('tr-TR')} Oy</span>
+
+                    <div className="top50-meta-row">
+                      <div className="top50-rating-box">
+                        <Star size={14} className="top50-star" fill="currentColor" />
+                        <span className="top50-rating-val">{Number(dizi.rating).toFixed(1)}</span>
+                      </div>
+                      <span className="top50-votes">{(parseInt(dizi.vote_count) || 0).toLocaleString('tr-TR')} oy</span>
+                    </div>
 
                     <div className="top50-genres">
                       {genreList.map(g => (
                         <span key={g} className="top50-genre-tag">{g}</span>
                       ))}
                     </div>
+
+                    <p className="top50-overview">{dizi.overview}</p>
                   </div>
 
-                  <p className="top50-overview">{dizi.overview}</p>
-                </div>
-
-                {/* Actions */}
-                <div className="top50-actions">
-                  <button
-                    className={`top50-action-btn ${userActivity.watched[dizi.series_id] ? 'active watch' : ''}`}
-                    onClick={(e) => { e.stopPropagation(); toggleActivity(dizi.series_id, 'watched'); }}
-                    title="İzlendi"
-                  >
-                    <Eye size={18} strokeWidth={userActivity.watched[dizi.series_id] ? 2.5 : 1.5} />
-                  </button>
-                  <button
-                    className={`top50-action-btn ${userActivity.liked[dizi.series_id] ? 'active like' : ''}`}
-                    onClick={(e) => { e.stopPropagation(); toggleActivity(dizi.series_id, 'liked'); }}
-                    title="Beğen"
-                  >
-                    <Heart size={18} strokeWidth={userActivity.liked[dizi.series_id] ? 2.5 : 1.5} fill={userActivity.liked[dizi.series_id] ? 'currentColor' : 'none'} />
-                  </button>
-                  <button
-                    className={`top50-action-btn ${userActivity.watchlist[dizi.series_id] ? 'active wl' : ''}`}
-                    onClick={(e) => { e.stopPropagation(); toggleActivity(dizi.series_id, 'watchlist'); }}
-                    title="Watchlist"
-                  >
-                    <Bookmark size={18} strokeWidth={userActivity.watchlist[dizi.series_id] ? 2.5 : 1.5} fill={userActivity.watchlist[dizi.series_id] ? 'currentColor' : 'none'} />
-                  </button>
+                  <div className="top50-footer">
+                    <div className="top50-actions">
+                      <button
+                        className={`top50-action-btn ${userActivity.watched[dizi.series_id] ? 'active watch' : ''}`}
+                        onClick={(e) => { e.stopPropagation(); toggleActivity(dizi.series_id, 'watched'); }}
+                        title="İzlendi"
+                      >
+                        <Eye size={17} strokeWidth={userActivity.watched[dizi.series_id] ? 2.5 : 1.5} />
+                      </button>
+                      <button
+                        className={`top50-action-btn ${userActivity.liked[dizi.series_id] ? 'active like' : ''}`}
+                        onClick={(e) => { e.stopPropagation(); toggleActivity(dizi.series_id, 'liked'); }}
+                        title="Beğen"
+                      >
+                        <Heart size={17} strokeWidth={userActivity.liked[dizi.series_id] ? 2.5 : 1.5} fill={userActivity.liked[dizi.series_id] ? 'currentColor' : 'none'} />
+                      </button>
+                      <button
+                        className={`top50-action-btn ${userActivity.watchlist[dizi.series_id] ? 'active wl' : ''}`}
+                        onClick={(e) => { e.stopPropagation(); toggleActivity(dizi.series_id, 'watchlist'); }}
+                        title="Watchlist"
+                      >
+                        <Bookmark size={17} strokeWidth={userActivity.watchlist[dizi.series_id] ? 2.5 : 1.5} fill={userActivity.watchlist[dizi.series_id] ? 'currentColor' : 'none'} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
