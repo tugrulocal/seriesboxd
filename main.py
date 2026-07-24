@@ -17,6 +17,7 @@ import re
 import requests as http_requests
 from bs4 import BeautifulSoup
 import urllib.parse
+import socket
 import smtplib
 import random
 import string
@@ -289,6 +290,33 @@ def get_db_conn():
         if "sslmode" not in db_url:
             sep = "&" if "?" in db_url else "?"
             db_url = db_url + sep + "sslmode=require"
+
+        # Render tarafında IPv6 egress yoksa hostname bazen AAAA adresine gider.
+        # Bu durumda IPv4 hostaddr ile bağlanmayı dene; hostname TLS doğrulaması için korunur.
+        try:
+            parsed = urllib.parse.urlparse(db_url)
+            if parsed.hostname:
+                ipv4_candidates = [
+                    info[4][0]
+                    for info in socket.getaddrinfo(parsed.hostname, parsed.port or 5432, socket.AF_INET, socket.SOCK_STREAM)
+                    if info and len(info) > 4 and info[4]
+                ]
+                ipv4_hostaddr = ipv4_candidates[0] if ipv4_candidates else None
+                if ipv4_hostaddr:
+                    conn_kwargs = {
+                        "dbname": parsed.path.lstrip("/") if parsed.path else "",
+                        "user": urllib.parse.unquote(parsed.username or ""),
+                        "password": urllib.parse.unquote(parsed.password or ""),
+                        "host": parsed.hostname,
+                        "port": parsed.port or 5432,
+                        "sslmode": "require",
+                        "hostaddr": ipv4_hostaddr,
+                    }
+                    return psycopg2.connect(**conn_kwargs, connect_timeout=3)
+        except Exception:
+            # Fall back to the original URL if IPv4 lookup/parsing fails.
+            pass
+
         try:
             return psycopg2.connect(db_url, connect_timeout=3)
         except Exception as e:
