@@ -175,6 +175,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# --- Debug endpoints (temporary; remove after debugging) ---
+@app.get("/__debug/db-ping")
+def _debug_db_ping():
+    """Run a trivial query against the configured DB and report success or the error."""
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        row = cur.fetchone()
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return {"ok": True, "result": row[0] if row else None}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 class ListeEkleModel(BaseModel):
     name: str
 
