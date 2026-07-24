@@ -219,7 +219,7 @@ def get_db_conn():
     # 2. REMOTE_DATABASE_URL → bizim manuel eklediğimiz prod URL
     # 3. Yerel DB          → local geliştirme ortamı
     db_url = os.getenv("DATABASE_URL") or os.getenv("REMOTE_DATABASE_URL")
-    should_try_remote = bool(db_url) and (IS_PRODUCTION or USE_REMOTE_DB_IN_DEV)
+    should_try_remote = bool(db_url)
 
     if should_try_remote:
         # sslmode URL'de yoksa ekle (DigitalOcean zorunlu kılar)
@@ -232,7 +232,7 @@ def get_db_conn():
             if IS_PRODUCTION:
                 raise
             logger.warning(f"Uzak DB baglantisi basarisiz, local fallback kullaniliyor: {type(e).__name__}")
-    elif db_url and not IS_PRODUCTION:
+    elif not IS_PRODUCTION:
         # Development'ta default davranış: local DB ile düşük gecikme.
         logger.debug("Development modunda local DB kullaniliyor (USE_REMOTE_DB_IN_DEV=false).")
 
