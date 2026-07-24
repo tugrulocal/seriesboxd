@@ -237,6 +237,34 @@ def _debug_db_info():
     }
 
 
+@app.get("/__debug/dns")
+def _debug_dns():
+    """Return DNS A/AAAA records for the configured DB host."""
+    url = os.getenv("DATABASE_URL") or os.getenv("REMOTE_DATABASE_URL") or ""
+    host = None
+    try:
+        host = urllib.parse.urlparse(url).hostname
+    except Exception:
+        host = None
+    if not host:
+        return {"host": None, "ipv4": [], "ipv6": []}
+
+    ipv4 = []
+    ipv6 = []
+    try:
+        for info in socket.getaddrinfo(host, None, 0, socket.SOCK_STREAM):
+            addr = info[4][0]
+            family = info[0]
+            if family == socket.AF_INET and addr not in ipv4:
+                ipv4.append(addr)
+            elif family == socket.AF_INET6 and addr not in ipv6:
+                ipv6.append(addr)
+    except Exception as e:
+        return {"host": host, "error": str(e), "ipv4": ipv4, "ipv6": ipv6}
+
+    return {"host": host, "ipv4": ipv4, "ipv6": ipv6}
+
+
 class ListeEkleModel(BaseModel):
     name: str
 
