@@ -23,6 +23,7 @@ import string
 import json
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import urllib.parse
 
 # --- AUTH AYARLARI ---
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
@@ -203,6 +204,35 @@ def _debug_info():
         "HAS_DATABASE_URL": bool(os.getenv("DATABASE_URL")),
         "HAS_REMOTE_DATABASE_URL": bool(os.getenv("REMOTE_DATABASE_URL")),
         "RAW_DB_PRESENT": bool(raw_db),
+    }
+
+
+def _parse_db_url(url: str):
+    if not url:
+        return None
+    try:
+        p = urllib.parse.urlparse(url)
+        return {
+            "scheme": p.scheme,
+            "username": (p.username[:2] + '***') if p.username else None,
+            "has_password": bool(p.password),
+            "host": p.hostname,
+            "port": p.port,
+            "path": p.path,
+            "query": p.query,
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.get("/__debug/db-info")
+def _debug_db_info():
+    """Return parsed components (masked) for DATABASE_URL and REMOTE_DATABASE_URL."""
+    db = os.getenv("DATABASE_URL")
+    rdb = os.getenv("REMOTE_DATABASE_URL")
+    return {
+        "DATABASE_URL_parsed": _parse_db_url(db),
+        "REMOTE_DATABASE_URL_parsed": _parse_db_url(rdb),
     }
 
 
