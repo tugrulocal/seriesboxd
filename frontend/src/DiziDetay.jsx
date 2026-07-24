@@ -363,24 +363,50 @@ function DiziDetay() {
     const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
 
-    setAktif(!aktif);
-    
-    if (!aktif && type === 'watched') {
-      // Mark all episodes as watched
-      const allEpisodes = bolumler;
-      const newWatched = { ...izlenenBolumler };
-      const newSeasonStatus = { ...izlenenSezonlar };
-      
-      allEpisodes.forEach(ep => { newWatched[ep.episode_id] = true; });
-      sezonlar.forEach(s => { newSeasonStatus[s.season_id] = true; });
-      
-      setIzlenenBolumler(newWatched);
-      setIzlenenSezonlar(newSeasonStatus);
+    const nextState = !aktif;
+    const revertState = () => setAktif(aktif);
+
+    if (nextState) {
+      if (type === 'watched') {
+        const newWatched = { ...izlenenBolumler };
+        const newSeasonStatus = { ...izlenenSezonlar };
+        bolumler.forEach(ep => { newWatched[ep.episode_id] = true; });
+        sezonlar.forEach(s => { newSeasonStatus[s.season_id] = true; });
+        setIzlenenBolumler(newWatched);
+        setIzlenenSezonlar(newSeasonStatus);
+      }
+
+      fetch(`${API_BASE}/series-activity`, {
+        method: 'POST',
+        headers: jsonHeaders,
+        body: JSON.stringify({ series_id: dizi.series_id, activity_type: type })
+      })
+        .then(async (res) => {
+          if (!res.ok) throw new Error('Aktivite eklenemedi');
+          setAktif(true);
+          if (type === 'watched') await refetchWatchedStatus();
+        })
+        .catch(() => {
+          revertState();
+          if (type === 'watched') refetchWatchedStatus();
+        });
+    } else {
+      fetch(`${API_BASE}/series-activity/${dizi.series_id}/${type}`, {
+        method: 'DELETE',
+        headers: authHeaders,
+      })
+        .then(async (res) => {
+          if (!res.ok) throw new Error('Aktivite silinemedi');
+          setAktif(false);
+          if (type === 'watched') {
+            await refetchWatchedStatus();
+          }
+        })
+        .catch(() => {
+          revertState();
+          if (type === 'watched') refetchWatchedStatus();
+        });
     }
-    
-    fetch(`${API_BASE}/series-activity`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ series_id: dizi.series_id, activity_type: type }) })
-      .then(() => { if (!aktif && type === 'watched') refetchWatchedStatus(); })
-      .catch(() => {});
   };
 
   // --- LİSTE ---
@@ -417,14 +443,20 @@ function DiziDetay() {
   const puanVer = (puan) => {
     const token = ensureAuth('Diziye puan vermek');
     if (!token) return;
+    const previous = kullaniciPuani;
     setKullaniciPuani(puan);
-    fetch(`${API_BASE}/rating`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, score: puan }) });
+    fetch(`${API_BASE}/rating`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ series_id: dizi.series_id, score: puan }) })
+      .then((res) => { if (!res.ok) throw new Error('Puan kaydedilemedi'); })
+      .catch(() => setKullaniciPuani(previous));
   };
   const puanSil = () => {
     const token = ensureAuth('Dizi puanını silmek');
     if (!token) return;
+    const previous = kullaniciPuani;
     setKullaniciPuani(null);
-    fetch(`${API_BASE}/rating/${dizi.series_id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    fetch(`${API_BASE}/rating/${dizi.series_id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } })
+      .then((res) => { if (!res.ok) throw new Error('Puan silinemedi'); })
+      .catch(() => setKullaniciPuani(previous));
   };
 
   const bolumPuanVer = (episodeId, puan) => {
@@ -432,12 +464,17 @@ function DiziDetay() {
     if (!token) return;
     const authHeaders = { 'Authorization': `Bearer ${token}` };
     const jsonHeaders = { ...authHeaders, 'Content-Type': 'application/json' };
+    const previous = bolumPuanlari[episodeId] || null;
     if (bolumPuanlari[episodeId] === puan) {
       setBolumPuanlari(prev => { const s = { ...prev }; delete s[episodeId]; return s; });
-      fetch(`${API_BASE}/episode-rating/${episodeId}`, { method: 'DELETE', headers: authHeaders });
+      fetch(`${API_BASE}/episode-rating/${episodeId}`, { method: 'DELETE', headers: authHeaders })
+        .then((res) => { if (!res.ok) throw new Error('Bölüm puanı silinemedi'); })
+        .catch(() => setBolumPuanlari(prev => ({ ...prev, [episodeId]: previous }))); 
     } else {
       setBolumPuanlari(prev => ({ ...prev, [episodeId]: puan }));
-      fetch(`${API_BASE}/episode-rating`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ episode_id: episodeId, score: puan }) });
+      fetch(`${API_BASE}/episode-rating`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ episode_id: episodeId, score: puan }) })
+        .then((res) => { if (!res.ok) throw new Error('Bölüm puanı kaydedilemedi'); })
+        .catch(() => setBolumPuanlari(prev => ({ ...prev, [episodeId]: previous }))); 
     }
   };
 

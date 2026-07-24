@@ -16,7 +16,6 @@ from datetime import datetime, timedelta
 import re
 import requests as http_requests
 from bs4 import BeautifulSoup
-import urllib.parse
 import socket
 import smtplib
 import random
@@ -176,93 +175,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# --- Debug endpoints (temporary; remove after debugging) ---
-@app.get("/__debug/db-ping")
-def _debug_db_ping():
-    """Run a trivial query against the configured DB and report success or the error."""
-    try:
-        conn = get_db_conn()
-        cur = conn.cursor()
-        cur.execute("SELECT 1")
-        row = cur.fetchone()
-        try:
-            conn.close()
-        except Exception:
-            pass
-        return {"ok": True, "result": row[0] if row else None}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
-
-@app.get("/__debug/info")
-def _debug_info():
-    """Return non-sensitive runtime info to help debugging env issues."""
-    raw_db = os.getenv("DATABASE_URL") or os.getenv("REMOTE_DATABASE_URL")
-    return {
-        "ENVIRONMENT": os.getenv("ENVIRONMENT", "(unset)"),
-        "HAS_DATABASE_URL": bool(os.getenv("DATABASE_URL")),
-        "HAS_REMOTE_DATABASE_URL": bool(os.getenv("REMOTE_DATABASE_URL")),
-        "RAW_DB_PRESENT": bool(raw_db),
-    }
-
-
-def _parse_db_url(url: str):
-    if not url:
-        return None
-    try:
-        p = urllib.parse.urlparse(url)
-        return {
-            "scheme": p.scheme,
-            "username": (p.username[:2] + '***') if p.username else None,
-            "has_password": bool(p.password),
-            "host": p.hostname,
-            "port": p.port,
-            "path": p.path,
-            "query": p.query,
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-
-@app.get("/__debug/db-info")
-def _debug_db_info():
-    """Return parsed components (masked) for DATABASE_URL and REMOTE_DATABASE_URL."""
-    db = os.getenv("DATABASE_URL")
-    rdb = os.getenv("REMOTE_DATABASE_URL")
-    return {
-        "DATABASE_URL_parsed": _parse_db_url(db),
-        "REMOTE_DATABASE_URL_parsed": _parse_db_url(rdb),
-    }
-
-
-@app.get("/__debug/dns")
-def _debug_dns():
-    """Return DNS A/AAAA records for the configured DB host."""
-    url = os.getenv("DATABASE_URL") or os.getenv("REMOTE_DATABASE_URL") or ""
-    host = None
-    try:
-        host = urllib.parse.urlparse(url).hostname
-    except Exception:
-        host = None
-    if not host:
-        return {"host": None, "ipv4": [], "ipv6": []}
-
-    ipv4 = []
-    ipv6 = []
-    try:
-        for info in socket.getaddrinfo(host, None, 0, socket.SOCK_STREAM):
-            addr = info[4][0]
-            family = info[0]
-            if family == socket.AF_INET and addr not in ipv4:
-                ipv4.append(addr)
-            elif family == socket.AF_INET6 and addr not in ipv6:
-                ipv6.append(addr)
-    except Exception as e:
-        return {"host": host, "error": str(e), "ipv4": ipv4, "ipv6": ipv6}
-
-    return {"host": host, "ipv4": ipv4, "ipv6": ipv6}
 
 
 class ListeEkleModel(BaseModel):
