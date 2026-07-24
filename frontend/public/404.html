@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Yükleniyor…</title>
+  </head>
+  <body>
+    <script>
+      // Eğer sunucu SPA için rewrite yapmıyorsa, index.html'i alıp
+      // mevcut URL'yi koruyarak sayfaya yazıyoruz. Bu sayede React
+      // router doğru route'u görecek.
+      fetch('/index.html')
+        .then(function(res){ return res.text(); })
+        .then(function(html){
+          document.open();
+          document.write(html);
+          document.close();
+        })
+        .catch(function(){
+          // Basit fallback: ana sayfaya yönlendir
+          window.location.href = '/';
+        });
+    </script>
+  </body>
+</html>
