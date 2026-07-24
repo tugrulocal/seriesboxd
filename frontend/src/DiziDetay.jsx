@@ -41,6 +41,9 @@ function DiziDetay() {
   const [hoverBolumPuani, setHoverBolumPuani] = useState({ id: null, puan: 0 });
   const [acikPuanlama, setAcikPuanlama] = useState(null);
   const [yukleniyor, setYukleniyor] = useState(true);
+  const [ozetAcik, setOzetAcik] = useState(false);
+  const [showReadMore, setShowReadMore] = useState(false);
+  const overviewRef = useRef(null);
 
   const [kullaniciPuani, setKullaniciPuani] = useState(null);
   const [hoverPuani, setHoverPuani] = useState(0);
@@ -163,6 +166,13 @@ function DiziDetay() {
       .then(res => { if (!res.ok) throw new Error("Veri çekilemedi"); return res.json(); })
       .then(data => {
         if (data.dizi) { setDizi(data.dizi); setSezonlar(data.sezonlar || []); setBolumler(data.bolumler || []); setOyuncular(data.cast || []); setEkip(data.crew || []); }
+        
+        setTimeout(() => {
+          if (overviewRef.current) {
+            setShowReadMore(overviewRef.current.scrollHeight > overviewRef.current.clientHeight);
+          }
+        }, 100);
+
         setYukleniyor(false);
       })
       .catch(() => setYukleniyor(false));
@@ -547,9 +557,12 @@ function DiziDetay() {
   return (
     <div className="detay-v2">
       {/* ===== HERO BANNER ===== */}
-      <div className="dv2-hero" style={{ backgroundImage: `url(${arkaplanResmi})` }}>
-        <div className="dv2-hero-grad-left"></div>
-        <div className="dv2-hero-grad-bottom"></div>
+      <div className="dv2-hero">
+        <div className="dv2-hero-bg-wrapper">
+          <div className="dv2-hero-backdrop" style={{ backgroundImage: `url(${arkaplanResmi})` }}></div>
+          <div className="dv2-hero-grad-left"></div>
+          <div className="dv2-hero-grad-bottom"></div>
+        </div>
 
         <div className="dv2-hero-inner">
           {/* Sol: Poster */}
@@ -559,9 +572,27 @@ function DiziDetay() {
           <div className="dv2-hero-info">
             <h1 className="dv2-title">{dizi.name} <span className="dv2-yil">{yil}</span></h1>
             <div className="dv2-meta">
-              <span className="dv2-rating"><Star size={15} fill="#f59e0b" color="#f59e0b" /> {Number(dizi.rating).toFixed(1)}</span>
-              <span className="dv2-votes">({(dizi.vote_count || 0).toLocaleString('tr-TR')} oy)</span>
               <span className="dv2-durum">{durum}</span>
+              <div className="dv2-rating-votes">
+                <span className="dv2-rating"><Star size={15} fill="#f59e0b" color="#f59e0b" /> {Number(dizi.rating).toFixed(1)}</span>
+                <span className="dv2-votes">({(dizi.vote_count || 0).toLocaleString('tr-TR')} oy)</span>
+              </div>
+              <div className="dv2-stars-mobile">
+                {[...Array(10)].map((_, i) => (
+                  <Star 
+                    key={i} 
+                    size={16} 
+                    weight={(hoverPuani || kullaniciPuani) > i ? "fill" : "regular"} 
+                    color={(hoverPuani || kullaniciPuani) > i ? "#f59e0b" : "#94a3b8"}
+                    onMouseEnter={() => setHoverPuani(i + 1)}
+                    onClick={() => handlePuanVer(i + 1)}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                  />
+                ))}
+              </div>
+              <button className="dv2-btn dv2-btn-play dv2-btn-play-mobile" onClick={genelIzle}>
+                <PlayCircle size={18} /> İZLE
+              </button>
             </div>
             <div className="dv2-genres">
               {genres.map(g => (
@@ -575,7 +606,14 @@ function DiziDetay() {
                 )
               ))}
             </div>
-            <p className="dv2-overview">{dizi.overview || 'Bu dizi için henüz bir özet bulunmuyor.'}</p>
+            <div className={`dv2-overview-container ${ozetAcik ? 'expanded' : ''}`}>
+              <p className="dv2-overview" ref={overviewRef}>{dizi.overview || 'Bu dizi için henüz bir özet bulunmuyor.'}</p>
+              {showReadMore && (
+                <button className="dv2-overview-more" onClick={() => setOzetAcik(!ozetAcik)}>
+                  {ozetAcik ? 'Kısalt' : 'Devamını Oku'}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Sağ: Aksiyonlar */}
@@ -641,7 +679,7 @@ function DiziDetay() {
               )}
             </div>
 
-            <button className="dv2-btn dv2-btn-play" onClick={genelIzle}>
+            <button className="dv2-btn dv2-btn-play dv2-btn-play-desktop" onClick={genelIzle}>
               <PlayCircle size={18} /> İZLE
             </button>
           </div>
@@ -672,10 +710,11 @@ function DiziDetay() {
                       <div className="sezon-bilgi">
                         <div className="sezon-baslik">{sezon.name}</div>
                         <div className="sezon-detay">
-                          {sezon.air_date && <span>{sezon.air_date.substring(0, 4)}</span>}
+                          {sezon.air_date && <span className="sezon-yil">{sezon.air_date.substring(0, 4)}</span>}
                           <span>• {sezon.season_number}. Sezon</span>
-                          {sezon.vote_average > 0 && <span>⭐ {Number(sezon.vote_average).toFixed(1)}</span>}
+                          {sezon.vote_average > 0 && <span className="sezon-puan">⭐ {Number(sezon.vote_average).toFixed(1)}</span>}
                         </div>
+                        {sezon.overview && <p className="sezon-overview">{sezon.overview}</p>}
                         <div className="sezon-progress-bar"><div className="sezon-progress-fill" style={{ width: `${yuzde}%` }} /></div>
                         <div className="sezon-izlenme-text">{izlenen} / {toplam} izlendi</div>
                       </div>
@@ -691,19 +730,31 @@ function DiziDetay() {
                           <div key={bolum.episode_id} className="bolum-satir">
                             <div className="bolum-sol">
                               <span className="bolum-no">{bolum.episode_number}</span>
+                              <div className="bolum-still-container">
+                                {bolum.still_path ? (
+                                  <img src={getImageUrl(bolum.still_path, 'w185')} alt={bolum.name} className="bolum-still-img" loading="lazy" />
+                                ) : (
+                                  <div className="bolum-still-placeholder"><PlayCircle size={24} color="#334155" /></div>
+                                )}
+                              </div>
                               <div className="bolum-bilgi">
                                 <span className="bolum-adi">{bolum.name || `Bölüm ${bolum.episode_number}`}</span>
-                                {bolum.air_date && <span className="bolum-tarih">{tarihFormatla(bolum.air_date)}</span>}
-                                {bolum.vote_average > 0 && <span className="bolum-rating">⭐ {Number(bolum.vote_average).toFixed(1)}</span>}
+                                <div className="bolum-meta-satiri">
+                                  {bolum.vote_average > 0 && <span className="bolum-rating">⭐ {Number(bolum.vote_average).toFixed(1)}</span>}
+                                  {bolum.air_date && <span className="bolum-tarih">{tarihFormatla(bolum.air_date)}</span>}
+                                </div>
+                                {bolum.overview && <p className="bolum-overview">{bolum.overview}</p>}
                               </div>
                             </div>
                             <div className="bolum-aksiyonlar">
-                              <button className="bolum-izle-btn bolum-play" onClick={() => stremioModalAc(bolum)} title="İzle">
-                                <PlayCircle size={16} />
+                              <button className="bolum-play-modern" onClick={() => stremioModalAc(bolum)} title="İzle">
+                                <PlayCircle size={18} />
+                                <span>İZLE</span>
                               </button>
                               <div className="bolum-puanlama-container">
-                                <button className="bolum-puan-toggle" onClick={() => setAcikPuanlama(acikPuanlama === bolum.episode_id ? null : bolum.episode_id)}>
-                                  {bolumPuanlari[bolum.episode_id] ? `★ ${bolumPuanlari[bolum.episode_id]}` : '☆'}
+                                <button className={`bolum-puan-toggle bolum-ikon-glass ${bolumPuanlari[bolum.episode_id] ? 'aktif-puan' : ''}`} onClick={() => setAcikPuanlama(acikPuanlama === bolum.episode_id ? null : bolum.episode_id)}>
+                                  <Star size={18} fill={bolumPuanlari[bolum.episode_id] ? "currentColor" : "none"} />
+                                  {bolumPuanlari[bolum.episode_id] && <span className="bolum-puan-text">{bolumPuanlari[bolum.episode_id]}</span>}
                                 </button>
                                 {acikPuanlama === bolum.episode_id && (
                                   <div className="bolum-yildizlar" onMouseLeave={() => setHoverBolumPuani({ id: null, puan: 0 })}>
@@ -713,12 +764,17 @@ function DiziDetay() {
                                         onMouseEnter={() => setHoverBolumPuani({ id: bolum.episode_id, puan: i + 1 })}
                                         onClick={() => bolumPuanVer(bolum.episode_id, i + 1)}>★</span>
                                     ))}
+                                    {bolumPuanlari[bolum.episode_id] && (
+                                      <button className="bolum-puan-sil-btn" onClick={(e) => { e.stopPropagation(); bolumPuanVer(bolum.episode_id, bolumPuanlari[bolum.episode_id]); }} title="Puanı Sil">
+                                        <Trash2 size={14} />
+                                      </button>
+                                    )}
                                   </div>
                                 )}
                               </div>
 
-                              <button className={`bolum-izle-btn ${izlenenBolumler[bolum.episode_id] ? 'izlendi' : ''}`} onClick={() => bolumIzleToggle(bolum)} title="İzleedim"><Eye size={16} /></button>
-                              <button className={`bolum-izle-btn ${izlenecekBolumler[bolum.episode_id] ? 'izlenecek' : ''}`} onClick={() => bolumIzlenecekToggle(bolum)} title="İzleyeceğim"><Clock size={16} /></button>
+                              <button className={`bolum-ikon-glass ${izlenenBolumler[bolum.episode_id] ? 'aktif' : ''}`} onClick={() => bolumIzleToggle(bolum)} title="İzledim"><Eye size={18} /></button>
+                              <button className={`bolum-ikon-glass ${izlenecekBolumler[bolum.episode_id] ? 'aktif' : ''}`} onClick={() => bolumIzlenecekToggle(bolum)} title="İzleyeceğim"><Bookmark size={18} /></button>
                             </div>
                           </div>
                         ))}

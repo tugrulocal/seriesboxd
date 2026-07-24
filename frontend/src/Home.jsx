@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     Eye, Heart, Bookmark, ChevronLeft, ChevronRight,
     Drama, Search, Laugh, Rocket, Sword, Crosshair,
-    Star, TrendingUp, Sparkles
+    Star, TrendingUp, Sparkles, PlayCircle
 } from 'lucide-react';
 import AuthRequiredModal from './AuthRequiredModal';
 import useAuthGate from './useAuthGate';
@@ -220,7 +220,7 @@ function Home({ tumDiziler }) {
     // Auto-rotation: 20s, resets on manual navigation
     useEffect(() => {
         if (heroList.length <= 1) return;
-        const timer = setInterval(heroNext, 20000);
+        const timer = setInterval(heroNext, 12000);
         return () => clearInterval(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [heroList.length, heroIndex]);
@@ -270,6 +270,11 @@ function Home({ tumDiziler }) {
 
     const handlePosterClick = (dizi) => navigate(`/dizi/${dizi.series_id}`);
 
+    const handleHeroWatch = () => {
+        if (!featured) return;
+        navigate(`/watch/${featured.series_id}/1/1`);
+    };
+
     if (!featured) return null;
 
     // === VERİ SETLERİ ===
@@ -286,6 +291,9 @@ function Home({ tumDiziler }) {
 
     return (
         <div className="home-container">
+            <div className="home-orb home-orb-a" />
+            <div className="home-orb home-orb-b" />
+            <div className="home-grain" />
             {/* HERO BANNER - Only show when loaded */}
             {!heroLoading && featured && (
             <div
@@ -294,20 +302,18 @@ function Home({ tumDiziler }) {
                 onPointerUp={handlePointerUp}
                 style={{ touchAction: 'pan-y', userSelect: 'none' }}
             >
-                {/* Animated backdrop — key forces CSS animation restart on every index change */}
-                <div
-                    key={heroIndex}
-                    className="hero-backdrop"
-                    style={{ backgroundImage: `url(${getImageUrl(featured.backdrop_path || featured.poster_path, 'original')})` }}
-                />
-
-                <div className="hero-gradient-left" />
-                <div className="hero-gradient-bottom" />
+                <div className="hero-bg-wrapper">
+                    <div
+                        key={heroIndex}
+                        className="hero-backdrop"
+                        style={{ backgroundImage: `url(${getImageUrl(featured.backdrop_path || featured.poster_path, 'original')})` }}
+                    />
+                    <div className="hero-gradient-top" />
+                    <div className="hero-gradient-bottom" />
+                </div>
 
                 {heroList.length > 1 && (
                     <>
-                        <button className="hero-nav hero-nav-left" onClick={heroPrev}><ChevronLeft size={36} /></button>
-                        <button className="hero-nav hero-nav-right" onClick={heroNext}><ChevronRight size={36} /></button>
                         <div className="hero-dots">
                             {heroList.map((_, i) => (
                                 <span
@@ -324,8 +330,13 @@ function Home({ tumDiziler }) {
                     <h1 className="hero-title">{featured.name}</h1>
                     <div className="hero-meta">
                         <span className="hero-rating"><Star size={16} fill="#f59e0b" color="#f59e0b" /> {Number(featured.rating).toFixed(1)}</span>
-                        <span className="hero-votes">({(featured.vote_count || 0).toLocaleString('tr-TR')} oy)</span>
-                        {featured.genres && <span className="hero-genres">{featured.genres.split(',').slice(0, 3).map(g => g.trim()).join(' · ')}</span>}
+                        {featured.genres && (
+                            <div className="hero-genres">
+                                {featured.genres.split(',').slice(0, 3).map((g, idx) => (
+                                    <span key={idx} className="hero-genre-tag">{g.trim()}</span>
+                                ))}
+                            </div>
+                        )}
                     </div>
                     <p className="hero-overview">
                         {featured.overview
@@ -335,6 +346,10 @@ function Home({ tumDiziler }) {
                     <div className="hero-buttons">
                         <button className="hero-btn-primary" onClick={() => navigate(`/dizi/${featured.series_id}`)}>
                             İncele
+                        </button>
+                        <button className="hero-btn-secondary" onClick={handleHeroWatch}>
+                            <PlayCircle size={18} />
+                            İzle
                         </button>
                         <div className="hero-actions">
                             <div

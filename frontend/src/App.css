@@ -179,6 +179,7 @@ body {
 .menu-linkler>a {
   color: #94a3b8;
   text-decoration: none;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.95rem;
   font-weight: 500;
   position: relative;
@@ -218,7 +219,7 @@ body {
   border-radius: 14px;
   font-weight: 700 !important;
   font-size: 0.88rem;
-  font-family: 'Gabarito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   letter-spacing: 0.01em;
   display: inline-flex;
   align-items: center;
@@ -769,21 +770,37 @@ h1 {
 .dv2-hero {
   position: relative;
   width: 100%;
-  min-height: 500px;
+  min-height: 560px;
+  margin-top: -75px;
+  padding-top: 75px;
+  z-index: 1;
+}
+
+.dv2-hero-bg-wrapper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, black 18%);
+  mask-image: linear-gradient(to top, transparent 0%, black 18%);
+}
+
+.dv2-hero-backdrop {
+  position: absolute;
+  inset: 0;
   background-size: cover;
   background-position: center 20%;
   background-repeat: no-repeat;
-  margin-top: -75px;
-  padding-top: 75px;
+  z-index: 0;
+  animation: heroFadeIn 0.8s ease-in-out forwards;
 }
 
 .dv2-hero-grad-left {
   position: absolute;
   top: 0;
   left: 0;
-  width: 65%;
+  width: 70%;
   height: 100%;
-  background: linear-gradient(to right, #0f172a 0%, rgba(15, 23, 42, 0.85) 30%, rgba(15, 23, 42, 0.3) 65%, transparent 100%);
+  background: linear-gradient(to right, #0f172a 0%, rgba(15, 23, 42, 0.9) 25%, rgba(15, 23, 42, 0.4) 65%, transparent 100%);
   z-index: 1;
 }
 
@@ -792,8 +809,8 @@ h1 {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 50%;
-  background: linear-gradient(to top, #0f172a 0%, rgba(15, 23, 42, 0.6) 50%, transparent 100%);
+  height: 60%;
+  background: linear-gradient(to top, #090e1a 0%, rgba(9, 14, 26, 0.85) 30%, rgba(9, 14, 26, 0.3) 65%, transparent 100%);
   z-index: 1;
 }
 
@@ -805,33 +822,39 @@ h1 {
   padding: 60px 4% 40px;
   display: flex;
   gap: 30px;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .dv2-hero-poster {
-  width: 200px;
+  width: 220px;
   flex-shrink: 0;
-  border-radius: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dv2-hero-poster:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(56, 189, 248, 0.2);
 }
 
 .dv2-hero-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   min-width: 0;
-  font-family: 'Gabarito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .dv2-title {
-  font-size: 2.4rem;
-  font-family: 'Gabarito', sans-serif;
+  font-size: 2.8rem;
+  font-family: 'Montserrat', sans-serif;
   font-weight: 800;
-  color: white;
+  color: #f8fafc;
   margin: 0;
-  line-height: 1.15;
+  line-height: 1.1;
   text-shadow: 2px 3px 10px rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: baseline;
@@ -900,33 +923,86 @@ h1 {
   border-color: #38bdf8;
 }
 
+.dv2-overview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: 4px;
+}
+
 .dv2-overview {
   font-size: 0.95rem;
   color: #cbd5e1;
   line-height: 1.55;
-  margin: 4px 0 0 0;
+  margin: 0;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.dv2-overview-container.expanded .dv2-overview {
+  display: block;
+  -webkit-line-clamp: unset;
+  max-height: 140px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+/* Custom scrollbar for overview */
+.dv2-overview-container.expanded .dv2-overview::-webkit-scrollbar {
+  width: 4px;
+}
+.dv2-overview-container.expanded .dv2-overview::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+.dv2-overview-container.expanded .dv2-overview::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.5);
+  border-radius: 4px;
+}
+
+.dv2-overview-more {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 0;
+  margin-top: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.dv2-overview-more:hover {
+  color: #7dd3fc;
+  text-decoration: underline;
 }
 
 /* Actions (Right) */
 .dv2-hero-actions {
-  width: 260px; /* Increased from 220px to fit 'İZLEYECEĞİM' */
+  width: 280px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   align-self: flex-start;
-  margin-top: 20px;
+  margin-top: 10px;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .dv2-action-icons {
   display: flex;
   justify-content: space-around;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 12px 8px;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 16px;
+  padding: 14px 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .dv2-action {
@@ -934,15 +1010,15 @@ h1 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   color: #94a3b8;
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 8px;
-  transition: all 0.2s;
-  font-size: 0.70rem; /* smaller font for very long translation words */
+  padding: 8px 10px;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.75rem;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
-  font-weight: 500;
+  font-weight: 600;
   flex: 1;
 }
 
@@ -986,11 +1062,13 @@ h1 {
 }
 
 .dv2-rate-box {
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 10px;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 16px;
+  padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   text-align: center;
 }
 
@@ -1062,49 +1140,66 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
-  padding: 9px;
-  background: rgba(30, 41, 59, 0.7);
-  color: #cbd5e1;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  font-size: 0.85rem;
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.4);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .dv2-btn:hover {
-  background: #334155;
+  background: rgba(56, 189, 248, 0.15);
   color: #fff;
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 6px 16px rgba(56, 189, 248, 0.2);
+  transform: translateY(-2px);
 }
 
 .dv2-liste-container {
   position: relative;
 }
 
+.dv2-btn-play-mobile,
+.dv2-stars-mobile {
+  display: none;
+}
+
 .dv2-btn-play {
-  background: rgba(225, 29, 72, 0.15);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(159, 18, 57, 0.2));
   color: #fff;
-  border: 1px solid rgba(225, 29, 72, 0.4);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  font-size: 1rem;
-  font-family: 'Gabarito', sans-serif !important;
-  font-weight: normal;
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  font-size: 1.1rem;
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 800;
   letter-spacing: 1px;
-  padding: 12px;
-  margin-top: 8px;
-  box-shadow: 0 4px 15px rgba(225, 29, 72, 0.2);
-  transition: all 0.3s ease;
+  padding: 16px;
+  margin-top: 12px;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(225, 29, 72, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .dv2-btn-play:hover {
-  background: rgba(225, 29, 72, 0.35);
-  border-color: rgba(225, 29, 72, 0.7);
-  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.4);
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.45), rgba(159, 18, 57, 0.35));
+  border-color: rgba(239, 68, 68, 0.9);
+  box-shadow: 0 12px 40px rgba(225, 29, 72, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-4px) scale(1.03);
 }
 
 /* ===== CONTENT BELOW HERO ===== */
@@ -1116,32 +1211,36 @@ h1 {
 
 .dv2-tabs {
   display: flex;
-  gap: 6px;
-  border-bottom: 2px solid #1e293b;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 0;
-  margin-bottom: 24px;
+  margin-bottom: 30px;
 }
 
 .dv2-tabs span {
-  color: #64748b;
-  font-size: 0.9rem;
-  font-weight: 500;
-  padding: 10px 20px;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 12px 24px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  transition: all 0.2s;
-  text-transform: uppercase;
+  margin-bottom: -1px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   letter-spacing: 0.5px;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .dv2-tabs span:hover {
-  color: #e2e8f0;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.03);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 }
 
 .dv2-tab-active {
-  color: #fff !important;
+  color: #38bdf8 !important;
   border-bottom-color: #38bdf8 !important;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
 }
 
 .dv2-tab-content {
@@ -1693,11 +1792,21 @@ h1.detay-baslik {
 }
 
 .review-item {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 10px;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.review-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
 }
 
 .review-section-header {
@@ -2039,52 +2148,79 @@ h1.detay-baslik {
   gap: 15px;
   margin-top: 25px;
   animation: modalAcilis 0.3s ease-out;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .sezon-satir {
   display: flex;
   align-items: center;
-  background: rgba(20, 30, 55, 0.65);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 15px;
-  border-radius: 10px;
-  border: 1px solid rgba(56, 189, 248, 0.12);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 20px 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  gap: 24px;
+  min-height: 200px;
 }
 
 .sezon-satir:hover {
-  border-color: rgba(56, 189, 248, 0.45);
-  background: rgba(30, 45, 75, 0.75);
-  transform: translateX(5px);
-  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(30, 41, 59, 0.8);
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px rgba(56, 189, 248, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .sezon-poster-kucuk {
-  width: 45px;
-  border-radius: 4px;
-  margin-right: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  width: 110px;
+  height: 165px;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  transition: transform 0.4s;
+}
+
+.sezon-satir:hover .sezon-poster-kucuk {
+  transform: scale(1.05);
 }
 
 .sezon-bilgi {
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 
 .sezon-baslik {
   color: #f8fafc;
-  font-weight: bold;
-  font-size: 1rem;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
 }
 
 .sezon-detay {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sezon-overview {
+  font-size: 0.85rem;
   color: #94a3b8;
-  font-size: 0.8rem;
-  margin-top: 3px;
+  line-height: 1.4;
+  margin: 8px 0 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 85%;
 }
 
 /* Sezon Sağ Taraf (İkonlar Grubu) */
@@ -2118,27 +2254,31 @@ h1.detay-baslik {
 }
 
 /* BÖLÜMLER (ACCORDION İÇERİĞİ) */
-.bolum-listesi-container {
-  background-color: #0f172a;
-  border-left: 2px solid #334155;
-  margin-left: 20px;
-  margin-bottom: 15px;
-  border-radius: 0 0 8px 8px;
+.bolum-listesi-container, .bolum-listesi-wrapper {
+  background: rgba(15, 23, 42, 0.3);
+  border-left: 2px solid rgba(56, 189, 248, 0.4);
+  margin-left: 24px;
+  margin-bottom: 20px;
+  border-radius: 0 0 12px 12px;
   overflow: hidden;
-  animation: modalAcilis 0.2s ease-out;
+  animation: modalAcilis 0.3s ease-out;
 }
 
 .bolum-satir {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 15px;
-  border-bottom: 1px solid #1e293b;
-  transition: background 0.2s;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+.bolum-satir:last-child {
+  border-bottom: none;
 }
 
 .bolum-satir:hover {
-  background-color: #1e293b;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .bolum-sol {
@@ -2148,32 +2288,184 @@ h1.detay-baslik {
 }
 
 .bolum-no {
-  color: #64748b;
-  font-size: 0.9rem;
-  font-weight: bold;
+  color: #94a3b8;
+  font-size: 1rem;
+  font-weight: 800;
   min-width: 25px;
+  text-align: center;
 }
 
-.bolum-bilgi-container {
+.bolum-still-container {
+  width: 130px;
+  height: 75px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bolum-still-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.bolum-satir:hover .bolum-still-img {
+  transform: scale(1.08);
+}
+
+.bolum-still-placeholder {
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bolum-bilgi {
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.bolum-meta {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 2px;
+.bolum-adi {
+  color: #f8fafc;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
 }
 
-.bolum-adi {
-  color: #e2e8f0;
-  font-size: 0.95rem;
+.bolum-meta-satiri {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+
+.bolum-rating {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bolum-tarih {
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+}
+
+.bolum-rating {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.bolum-overview {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 600px;
+}
+
+.bolum-puan-sil-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.bolum-puan-sil-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  transform: scale(1.1);
 }
 
 .bolum-aksiyonlar {
   display: flex;
+  align-items: center;
   gap: 10px;
+}
+
+.bolum-play-modern {
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.25), rgba(190, 18, 60, 0.15));
+  color: #fff;
+  border: 1px solid rgba(225, 29, 72, 0.5);
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(225, 29, 72, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.bolum-play-modern:hover {
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.4), rgba(190, 18, 60, 0.25));
+  border-color: rgba(225, 29, 72, 0.8);
+  box-shadow: 0 8px 25px rgba(225, 29, 72, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.bolum-ikon-glass {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bolum-ikon-glass:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #fff;
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-2px);
+}
+
+.bolum-ikon-glass.aktif {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.bolum-puan-toggle.bolum-ikon-glass.aktif-puan {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.5);
+  gap: 4px;
+}
+
+.bolum-puan-text {
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
 .bolum-ikon {
@@ -2263,31 +2555,34 @@ h1.detay-baslik {
 }
 
 .sezon-izle-btn.aktif-izle {
-  background: #10b981;
+  background: rgba(16, 185, 129, 0.2);
   border-color: #10b981;
-  color: white;
+  color: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
 }
 
 .sezon-izle-btn.aktif-izlenecek {
-  background: #38bdf8;
+  background: rgba(56, 189, 248, 0.2);
   border-color: #38bdf8;
-  color: white;
+  color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
 }
 
-/* Sezon progress bar */
 .sezon-progress-bar {
   width: 100%;
-  height: 3px;
-  background: #334155;
-  border-radius: 2px;
-  margin-top: 6px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  margin-top: 8px;
   overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .sezon-progress-fill {
   height: 100%;
-  background: #10b981;
-  transition: width 0.3s;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
 .sezon-izlenme-text {
@@ -2302,6 +2597,7 @@ h1.detay-baslik {
   border-left: 2px solid #334155;
   margin-left: 20px;
   margin-bottom: 15px;
+  margin-top: 10px;
   border-radius: 0 0 8px 8px;
   overflow: hidden;
   animation: modalAcilis 0.2s ease-out;
@@ -2419,19 +2715,20 @@ h1.detay-baslik {
 }
 
 .cast-kart {
-  background: rgba(20, 32, 58, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(56, 189, 248, 0.1);
-  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
 .cast-kart:hover {
-  transform: translateY(-5px);
+  transform: translateY(-6px);
   border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.15);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(56, 189, 248, 0.15);
 }
 
 .cast-foto {
@@ -2500,16 +2797,20 @@ h1.detay-baslik {
 }
 
 .crew-kart {
-  background: #1e293b;
-  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #334155;
-  transition: transform 0.2s, border-color 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
 .crew-kart:hover {
-  transform: translateY(-4px);
-  border-color: #38bdf8;
+  transform: translateY(-6px);
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(56, 189, 248, 0.15);
 }
 
 /* =========================================
@@ -7260,22 +7561,225 @@ button.sifre-unut-link:hover {
     border-radius: 999px;
   }
 
-  /* Flex direction column on mobile for grids/heros */
-  .dv2-hero-inner {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding-top: 20px;
+  /* Mobil için Hero Banner Grid Layout (Letterboxd Style) */
+  .dv2-hero-bg-wrapper {
+    top: 75px; /* Navbar'ın altında başlat */
+    height: 250px;
+    bottom: auto;
+    -webkit-mask-image: linear-gradient(to top, transparent 0%, black 50%);
+    mask-image: linear-gradient(to top, transparent 0%, black 50%);
+  }
+  
+  .dv2-hero-grad-left, 
+  .dv2-hero-grad-bottom {
+    display: none;
+  }
+  
+  .dv2-title {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 8px;
+    grid-column: 1 / 2;
+    grid-row: 1;
   }
 
-  .dv2-hero-actions {
+  .dv2-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    grid-column: 1 / 2;
+    grid-row: 2; /* Başlığın hemen altına yerleşir */
+    align-self: start; /* Yukarı hizala */
+    margin-top: 15px;
+  }
+
+  .dv2-rating-votes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dv2-stars-mobile {
+    display: flex;
+    gap: 3px;
+  }
+
+  .dv2-meta .dv2-rating { font-size: 1.25rem; font-weight: 700; }
+  .dv2-meta .dv2-votes { font-size: 1.1rem; }
+  .dv2-meta .dv2-durum { font-size: 1.05rem; font-weight: 500; color: #94a3b8; }
+
+  .dv2-btn-play-mobile {
+    display: flex;
     width: 100%;
-    max-width: 350px;
-    align-self: center; /* Center on mobile! */
+    max-width: 180px;
+    margin-top: 4px;
+    padding: 8px 16px;
+    font-size: 0.95rem;
+    height: 40px;
+  }
+
+  .dv2-btn-play-desktop {
+    display: none;
   }
 
   .dv2-genres {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-top: 8px;
+    padding-bottom: 4px;
+  }
+  .dv2-genres::-webkit-scrollbar { display: none; }
+
+  .dv2-genre-pill {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
+    height: fit-content;
+  }
+
+  .dv2-overview-container {
+    grid-column: 1 / -1;
+    grid-row: 5;
+    margin-top: 4px;
+  }
+
+  .dv2-provider-logo-link {
+    display: none;
+  }
+
+  .dv2-hero {
+    min-height: auto;
+  }
+
+  .dv2-hero-inner {
+    display: grid;
+    grid-template-columns: 1fr 140px;
+    grid-template-rows: auto 1fr auto auto auto auto;
+    gap: 4px 15px;
+    align-items: start;
+    text-align: left;
+    padding-top: 190px;
+  }
+
+  .dv2-hero-info {
+    display: contents; /* grid sistemine tüm öğeleri aktarır */
+  }
+
+  .dv2-hero-poster {
+    width: 100%;
+    height: auto;
+    grid-column: 2 / 3;
+    grid-row: 1 / 4;
+    margin: 0;
+    z-index: 10;
+  }
+
+  .dv2-hero-actions {
+    grid-column: 1 / -1;
+    grid-row: 6;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 12px;
+  }
+
+  /* Sezon Kartları Mobil Düzenlemesi */
+  .sezon-satir {
+    padding: 12px 14px;
+    gap: 12px;
+    min-height: auto;
+  }
+
+  .sezon-poster-kucuk {
+    width: 80px;
+    height: 120px;
+  }
+
+  .sezon-baslik {
+    font-size: 1.2rem;
+    font-weight: 500; /* İncelik artırıldı */
+  }
+
+  /* Bölüm Kartları Mobil Düzenlemesi */
+  .bolum-satir {
+    display: grid;
+    grid-template-columns: min-content 75px 1fr;
+    grid-template-rows: auto 1fr;
+    row-gap: 8px;
+    column-gap: 12px;
+    padding: 12px 14px;
+    align-items: start;
+  }
+
+  .bolum-meta-satiri {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .bolum-sol {
+    display: contents; /* Grid child'larını dışarı aktarır */
+  }
+
+  .bolum-no {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    padding-top: 2px;
+  }
+
+  .bolum-still-container {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    width: 75px;
+    height: 112px; /* Dikey (Portrait) oran */
+  }
+
+  .bolum-bilgi {
+    grid-column: 3;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .bolum-adi {
+    font-size: 0.95rem;
+    line-height: 1.3;
+    font-weight: 400; /* İncelik artırıldı */
+  }
+  
+  .bolum-overview {
+    display: none; /* Mobilde özeti gizle */
+  }
+
+  .bolum-aksiyonlar {
+    grid-column: 3;
+    grid-row: 2;
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-self: end; /* Görsel uzunsa butonları alta iter */
+  }
+
+  /* Mobilde bölüm izle butonunu kompakt yuvarlak ikon yap */
+  .bolum-play-modern {
+    padding: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    justify-content: center;
+  }
+  
+  .bolum-play-modern span {
+    display: none;
   }
 
   .watch-content-grid {
