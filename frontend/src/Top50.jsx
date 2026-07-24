@@ -256,7 +256,8 @@ function Top50() {
           {filteredAndSorted.map((dizi, index) => {
             const year = dizi.first_air_date ? dizi.first_air_date.substring(0, 4) : '';
             const genreList = dizi.genres ? dizi.genres.split(',').map(g => g.trim()).slice(0, 3) : [];
-            const isRank1 = sortBy === 'rating' && index === 0;
+            const titlePrefix = `${index + 1}. ${dizi.name}`;
+            const hasOverview = Boolean(dizi.overview && String(dizi.overview).trim());
 
             return (
               <div
@@ -264,10 +265,6 @@ function Top50() {
                 className="top50-item"
                 onClick={(e) => handleSeriesClick(dizi.series_id, e)}
               >
-                <div className="top50-rank-rail">
-                  <span className="top50-rank">{index + 1}</span>
-                </div>
-
                 <div className="top50-poster-wrapper">
                   <PosterImage
                     path={dizi.poster_path}
@@ -281,7 +278,7 @@ function Top50() {
                 <div className="top50-content">
                   <div className="top50-info">
                     <div className="top50-title-row">
-                      <h2 className="top50-title">{dizi.name}</h2>
+                      <h2 className="top50-title">{titlePrefix}</h2>
                       {year && <span className="top50-year">{year}</span>}
                     </div>
 
@@ -298,7 +295,9 @@ function Top50() {
                       </div>
                     </div>
 
-                    <p className="top50-overview">{dizi.overview}</p>
+                    <p className={`top50-overview ${hasOverview ? '' : 'empty'}`}>
+                      {hasOverview ? dizi.overview : 'Bu dizi için henüz bir özet bulunmuyor.'}
+                    </p>
                   </div>
 
                   <div className="top50-footer">
