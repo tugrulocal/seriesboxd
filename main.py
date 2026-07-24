@@ -3628,11 +3628,6 @@ def get_discovery_stats(user = Depends(get_current_user)):
         cur.close()
         conn.close()
 
-@app.get("/__debug/db-source")
-def _debug_db_source():
-    db_url = os.getenv("DATABASE_URL") or os.getenv("REMOTE_DATABASE_URL")
-    return {"db_source": "remote" if db_url else "local"}
-
 @app.delete("/api/discovery/reset")
 def reset_discovery_history(user = Depends(get_current_user)):
     """
