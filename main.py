@@ -194,6 +194,18 @@ def _debug_db_ping():
         return {"ok": False, "error": str(e)}
 
 
+@app.get("/__debug/info")
+def _debug_info():
+    """Return non-sensitive runtime info to help debugging env issues."""
+    raw_db = os.getenv("DATABASE_URL") or os.getenv("REMOTE_DATABASE_URL")
+    return {
+        "ENVIRONMENT": os.getenv("ENVIRONMENT", "(unset)"),
+        "HAS_DATABASE_URL": bool(os.getenv("DATABASE_URL")),
+        "HAS_REMOTE_DATABASE_URL": bool(os.getenv("REMOTE_DATABASE_URL")),
+        "RAW_DB_PRESENT": bool(raw_db),
+    }
+
+
 class ListeEkleModel(BaseModel):
     name: str
 
