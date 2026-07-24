@@ -237,13 +237,16 @@ def get_db_conn():
     # 1. DATABASE_URL      → DigitalOcean managed DB component eklendiğinde otomatik inject edilir
     # 2. REMOTE_DATABASE_URL → bizim manuel eklediğimiz prod URL
     # 3. Yerel DB          → local geliştirme ortamı
-    db_url = os.getenv("DATABASE_URL") or os.getenv("REMOTE_DATABASE_URL")
+    # Read DB URL from env and strip whitespace/newlines (users sometimes copy-paste with trailing newline)
+    _raw_db_url = os.getenv("DATABASE_URL") or os.getenv("REMOTE_DATABASE_URL") or ""
+    db_url = _raw_db_url.strip()
     should_try_remote = bool(db_url)
 
     if should_try_remote:
         # sslmode URL'de yoksa ekle (DigitalOcean zorunlu kılar)
         if "sslmode" not in db_url:
-            db_url += ("&" if "?" in db_url else "?") + "sslmode=require"
+            sep = "&" if "?" in db_url else "?"
+            db_url = db_url + sep + "sslmode=require"
         try:
             return psycopg2.connect(db_url, connect_timeout=3)
         except Exception as e:
