@@ -570,26 +570,13 @@ function DiziDetay() {
 
           {/* Orta: Bilgiler */}
           <div className="dv2-hero-info">
-            <h1 className="dv2-title">{dizi.name} <span className="dv2-yil">{yil}</span></h1>
+            <h1 className="dv2-title">{dizi.name}</h1>
             <div className="dv2-meta">
-              <span className="dv2-durum">{durum}</span>
               <div className="dv2-rating-votes">
                 <span className="dv2-rating"><Star size={15} fill="#f59e0b" color="#f59e0b" /> {Number(dizi.rating).toFixed(1)}</span>
                 <span className="dv2-votes">({(dizi.vote_count || 0).toLocaleString('tr-TR')} oy)</span>
               </div>
-              <div className="dv2-stars-mobile">
-                {[...Array(10)].map((_, i) => (
-                  <Star 
-                    key={i} 
-                    size={16} 
-                    weight={(hoverPuani || kullaniciPuani) > i ? "fill" : "regular"} 
-                    color={(hoverPuani || kullaniciPuani) > i ? "#f59e0b" : "#94a3b8"}
-                    onMouseEnter={() => setHoverPuani(i + 1)}
-                    onClick={() => handlePuanVer(i + 1)}
-                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
-                  />
-                ))}
-              </div>
+              <span className="dv2-durum">{yil && <>{yil} • </>}{durum}</span>
               <button className="dv2-btn dv2-btn-play dv2-btn-play-mobile" onClick={genelIzle}>
                 <PlayCircle size={18} /> İZLE
               </button>
@@ -662,21 +649,7 @@ function DiziDetay() {
               <MessageSquare size={15} /> Yorum Yaz
             </button>
             <div className="dv2-liste-container">
-              <button className="dv2-btn" onClick={() => setListeMenuAcik(!listeMenuAcik)}><Bookmark size={15} /> Listeye Ekle</button>
-              {listeMenuAcik && (
-                <div className="liste-popup">
-                  {kullaniciListeleri.map(liste => (
-                    <div key={liste.list_id} className="liste-satir" onClick={() => listeToggle(liste.list_id)}>
-                      <input type="checkbox" className="liste-checkbox" checked={dizininListeleri.includes(liste.list_id)} readOnly />
-                      <span className="liste-adi">{liste.name}</span>
-                    </div>
-                  ))}
-                  <div className="yeni-liste-form">
-                    <input type="text" className="yeni-liste-input" placeholder="Yeni liste..." value={yeniListeAdi} onChange={e => setYeniListeAdi(e.target.value)} />
-                    <button className="liste-ekle-btn" onClick={yeniListeOlustur}>+</button>
-                  </div>
-                </div>
-              )}
+              <button className="dv2-btn" onClick={() => setListeMenuAcik(true)}><Bookmark size={15} /> Listeye Ekle</button>
             </div>
 
             <button className="dv2-btn dv2-btn-play dv2-btn-play-desktop" onClick={genelIzle}>
@@ -979,20 +952,57 @@ function DiziDetay() {
         )}
       </div>
 
-      {/* REVIEW MODAL */}
-      {reviewModalAcik && (
-        <div className="review-modal-overlay" onClick={() => setReviewModalAcik(false)}>
-          <div className="review-modal" onClick={e => e.stopPropagation()}>
-            <div className="review-modal-header">
-              <h3>Yorum Yaz — {dizi.name}</h3>
-              <button className="review-modal-kapat" onClick={() => setReviewModalAcik(false)}>✕</button>
+      {/* LISTE MODAL (Yeni Glass Modal Tasarımı) */}
+      {listeMenuAcik && (
+        <div className="glass-modal-overlay" onClick={() => setListeMenuAcik(false)}>
+          <div className="glass-modal" onClick={e => e.stopPropagation()}>
+            <button className="glass-modal-close" onClick={() => setListeMenuAcik(false)}>✕</button>
+            <div className="glass-modal-header">
+              <h3>Listeye Ekle</h3>
+              <p>Diziyi eklemek istediğiniz listeleri seçin</p>
             </div>
-            <textarea className="review-textarea" placeholder="Bu dizi hakkında ne düşünüyorsun?" value={reviewText} onChange={e => setReviewText(e.target.value)} rows={5} />
-            <label className="spoiler-label">
-              <input type="checkbox" checked={spoilerVar} onChange={e => setSpoilerVar(e.target.checked)} />
-              <AlertTriangle size={14} /> Spoiler içeriyor
-            </label>
-            <button className="review-gonder-btn" disabled={!reviewText.trim() || reviewGonderiliyor}
+            
+            {kullaniciListeleri.length === 0 && (
+              <div style={{ color: '#94a3b8', fontStyle: 'italic', marginBottom: '16px' }}>Henüz liste oluşturmadınız.</div>
+            )}
+            
+            <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '20px' }}>
+              {kullaniciListeleri.map(liste => (
+                <div key={liste.list_id} className={`glass-liste-satir ${dizininListeleri.includes(liste.list_id) ? 'glass-liste-satir-aktif' : ''}`} onClick={() => listeToggle(liste.list_id)}>
+                  <div className={`glass-liste-checkbox ${dizininListeleri.includes(liste.list_id) ? 'checked' : ''}`}>
+                    {dizininListeleri.includes(liste.list_id) && <span>✓</span>}
+                  </div>
+                  <span className="glass-liste-adi">{liste.name}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="glass-yeni-liste">
+              <input type="text" className="glass-yeni-liste-input" placeholder="Yeni liste oluştur..." value={yeniListeAdi} onChange={e => setYeniListeAdi(e.target.value)} onKeyDown={e => e.key === 'Enter' && yeniListeOlustur()} />
+              <button className="glass-liste-ekle-btn" onClick={yeniListeOlustur}>+</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REVIEW MODAL (Yeni Glass Modal Tasarımı) */}
+      {reviewModalAcik && (
+        <div className="glass-modal-overlay" onClick={() => setReviewModalAcik(false)}>
+          <div className="glass-modal" onClick={e => e.stopPropagation()}>
+            <button className="glass-modal-close" onClick={() => setReviewModalAcik(false)}>✕</button>
+            <div className="glass-modal-header">
+              <h3>Yorum Yaz</h3>
+              <p>{dizi.name}</p>
+            </div>
+            <textarea className="glass-textarea" placeholder="Bu dizi hakkında düşüncelerini paylaş..." value={reviewText} onChange={e => setReviewText(e.target.value)} rows={6} maxLength={2000} />
+            <div className="review-textarea-footer">
+              <label className="spoiler-label">
+                <input type="checkbox" checked={spoilerVar} onChange={e => setSpoilerVar(e.target.checked)} />
+                <AlertTriangle size={14} /> Spoiler içeriyor
+              </label>
+              <span className="review-char-count">{reviewText.length}/2000</span>
+            </div>
+            <button className="glass-btn-primary" disabled={!reviewText.trim() || reviewGonderiliyor}
               onClick={async () => {
                 const token = ensureAuth('Yorum göndermek');
                 if (!token) return;
@@ -1007,7 +1017,7 @@ function DiziDetay() {
                 } catch (e) { console.error(e); }
                 setReviewGonderiliyor(false);
               }}>
-              {reviewGonderiliyor ? 'Gönderiliyor...' : 'Gönder'}
+              {reviewGonderiliyor ? 'Gönderiliyor...' : 'Yorumu Gönder'}
             </button>
           </div>
         </div>
