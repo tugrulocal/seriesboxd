@@ -163,8 +163,15 @@ _LOCAL_ORIGINS = [
     "http://localhost:5176",
     "http://127.0.0.1:5176",      # ← ekle
 ]
-_PROD_ORIGINS_RAW  = os.getenv("ALLOWED_ORIGINS", "https://dizilog.app,https://www.dizilog.app,https://dizilog.onrender.com,https://seriesboxd.onrender.com")           # virgülle ayrılmış domain listesi
+_PROD_ORIGINS_RAW  = os.getenv("ALLOWED_ORIGINS", "")
 _PROD_ORIGINS      = [o.strip() for o in _PROD_ORIGINS_RAW.split(",") if o.strip()]
+_PROD_ORIGINS.extend([
+    "https://dizilog.app",
+    "https://www.dizilog.app",
+    "https://dizilog.onrender.com",
+    "https://seriesboxd.onrender.com"
+])
+_PROD_ORIGINS = list(set(_PROD_ORIGINS))
 
 CORS_ORIGINS = _PROD_ORIGINS if (IS_PRODUCTION and _PROD_ORIGINS) else _LOCAL_ORIGINS
 
