@@ -1,0 +1,17 @@
+name: Keep Render App Alive
+
+on:
+  schedule:
+    # GitHub sunucuları bazen cron görevlerini geciktirdiği için süreyi 5 dakikaya indirdik. 
+    # Render 15 dk'da uyur, gecikme olsa bile bu süre içinde kesinlikle tetiklenmiş olur.
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Backend
+        run: |
+          echo "Pinging dizilog.onrender.com..."
+          curl -v https://dizilog.onrender.com/health
